@@ -17,7 +17,7 @@ exports.handler = async (event) => {
         path: '/api/public/rastreio/' + codigo,
         method: 'GET',
         headers: {
-          'Authorization': 'Bearer sr_live_xM3NoEvU2NLqMrY7obQWubbWr-RLJS4b86RIsyt1iQo',
+          'Authorization': 'Bearer sr_live_fjlvMM3nQ7Rn7WIRA00qMpIdKKz9Xr1YQbIFi2SpDHY',
           'Accept': 'application/json',
           'User-Agent': 'MATRIX/1.0'
         }
