@@ -13,8 +13,8 @@ exports.handler = async (event) => {
 
     const result = await new Promise((resolve, reject) => {
       const req = https.request({
-        hostname: 'api.seurastreio.com.br',
-        path: '/v1/tracking/' + codigo,
+        hostname: 'seurastreio.com.br',
+        path: '/api/public/rastreio/' + codigo,
         method: 'GET',
         headers: {
           'Authorization': 'Bearer sr_live_xM3NoEvU2NLqMrY7obQWubbWr-RLJS4b86RIsyt1iQo',
