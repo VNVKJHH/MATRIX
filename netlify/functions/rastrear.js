@@ -11,21 +11,37 @@ exports.handler = async (event) => {
     const codigo = body.codigo;
     if (!codigo) return { statusCode: 400, body: JSON.stringify({ error: 'Código não informado' }) };
 
-    const result = await new Promise((resolve, reject) => {
+    // Busca token dos Correios primeiro
+    const tokenResult = await new Promise((resolve, reject) => {
+      const postData = 'numero=' + codigo;
       const req = https.request({
-        hostname: 'linketrack.com',
-        path: '/track/json?user=teste&token=1abcd00b2731640591ed1249a6eb0359&codigo=' + codigo,
-        method: 'GET',
-        headers: { 'User-Agent': 'MATRIX/1.0', 'Accept': 'application/json' }
+        hostname: 'proxyapp.correios.com.br',
+        path: '/track/json',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'CorreiosApp/5.5.2 CFNetwork/1485 Darwin/23.1.0',
+          'Accept': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
       }, (res) => { let data = ''; res.on('data', c => data += c); res.on('end', () => resolve({ status: res.statusCode, body: data })); });
       req.on('error', reject);
+      req.write(postData);
       req.end();
     });
 
-    console.log('Status:', result.status);
-    console.log('Response:', result.body.substring(0, 300));
+    console.log('Correios Status:', tokenResult.status);
+    console.log('Correios Response:', tokenResult.body.substring(0, 500));
 
-    const parsed = JSON.parse(result.body);
+    if(tokenResult.status !== 200) {
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Correios retornou ' + tokenResult.status, raw: tokenResult.body.substring(0, 200) })
+      };
+    }
+
+    const parsed = JSON.parse(tokenResult.body);
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
