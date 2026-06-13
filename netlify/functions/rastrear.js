@@ -12,19 +12,22 @@ exports.handler = async (event) => {
     if (!codigo) return { statusCode: 400, body: JSON.stringify({ error: 'Código não informado' }) };
 
     const result = await new Promise((resolve, reject) => {
-      const path = '/track/json?user=teste&token=1abcd00b2731640e886fb41a8a9671ad1434c599dbaa0a0de9a5aa619f29a83f&codigo=' + codigo;
       const req = https.request({
-        hostname: 'api.linketrack.com',
-        path: path,
+        hostname: 'api.seurastreio.com.br',
+        path: '/v1/tracking/' + codigo,
         method: 'GET',
-        headers: { 'User-Agent': 'MATRIX/1.0', 'Accept': 'application/json' }
+        headers: {
+          'Authorization': 'Bearer sr_live_xM3NoEvU2NLqMrY7obQWubbWr-RLJS4b86RIsyt1iQo',
+          'Accept': 'application/json',
+          'User-Agent': 'MATRIX/1.0'
+        }
       }, (res) => { let data = ''; res.on('data', c => data += c); res.on('end', () => resolve({ status: res.statusCode, body: data })); });
       req.on('error', reject);
       req.end();
     });
 
-    console.log('Status:', result.status);
-    console.log('Response:', result.body.substring(0, 300));
+    console.log('SeuRastreio Status:', result.status);
+    console.log('SeuRastreio Response:', result.body.substring(0, 500));
 
     const parsed = JSON.parse(result.body);
     return {
