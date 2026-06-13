@@ -11,37 +11,22 @@ exports.handler = async (event) => {
     const codigo = body.codigo;
     if (!codigo) return { statusCode: 400, body: JSON.stringify({ error: 'Código não informado' }) };
 
-    // Busca token dos Correios primeiro
-    const tokenResult = await new Promise((resolve, reject) => {
-      const postData = 'numero=' + codigo;
+    const result = await new Promise((resolve, reject) => {
+      const path = '/track/json?user=teste&token=1abcd00b2731640e886fb41a8a9671ad1434c599dbaa0a0de9a5aa619f29a83f&codigo=' + codigo;
       const req = https.request({
-        hostname: 'proxyapp.correios.com.br',
-        path: '/track/json',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'CorreiosApp/5.5.2 CFNetwork/1485 Darwin/23.1.0',
-          'Accept': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        }
+        hostname: 'api.linketrack.com',
+        path: path,
+        method: 'GET',
+        headers: { 'User-Agent': 'MATRIX/1.0', 'Accept': 'application/json' }
       }, (res) => { let data = ''; res.on('data', c => data += c); res.on('end', () => resolve({ status: res.statusCode, body: data })); });
       req.on('error', reject);
-      req.write(postData);
       req.end();
     });
 
-    console.log('Correios Status:', tokenResult.status);
-    console.log('Correios Response:', tokenResult.body.substring(0, 500));
+    console.log('Status:', result.status);
+    console.log('Response:', result.body.substring(0, 300));
 
-    if(tokenResult.status !== 200) {
-      return {
-        statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Correios retornou ' + tokenResult.status, raw: tokenResult.body.substring(0, 200) })
-      };
-    }
-
-    const parsed = JSON.parse(tokenResult.body);
+    const parsed = JSON.parse(result.body);
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
