@@ -13,22 +13,23 @@ exports.handler = async (event) => {
 
     const result = await new Promise((resolve, reject) => {
       const req = https.request({
-        hostname: 'rastreamento.correios.com.br',
-        path: '/app/index.php?objeto=' + codigo,
+        hostname: 'api.linketrack.com',
+        path: '/track/json?user=teste&token=1abcd00b2731640591ed1249a6eb0359&codigo=' + codigo,
         method: 'GET',
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
-      }, (res) => { let data = ''; res.on('data', c => data += c); res.on('end', () => resolve({ status: res.statusCode, body: data, headers: res.headers })); });
+        headers: { 'User-Agent': 'MATRIX/1.0', 'Accept': 'application/json' }
+      }, (res) => { let data = ''; res.on('data', c => data += c); res.on('end', () => resolve({ status: res.statusCode, body: data })); });
       req.on('error', reject);
       req.end();
     });
 
-    console.log('Correios Status:', result.status);
-    console.log('Correios Response:', result.body.substring(0, 300));
+    console.log('Linketrack Status:', result.status);
+    console.log('Linketrack Response:', result.body.substring(0, 300));
 
+    const parsed = JSON.parse(result.body);
     return {
       statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: result.status, body: result.body.substring(0, 1000) })
+      body: JSON.stringify(parsed)
     };
   } catch (error) {
     console.log('Error:', error.message);
