@@ -675,7 +675,8 @@ tr:hover td{background:var(--neon-glow)}
           <th>Rastreamento</th>
           <th>Acompanhamento</th>
           <th>Previsão</th>
-          <th>Entrega</th>
+          <th>Tempo</th>
+          <th>Status</th>
         </tr></thead>
         <tbody id="rast-tbody"></tbody>
       </table>
@@ -2627,6 +2628,15 @@ function renderRastreamento(){
   let rows=[...dados];
   if(atendFiltro) rows=rows.filter(r=>r.atendente===atendFiltro);
   if(mesFiltro) rows=rows.filter(r=>r.mes===mesFiltro);
+  // Status filter
+  const statusFil = adminLogado?(document.getElementById('rast-status')?.value||''):'';
+  if(statusFil === 'pendente') rows = rows.filter(r => getStatusCorreios(r).tipo === 'postagem');
+  else if(statusFil === 'transito') rows = rows.filter(r => getStatusCorreios(r).tipo === 'rota');
+  else if(statusFil === 'retirada') rows = rows.filter(r => getStatusCorreios(r).tipo === 'retirada');
+  else if(statusFil === 'entregue') rows = rows.filter(r => getStatusCorreios(r).tipo === 'entregue');
+  else if(statusFil === 'devolucao') rows = rows.filter(r => getStatusCorreios(r).tipo === 'devolucao');
+  else if(statusFil === 'invalido') rows = rows.filter(r => getStatusCorreios(r).tipo === 'invalido');
+
   if(busca) rows=rows.filter(r=>{
     const s=((r.nomeCliente||'')+(r.telefone||'')+(r.rastreamento||'')+(r.atendente||'')).toLowerCase();
     return s.includes(busca);
@@ -2696,25 +2706,33 @@ function renderRastreamento(){
       <td id="track-cell-${gi}" style="min-width:200px">
         ${r.rastreamento ? `
           <div>
-            ${r.trackStatus ? `
-              <div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div>
-              <div style="font-size:10px;color:var(--t3);margin-bottom:6px">${r.trackData||''}</div>
-            ` : `<div style="font-size:11px;color:var(--t3);margin-bottom:6px;font-style:italic">Clique para buscar</div>`}
-            <div style="display:flex;gap:4px;flex-wrap:wrap">
-              <button class="btn btn-success btn-sm" onclick="buscarRastreio(${gi},'rast')" style="font-size:11px;padding:4px 10px">
-                <i class="ti ti-refresh"></i> ${r.trackStatus?'Atualizar':'Buscar'}
-              </button>
-              ${r.trackHistorico&&r.trackHistorico.length>0?`
-                <button class="btn btn-sm" onclick="verHistorico(${gi})" style="font-size:11px;padding:4px 10px">
-                  <i class="ti ti-list"></i> Histórico
-                </button>`:''
-              }
-            </div>
+            ${r.trackInvalido ? `<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>` :
+              r.trackStatus ? `
+                <div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div>
+                <div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>
+              ` : `<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`
+            }
+            ${r.trackHistorico&&r.trackHistorico.length>0?`
+              <button class="btn btn-sm" onclick="verHistorico(${gi})" style="font-size:11px;padding:3px 8px">
+                <i class="ti ti-list"></i> Histórico
+              </button>`:''
+            }
           </div>
         ` : '<span style="font-size:11px;color:var(--t3)">—</span>'}
       </td>
       <td style="font-size:11px;white-space:nowrap">
         ${r.previsaoEntrega ? `<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> ${new Date(r.previsaoEntrega).toLocaleDateString('pt-BR')}</span>` : '<span style="color:var(--t3)">—</span>'}
+      </td>
+      <td style="font-size:11px;white-space:nowrap;min-width:120px">
+        ${(()=>{
+          const hoje = new Date();
+          const lancado = new Date(r.ano, MESES.indexOf(r.mes), r.dia);
+          const diasTotal = Math.floor((hoje - lancado) / 86400000);
+          const primeiroEvento = r.trackHistorico && r.trackHistorico.length > 0 ? new Date(r.trackHistorico[r.trackHistorico.length-1].data?.split('/').reverse().join('-')) : null;
+          const diasTransito = primeiroEvento && !isNaN(primeiroEvento) ? Math.floor((hoje - primeiroEvento) / 86400000) : null;
+          return '<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há ' + diasTotal + 'd</div>' +
+                 (diasTransito !== null ? '<div style="color:var(--amber);margin-top:2px"><i class="ti ti-truck-delivery" style="font-size:10px"></i> ' + diasTransito + 'd em rota</div>' : '');
+        })()}
       </td>
       ${entregaCell}
     </tr>`;
@@ -2931,6 +2949,65 @@ function atualizarBotaoRastreio(){
     }
   }
   if(count) count.textContent = pendentes + ' pendente' + (pendentes!==1?'s':'');
+}
+
+function getStatusCorreios(r){
+  // Determina o status baseado no trackStatus dos Correios
+  if(!r.rastreamento) return {label:'Aguardando postagem', cor:'var(--t3)', icon:'ti-clock', tipo:'postagem'};
+  if(!r.trackStatus) return {label:'Aguardando postagem', cor:'var(--t3)', icon:'ti-clock', tipo:'postagem'};
+  
+  const s = r.trackStatus.toLowerCase();
+  
+  // ENTREGUE AO REMETENTE / DEVOLUÇÃO (prioridade máxima)
+  if(s.includes('entregue ao remetente') || s.includes('devolvido ao remetente') || 
+     s.includes('devolução') || s.includes('prazo de retirada encerrado') ||
+     s.includes('não entregue - prazo')) {
+    return {label:'Devolução', cor:'var(--red)', icon:'ti-arrow-back-up', tipo:'devolucao'};
+  }
+  
+  // ENTREGUE AO DESTINATÁRIO
+  if(s.includes('entregue ao destinatário') || s.includes('objeto entregue') ||
+     (s.includes('entregue') && !s.includes('remetente'))) {
+    return {label:'Entregue', cor:'var(--neon)', icon:'ti-circle-check', tipo:'entregue'};
+  }
+  
+  // AGUARDANDO RETIRADA
+  if(s.includes('aguardando retirada') || s.includes('disponível para retirada') ||
+     s.includes('destinatário ausente') || s.includes('tentativa de entrega')) {
+    return {label:'Aguardando retirada', cor:'var(--amber)', icon:'ti-building-store', tipo:'retirada'};
+  }
+  
+  // EM ROTA / TRANSFERÊNCIA
+  if(s.includes('transferência') || s.includes('em rota') || s.includes('trânsito') ||
+     s.includes('postado') || s.includes('coletado') || s.includes('saiu para entrega') ||
+     s.includes('encaminhado') || s.includes('chegou') || s.includes('objeto recebido')) {
+    return {label:'Em rota', cor:'var(--blue)', icon:'ti-truck-delivery', tipo:'rota'};
+  }
+  
+  // Código inválido
+  if(r.trackInvalido) return {label:'Código inválido', cor:'var(--red)', icon:'ti-alert-triangle', tipo:'invalido'};
+  
+  // Default - tem status mas não se encaixa em nenhuma categoria
+  return {label:'Em rota', cor:'var(--blue)', icon:'ti-truck-delivery', tipo:'rota'};
+}
+
+function getPrazoRetirada(r){
+  // Calcula prazo de retirada (7 dias corridos após tentativa de entrega)
+  if(!r.trackHistorico || r.trackHistorico.length === 0) return null;
+  // Find first "aguardando retirada" event
+  const evento = r.trackHistorico.find(e => 
+    e.descricao && (e.descricao.toLowerCase().includes('aguardando retirada') || 
+                    e.descricao.toLowerCase().includes('destinatário ausente'))
+  );
+  if(!evento || !evento.data) return null;
+  const partes = evento.data.split('/');
+  if(partes.length < 3) return null;
+  const dataEvento = new Date(partes[2], partes[1]-1, partes[0]);
+  const prazo = new Date(dataEvento);
+  prazo.setDate(prazo.getDate() + 7);
+  const hoje = new Date();
+  const diasRestantes = Math.ceil((prazo - hoje) / 86400000);
+  return { prazo, diasRestantes };
 }
 
 function verHistorico(gi){
