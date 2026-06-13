@@ -13,7 +13,7 @@ exports.handler = async (event) => {
 
     const result = await new Promise((resolve, reject) => {
       const req = https.request({
-        hostname: 'api.linketrack.com',
+        hostname: 'linketrack.com',
         path: '/track/json?user=teste&token=1abcd00b2731640591ed1249a6eb0359&codigo=' + codigo,
         method: 'GET',
         headers: { 'User-Agent': 'MATRIX/1.0', 'Accept': 'application/json' }
@@ -22,8 +22,8 @@ exports.handler = async (event) => {
       req.end();
     });
 
-    console.log('Linketrack Status:', result.status);
-    console.log('Linketrack Response:', result.body.substring(0, 300));
+    console.log('Status:', result.status);
+    console.log('Response:', result.body.substring(0, 300));
 
     const parsed = JSON.parse(result.body);
     return {
