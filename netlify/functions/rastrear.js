@@ -1,4 +1,18 @@
+const https = require('https');
+
 exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
@@ -13,18 +27,32 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Código não informado' }) };
     }
 
-    const response = await fetch('https://melhorenvio.com.br/api/v2/me/shipment/tracking', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ME_TOKEN}`,
-        'User-Agent': 'MATRIX/1.0 (euvicentee@gmail.com)'
-      },
-      body: JSON.stringify({ orders: [codigo] })
-    });
+    const postData = JSON.stringify({ orders: [codigo] });
 
-    const data = await response.json();
+    const result = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'melhorenvio.com.br',
+        path: '/api/v2/me/shipment/tracking',
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ME_TOKEN}`,
+          'User-Agent': 'MATRIX/1.0 (euvicentee@gmail.com)',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, body: data }));
+      });
+
+      req.on('error', reject);
+      req.write(postData);
+      req.end();
+    });
 
     return {
       statusCode: 200,
@@ -32,12 +60,13 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: result.body
     };
   } catch (error) {
     return {
       statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ error: error.message })
     };
   }
-};b
+};
