@@ -2767,19 +2767,36 @@ async function buscarRastreio(gi, tipo){
     const data = await res.json();
     console.log('Tracking response:', data);
 
-    const trackInfo = data[codigo] || Object.values(data)[0];
-
-    if(!trackInfo || !trackInfo.tracking || trackInfo.tracking.length === 0){
+    if(!data.success || data.status === 'not_found' || data.status === 'invalid_format'){
       toast('Nenhum evento encontrado. Verifique o código.');
       return;
     }
 
-    const eventos = trackInfo.tracking.map(e => ({
-      descricao: e.message || e.status || '—',
-      data: e.happened_at ? e.happened_at.split('T')[0].split('-').reverse().join('/') : '',
-      hora: e.happened_at ? e.happened_at.split('T')[1]?.substring(0,5) : '',
-      local: e.origin || ''
-    }));
+    // SeuRastreio format
+    const eventos = [];
+    if(data.historico && data.historico.length > 0){
+      data.historico.forEach(e => {
+        eventos.push({
+          descricao: e.descricao || '—',
+          data: e.data ? e.data.split('T')[0].split('-').reverse().join('/') : '',
+          hora: e.data ? e.data.split('T')[1]?.substring(0,5) : '',
+          local: e.local || ''
+        });
+      });
+    } else if(data.eventoMaisRecente){
+      const e = data.eventoMaisRecente;
+      eventos.push({
+        descricao: e.descricao || '—',
+        data: e.data ? e.data.split('T')[0].split('-').reverse().join('/') : '',
+        hora: e.data ? e.data.split('T')[1]?.substring(0,5) : '',
+        local: e.local || (e.destino ? '→ '+e.destino : '')
+      });
+    }
+
+    if(eventos.length === 0){
+      toast('Nenhum evento encontrado.');
+      return;
+    }
 
     obj.trackStatus = eventos[0]?.descricao || '—';
     obj.trackData = (eventos[0]?.data||'') + (eventos[0]?.hora?' '+eventos[0].hora:'') + (eventos[0]?.local?' — '+eventos[0].local:'');
