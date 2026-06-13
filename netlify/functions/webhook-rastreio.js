@@ -1,7 +1,7 @@
 const https = require('https');
 const crypto = require('crypto');
 
-const WEBHOOK_SECRET = '8efa94a764bbe82b915625297d5dae4dad6d9f4684351dcb9dc18baa675a7dc4';
+const WEBHOOK_SECRET = 'fad76e6acf342ed76fa0fea2f1e4185b85418942a223b14ba8f5db37af318f2d';
 const FIREBASE_PROJECT = 'matrix-eb42e';
 const FIREBASE_KEY = 'AIzaSyAPwURZrZGNjZr2IV8Ba0vcp2-b4XkKZ_w';
 
