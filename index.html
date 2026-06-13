@@ -2748,67 +2748,29 @@ async function buscarRastreio(gi, tipo){
   if(!obj||!obj.rastreamento){toast('Sem código de rastreamento!');return;}
   const codigo = obj.rastreamento.trim().toUpperCase();
   
-  // Show loading state
   toast('Buscando rastreamento...');
 
   try{
-    // Melhor Envio tracking API
-    // Melhor Envio: busca pelo código de rastreamento dos Correios
-    const apiUrl = `https://melhorenvio.com.br/api/v2/me/orders?q=${codigo}&per_page=5`;
-    const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
-    
-    const res = await fetch(proxyUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + ME_TOKEN,
-        'User-Agent': 'MATRIX/1.0 (euvicentee@gmail.com)'
-      }
+    const res = await fetch('/.netlify/functions/rastrear', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ codigo })
     });
 
     if(!res.ok){
       const err = await res.text();
-      console.error('ME API error:', err);
-      toast('Erro na API. Tente novamente.');
+      console.error('Function error:', err);
+      toast('Erro na função. Código: ' + res.status);
       return;
     }
 
     const data = await res.json();
-    console.log('Tracking data:', data);
+    console.log('Tracking response:', data);
 
-    // Find order with matching tracking code
-    const orders = data.data || data || [];
-    const order = Array.isArray(orders) 
-      ? orders.find(o => o.tracking && o.tracking.includes(codigo)) || orders[0]
-      : null;
-    
-    if(!order){
-      toast('Pedido não encontrado. Verifique o código.');
-      return;
-    }
+    const trackInfo = data[codigo] || Object.values(data)[0];
 
-    // Now get tracking details using order id
-    const trackUrl = `https://melhorenvio.com.br/api/v2/me/shipment/tracking`;
-    const trackProxy = 'https://corsproxy.io/?' + encodeURIComponent(trackUrl);
-    const trackRes = await fetch(trackProxy, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + ME_TOKEN,
-        'User-Agent': 'MATRIX/1.0 (euvicentee@gmail.com)'
-      },
-      body: JSON.stringify({ orders: [order.id] })
-    });
-    
-    const trackData2 = await trackRes.json();
-    console.log('Track detail:', trackData2);
-    
-    const trackInfo = trackData2[order.id] || Object.values(trackData2)[0];
-    
     if(!trackInfo || !trackInfo.tracking || trackInfo.tracking.length === 0){
-      toast('Nenhum evento de rastreamento encontrado.');
+      toast('Nenhum evento encontrado. Verifique o código.');
       return;
     }
 
@@ -2820,9 +2782,10 @@ async function buscarRastreio(gi, tipo){
     }));
 
     obj.trackStatus = eventos[0]?.descricao || '—';
-    obj.trackData = (eventos[0]?.data || '') + (eventos[0]?.hora ? ' ' + eventos[0].hora : '') + (eventos[0]?.local ? ' — ' + eventos[0].local : '');
+    obj.trackData = (eventos[0]?.data||'') + (eventos[0]?.hora?' '+eventos[0].hora:'') + (eventos[0]?.local?' — '+eventos[0].local:'');
     obj.trackHistorico = eventos;
 
+    if(window.fbSave && obj.fbId) window.fbSave(tipo==='pad'?'pads':'dados', obj.fbId, obj);
     if(tipo==='pad') renderPad(); else renderRastreamento();
     toast('Rastreamento atualizado!');
 
@@ -2831,6 +2794,7 @@ async function buscarRastreio(gi, tipo){
     toast('Erro ao buscar. Verifique o código.');
   }
 }
+
 
 function processarRastreio(gi, tipo, data){
   const obj = tipo==='pad' ? pads[gi] : dados[gi];
