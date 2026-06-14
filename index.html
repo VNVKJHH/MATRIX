@@ -3350,6 +3350,9 @@ async function geocodificarCidade(local){
 }
 
 let globoInstance = null;
+let globoCountriesGeo = null;
+let globoStatesGeo = null;
+let globoPontos = [];
 
 function abrirGlobo(){
   document.getElementById('modal-globo').classList.add('open');
@@ -3368,6 +3371,7 @@ function fecharGlobo(){
   if(globoInstance){ try{ globoInstance._destructor && globoInstance._destructor(); }catch(e){} globoInstance=null; }
   const el = document.getElementById('globo-container');
   if(el) el.innerHTML = '';
+  globoCountriesGeo = null; globoStatesGeo = null; globoPontos = [];
 }
 
 async function iniciarGlobo(){
@@ -3375,7 +3379,7 @@ async function iniciarGlobo(){
     const s = document.createElement('script');
     s.src = 'https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js';
     s.onload = () => construirGlobo();
-    s.onerror = () => { document.getElementById('globo-loading-text').textContent = 'Erro ao carregar globo. Verifique a conexão.'; };
+    s.onerror = () => { document.getElementById('globo-loading-text').textContent = 'Erro ao carregar globo.'; };
     document.head.appendChild(s);
   } else {
     construirGlobo();
@@ -3388,69 +3392,139 @@ async function construirGlobo(){
   container.innerHTML = '';
 
   const loadingEl = document.getElementById('globo-loading');
-  if(loadingEl){ loadingEl.style.display='flex'; document.getElementById('globo-loading-text').textContent='Carregando fronteiras dos países...'; }
+  const loadingText = document.getElementById('globo-loading-text');
+  if(loadingEl) loadingEl.style.display='flex';
+  if(loadingText) loadingText.textContent = 'Carregando demarcações geográficas...';
 
-  // Fetch country borders GeoJSON
-  let countriesGeo = null;
-  let brazilStatesGeo = null;
-
+  // Load GeoJSONs
   try{
-    const [cRes, bRes] = await Promise.all([
-      fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson'),
-      fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson')
+    const [cRes, sRes] = await Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json()).catch(()=>null),
+      fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson').then(r=>r.json()).catch(()=>null)
     ]);
-    countriesGeo = await cRes.json();
-    brazilStatesGeo = await bRes.json();
-  } catch(e){
-    console.error('GeoJSON load error:', e);
-    // Try alternative
+
+    // Convert topojson to geojson if needed
+    if(cRes && cRes.type === 'Topology' && window.topojson){
+      globoCountriesGeo = window.topojson.feature(cRes, cRes.objects.countries);
+    } else if(cRes && cRes.features){
+      globoCountriesGeo = cRes;
+    }
+
+    globoStatesGeo = sRes;
+  } catch(e){ console.error('GeoJSON error:', e); }
+
+  // Try loading countries as plain geojson
+  if(!globoCountriesGeo){
     try{
-      const r = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
-      const topo = await r.json();
-      console.log('Loaded topojson fallback');
-    } catch(e2){ console.error(e2); }
+      const r = await fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson');
+      globoCountriesGeo = await r.json();
+    } catch(e){ console.error('Countries fallback error:', e); }
   }
 
-  if(loadingEl) loadingEl.style.display='none';
+  if(loadingText) loadingText.textContent = 'Construindo globo...';
 
+  // Build globe
   globoInstance = Globe()(container)
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
     .width(container.offsetWidth)
     .height(container.offsetHeight)
-    .backgroundColor('rgba(0,0,0,0)');
+    .backgroundColor('rgba(0,0,0,0)')
+    .pointOfView({ lat: -15, lng: -50, altitude: 2.0 }, 1000);
 
-  // Add country borders
-  if(countriesGeo){
+  // Country borders
+  if(globoCountriesGeo && globoCountriesGeo.features){
     globoInstance
-      .polygonsData(countriesGeo.features)
+      .polygonsData(globoCountriesGeo.features)
       .polygonCapColor(() => 'rgba(0,0,0,0)')
       .polygonSideColor(() => 'rgba(0,0,0,0)')
-      .polygonStrokeColor(() => 'rgba(100,200,255,0.25)')
-      .polygonAltitude(0.001);
+      .polygonStrokeColor(() => 'rgba(120,200,255,0.35)')
+      .polygonAltitude(0.001)
+      .onPolygonHover((polygon, prevPolygon) => {
+        const tooltip = document.getElementById('globo-tooltip');
+        if(polygon && polygon.properties){
+          const nome = polygon.properties.ADMIN || polygon.properties.name || polygon.properties.NAME || '';
+          if(nome && tooltip){
+            tooltip.style.display = 'block';
+            tooltip.innerHTML = '<span style="font-weight:600">🌍 '+nome+'</span>';
+          }
+        } else if(tooltip){
+          tooltip.style.display = 'none';
+        }
+      });
   }
 
-  // Add Brazil state borders as separate layer using paths
-  if(brazilStatesGeo){
-    globoInstance
-      .pathsData(brazilStatesGeo.features)
-      .pathPoints(f => {
-        const coords = f.geometry.type === 'Polygon'
-          ? f.geometry.coordinates[0]
-          : f.geometry.coordinates[0][0];
-        return coords.map(([lng,lat]) => [lat, lng]);
-      })
-      .pathColor(() => 'rgba(0,255,128,0.4)')
-      .pathStroke(0.5)
-      .pathDashLength(0)
-      .pathAltitude(0.001);
-  }
+  // Monitor zoom level and show/hide state borders
+  let lastAlt = 2.0;
+  setInterval(() => {
+    if(!globoInstance) return;
+    const pov = globoInstance.pointOfView();
+    const alt = pov.altitude;
+    if(Math.abs(alt - lastAlt) > 0.05){
+      lastAlt = alt;
+      atualizarDemarcacoesPorZoom(alt);
+    }
+  }, 200);
 
-  // Focar no Brasil
-  globoInstance.pointOfView({ lat: -15, lng: -50, altitude: 1.6 }, 1000);
+  if(loadingEl) loadingEl.style.display = 'none';
 
   // Load markers
   await renderGlobo();
+
+  // Tooltip follow mouse
+  const canvasEl = container.querySelector('canvas');
+  if(canvasEl){
+    canvasEl.addEventListener('mousemove', e => {
+      const tooltip = document.getElementById('globo-tooltip');
+      if(tooltip && tooltip.style.display !== 'none'){
+        const rect = canvasEl.getBoundingClientRect();
+        tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
+        tooltip.style.top = (e.clientY - rect.top - 40) + 'px';
+      }
+    });
+  }
+}
+
+function atualizarDemarcacoesPorZoom(alt){
+  if(!globoInstance) return;
+
+  // alt < 0.5 = muito perto (cidades)
+  // alt 0.5-1.2 = estados
+  // alt > 1.2 = só países
+
+  if(alt < 1.2 && globoStatesGeo && globoStatesGeo.features){
+    // Show state borders (green neon)
+    globoInstance
+      .polygonsData([...(globoCountriesGeo?.features||[]), ...globoStatesGeo.features])
+      .polygonCapColor(f => 'rgba(0,0,0,0)')
+      .polygonSideColor(() => 'rgba(0,0,0,0)')
+      .polygonStrokeColor(f => {
+        const isBrazilState = f.properties && (f.properties.sigla || f.properties.UF_05 || f.properties.name_pt);
+        return isBrazilState ? 'rgba(0,255,128,0.5)' : 'rgba(120,200,255,0.3)';
+      })
+      .polygonAltitude(0.001)
+      .onPolygonHover((polygon) => {
+        const tooltip = document.getElementById('globo-tooltip');
+        if(polygon && polygon.properties && tooltip){
+          const nome = polygon.properties.name || polygon.properties.ADMIN || polygon.properties.name_pt || polygon.properties.UF_05 || '';
+          if(nome){ tooltip.style.display='block'; tooltip.innerHTML='<span style="font-weight:600">📍 '+nome+'</span>'; }
+        } else if(tooltip){ tooltip.style.display='none'; }
+      });
+  } else {
+    // Show only country borders
+    if(globoCountriesGeo && globoCountriesGeo.features){
+      globoInstance
+        .polygonsData(globoCountriesGeo.features)
+        .polygonStrokeColor(() => 'rgba(120,200,255,0.35)')
+        .onPolygonHover((polygon) => {
+          const tooltip = document.getElementById('globo-tooltip');
+          if(polygon && polygon.properties && tooltip){
+            const nome = polygon.properties.ADMIN || polygon.properties.name || polygon.properties.NAME || '';
+            if(nome){ tooltip.style.display='block'; tooltip.innerHTML='<span style="font-weight:600">🌍 '+nome+'</span>'; }
+          } else if(tooltip){ tooltip.style.display='none'; }
+        });
+    }
+  }
 }
 
 async function renderGlobo(){
@@ -3468,7 +3542,7 @@ async function renderGlobo(){
   rows = rows.filter(r => r.rastreamento && (r.trackData || (r.trackHistorico && r.trackHistorico.length > 0)));
   if(statusFil) rows = rows.filter(r => getStatusCorreios(r).tipo === statusFil);
 
-  const pontos = [];
+  globoPontos = [];
   for(const r of rows){
     let local = '';
     if(r.trackHistorico && r.trackHistorico.length > 0){
@@ -3490,7 +3564,7 @@ async function renderGlobo(){
     if(!coords) continue;
 
     const st = getStatusCorreios(r);
-    pontos.push({
+    globoPontos.push({
       lat: coords.lat + (Math.random()-0.5)*0.04,
       lng: coords.lng + (Math.random()-0.5)*0.04,
       cor: cores[st.tipo] || '#888',
@@ -3503,29 +3577,31 @@ async function renderGlobo(){
     await new Promise(res => setTimeout(res, 250));
   }
 
-  document.getElementById('globo-count').textContent = pontos.length + ' envio' + (pontos.length!==1?'s':'') + ' no globo';
+  document.getElementById('globo-count').textContent = globoPontos.length + ' envio' + (globoPontos.length!==1?'s':'') + ' no globo';
 
   globoInstance
-    .pointsData(pontos)
+    .pointsData(globoPontos)
     .pointLat('lat')
     .pointLng('lng')
     .pointColor('cor')
-    .pointRadius(0.5)
-    .pointAltitude(0.02)
-    .pointLabel(d => '<div style="background:rgba(0,0,0,.92);border:2px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:170px">'
-      + '<div style="font-weight:800;color:'+d.cor+';margin-bottom:5px">'+d.nome+'</div>'
+    .pointRadius(0.35)
+    .pointAltitude(0.015)
+    .pointLabel(d =>
+      '<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:165px;box-shadow:0 0 12px '+d.cor+'44">'
+      + '<div style="font-weight:700;color:'+d.cor+';margin-bottom:4px;font-size:13px">'+d.nome+'</div>'
       + '<div style="color:#ddd;margin-bottom:3px">'+d.status+'</div>'
       + '<div style="color:#aaa;font-size:11px">📍 '+d.local+'</div>'
       + '<div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div>'
       + '<div style="color:#aaa;font-size:11px">👤 '+d.atend+'</div>'
-      + '</div>')
-    .ringsData(pontos)
+      + '</div>'
+    )
+    .ringsData(globoPontos)
     .ringLat('lat')
     .ringLng('lng')
     .ringColor(d => d.cor)
-    .ringMaxRadius(3)
+    .ringMaxRadius(2.5)
     .ringPropagationSpeed(2)
-    .ringRepeatPeriod(1500)
+    .ringRepeatPeriod(1400)
     .ringAltitude(0.005);
 }
 
