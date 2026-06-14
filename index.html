@@ -2727,9 +2727,9 @@ const st=getStatusCorreios(r);const prazoRet=st.tipo==='retirada'?getPrazoRetira
           const diasTransito = primeiroEvento && !isNaN(primeiroEvento) ? Math.floor((hoje - primeiroEvento) / 86400000) : null;
           return '<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há ' + diasTotal + 'd</div>' +
                  (diasTransito !== null ? '<div style="color:var(--amber);margin-top:2px"><i class="ti ti-truck-delivery" style="font-size:10px"></i> ' + diasTransito + 'd em rota</div>' : '');
-        })()}
+})()}
       </td>
-      ${entregaCell}
+      ${(()=>{const st=getStatusCorreios(r);if(st.tipo==='devolucao')return '<td><span style="color:var(--red);font-weight:700">🔴 DEVOLUÇÃO</span></td>';if(st.tipo==='retirada')return '<td><span style="color:var(--amber);font-weight:700">🟠 Aguardando retirada</span></td>';if(st.tipo==='entregue')return '<td><span style="color:var(--neon);font-weight:700">🟢 Entregue</span></td>';if(st.tipo==='rota')return '<td><span style="color:var(--blue);font-weight:700">🔵 Em rota</span></td>';if(st.tipo==='invalido')return '<td><span style="color:var(--red)">⚠️ Inválido</span></td>';return '<td><span style="color:var(--t3)">⏳ Aguardando postagem</span></td>';})()}
     </tr>`;
   });
 
