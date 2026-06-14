@@ -3409,33 +3409,42 @@ async function coletarPontosGlobo(){
     }
     // Try trackData: format "13/06/2026 04:02 — INDAIATUBA/SP"
     if(!local && r.trackData){
-      // Match pattern after " — " 
       const mDash = r.trackData.match(/—\s*([^\n]+\/[A-Z]{2})/);
       if(mDash) local = mDash[1].trim();
-      // Fallback: any CITY/UF pattern
       if(!local){
         const mCity = r.trackData.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+\/[A-Z]{2})/);
         if(mCity) local = mCity[1].trim();
       }
     }
-    console.log('Row', r.rastreamento, '-> local:', local);
     if(!local) continue;
+    
+    // Update loading text
+    const loading = document.getElementById('globo-loading');
+    if(loading && loading.style.display !== 'none'){
+      loading.innerHTML = '<div style="font-size:30px">📍</div><div style="color:var(--t2);font-size:13px">Buscando: '+local+'</div>';
+    }
+    
     const coords = await geocodificarCidade(local);
+    console.log('Geocode', local, '->', coords);
     if(!coords) continue;
+    
     const st = getStatusCorreios(r);
     pontos.push({
-      lat: coords.lat + (Math.random()-0.5)*0.08,
-      lng: coords.lng + (Math.random()-0.5)*0.08,
+      lat: coords.lat + (Math.random()-0.5)*0.05,
+      lng: coords.lng + (Math.random()-0.5)*0.05,
       cor: cores[st.tipo] || '#888',
-      label: (r.nomeCliente || '—') + '\n' + labels[st.tipo] + '\n' + local + '\n' + r.rastreamento,
       nome: r.nomeCliente || '—',
-      status: labels[st.tipo],
+      status: labels[st.tipo] || st.label,
       local: local,
       cod: r.rastreamento,
       atend: r.atendente.split(' ')[0],
       tipo: st.tipo
     });
+    
+    // Small delay to respect Nominatim rate limit
+    await new Promise(res => setTimeout(res, 300));
   }
+  console.log('Pontos coletados:', pontos.length, pontos);
   return pontos;
 }
 
