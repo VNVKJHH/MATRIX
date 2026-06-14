@@ -2757,7 +2757,9 @@ function cancelarRastreio(gi){
 function salvarRastreio(gi){
   const codigo=document.getElementById('rinp-'+gi).value.trim();
   dados[gi].rastreamento=codigo;
+  if(window.fbSave && dados[gi].fbId) window.fbSave('dados', dados[gi].fbId, dados[gi]);
   renderRastreamento();
+  atualizarBotaoRastreio();
   toast('Código salvo!');
 }
 
