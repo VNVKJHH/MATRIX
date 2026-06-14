@@ -3379,9 +3379,17 @@ async function coletarPontosGlobo(){
   const userAtend = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
 
   let rows = [...dados];
+  console.log('Total dados:', dados.length);
   if(userAtend) rows = rows.filter(r => r.atendente === userAtend);
   if(atendFil) rows = rows.filter(r => r.atendente === atendFil);
+  
+  // Debug: show all rows with rastreamento
+  const comRast = dados.filter(r => r.rastreamento);
+  console.log('Com rastreamento:', comRast.length);
+  comRast.forEach(r => console.log('  -', r.rastreamento, '| trackData:', r.trackData, '| historico:', r.trackHistorico?.length));
+  
   rows = rows.filter(r => r.rastreamento && (r.trackData || (r.trackHistorico && r.trackHistorico.length > 0)));
+  console.log('Com trackData/historico:', rows.length);
   if(statusFil) rows = rows.filter(r => getStatusCorreios(r).tipo === statusFil);
 
   const cores = { postagem:'#888888', rota:'#0EA5E9', retirada:'#F59E0B', entregue:'#00FF80', devolucao:'#EF4444', invalido:'#EF4444' };
@@ -3390,15 +3398,27 @@ async function coletarPontosGlobo(){
   const pontos = [];
   for(const r of rows){
     let local = '';
+    // Try trackHistorico first
     if(r.trackHistorico && r.trackHistorico.length > 0){
       for(const e of r.trackHistorico){
-        if(e.local && /\/[A-Z]{2}$/.test(e.local)){ local = e.local; break; }
+        if(e.local && e.local.includes('/')){
+          local = e.local.trim();
+          break;
+        }
       }
     }
+    // Try trackData: format "13/06/2026 04:02 — INDAIATUBA/SP"
     if(!local && r.trackData){
-      const m = r.trackData.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕ\s]+\/[A-Z]{2})/);
-      if(m) local = m[1];
+      // Match pattern after " — " 
+      const mDash = r.trackData.match(/—\s*([^\n]+\/[A-Z]{2})/);
+      if(mDash) local = mDash[1].trim();
+      // Fallback: any CITY/UF pattern
+      if(!local){
+        const mCity = r.trackData.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+\/[A-Z]{2})/);
+        if(mCity) local = mCity[1].trim();
+      }
     }
+    console.log('Row', r.rastreamento, '-> local:', local);
     if(!local) continue;
     const coords = await geocodificarCidade(local);
     if(!coords) continue;
