@@ -3327,15 +3327,12 @@ try{
 
 
 // ===== GLOBO 3D =====
-let globoMap = null;
-let globoMarkers = [];
+let globoInstance = null;
 
 function abrirGlobo(){
   document.getElementById('modal-globo').classList.add('open');
-  // Show ADM filter if admin
   const admFilter = document.getElementById('globo-adm-filter');
   if(admFilter) admFilter.style.display = adminLogado ? 'block' : 'none';
-  // Populate atendente filter
   const atendSel = document.getElementById('globo-atend-filter');
   if(atendSel && adminLogado){
     atendSel.innerHTML = '<option value="">Todos os atendentes</option>';
@@ -3345,189 +3342,146 @@ function abrirGlobo(){
       atendSel.appendChild(o);
     });
   }
-  setTimeout(iniciarGlobo, 100);
+  setTimeout(iniciarGlobo, 200);
 }
 
 function fecharGlobo(){
   document.getElementById('modal-globo').classList.remove('open');
+  if(globoInstance){ globoInstance._destructor && globoInstance._destructor(); globoInstance = null; }
+  const el = document.getElementById('globo-container');
+  if(el) el.innerHTML = '';
 }
 
-function iniciarGlobo(){
-  const container = document.getElementById('globo-container');
-  if(!container) return;
-  
-  // Load Leaflet if not loaded
-  if(!window.L){
-    // Load Leaflet CSS
-    if(!document.getElementById('leaflet-css')){
-      const link = document.createElement('link');
-      link.id = 'leaflet-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
-      document.head.appendChild(link);
-    }
-    // Load Leaflet JS
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    script.onload = () => criarMapa();
-    document.head.appendChild(script);
-  } else {
-    criarMapa();
-  }
-}
-
-function criarMapa(){
-  const container = document.getElementById('globo-container');
-  if(!container) return;
-  
-  // Destroy existing map
-  if(globoMap){ globoMap.remove(); globoMap = null; }
-  
-  // Create map centered on Brazil
-  globoMap = L.map('globo-container', {
-    center: [-15, -50],
-    zoom: 4,
-    zoomControl: true,
-    attributionControl: false
-  });
-  
-  // Dark tile layer
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19
-  }).addTo(globoMap);
-  
-  // Hide loading
-  const loading = document.getElementById('globo-loading');
-  if(loading) loading.style.display = 'none';
-  
-  renderGlobo();
-}
-
-// Cache de geocoding
+// Cache geocoding
 const geoCache = {};
-
 async function geocodificarCidade(local){
   if(!local) return null;
   if(geoCache[local]) return geoCache[local];
-  
-  // Parse "CIDADE/UF" format
   const match = local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
   if(!match) return null;
-  
   const cidade = match[1].trim();
   const uf = match[2];
-  const query = cidade + ', ' + uf + ', Brasil';
-  
   try{
-    const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1&countrycodes=br');
+    const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(cidade + ', ' + uf + ', Brasil') + '&limit=1&countrycodes=br');
     const data = await res.json();
     if(data && data[0]){
       const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       geoCache[local] = coords;
       return coords;
     }
-  } catch(e){ console.error('Geocoding error:', e); }
-  
+  } catch(e){}
   return null;
 }
 
-async function renderGlobo(){
-  if(!globoMap) return;
-  
+async function coletarPontosGlobo(){
   const atendFil = document.getElementById('globo-atend-filter')?.value || '';
   const statusFil = document.getElementById('globo-status-filter')?.value || '';
   const userAtend = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
-  
-  // Clear existing markers
-  globoMarkers.forEach(m => globoMap.removeLayer(m));
-  globoMarkers = [];
-  
-  // Filter dados
+
   let rows = [...dados];
   if(userAtend) rows = rows.filter(r => r.atendente === userAtend);
   if(atendFil) rows = rows.filter(r => r.atendente === atendFil);
-  // Only rows with rastreamento and trackData/trackHistorico with location
   rows = rows.filter(r => r.rastreamento && (r.trackData || (r.trackHistorico && r.trackHistorico.length > 0)));
-  
   if(statusFil) rows = rows.filter(r => getStatusCorreios(r).tipo === statusFil);
-  
-  document.getElementById('globo-count').textContent = rows.length + ' envio' + (rows.length !== 1 ? 's' : '');
-  
-  const tooltip = document.getElementById('globo-tooltip');
-  
-  // Process each row
-  let plotted = 0;
+
+  const cores = { postagem:'#888888', rota:'#0EA5E9', retirada:'#F59E0B', entregue:'#00FF80', devolucao:'#EF4444', invalido:'#EF4444' };
+  const labels = { postagem:'Aguardando postagem', rota:'Em rota', retirada:'Aguardando retirada', entregue:'Entregue', devolucao:'Devolução', invalido:'Inválido' };
+
+  const pontos = [];
   for(const r of rows){
-    // Get location from trackData or last event
     let local = '';
     if(r.trackHistorico && r.trackHistorico.length > 0){
-      // Use most recent event with location
       for(const e of r.trackHistorico){
-        if(e.local && e.local.match(/\/[A-Z]{2}$/)){
-          local = e.local;
-          break;
-        }
+        if(e.local && /\/[A-Z]{2}$/.test(e.local)){ local = e.local; break; }
       }
     }
     if(!local && r.trackData){
-      const match = r.trackData.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+\/[A-Z]{2})/);
-      if(match) local = match[1];
+      const m = r.trackData.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕ\s]+\/[A-Z]{2})/);
+      if(m) local = m[1];
     }
     if(!local) continue;
-    
     const coords = await geocodificarCidade(local);
     if(!coords) continue;
-    
     const st = getStatusCorreios(r);
-    const colors = {
-      postagem: '#888888',
-      rota: '#0EA5E9',
-      retirada: '#F59E0B',
-      entregue: '#00FF80',
-      devolucao: '#EF4444',
-      invalido: '#EF4444'
-    };
-    const cor = colors[st.tipo] || '#888';
-    
-    // Add slight jitter to avoid overlapping
-    const jitter = 0.05;
-    const lat = coords.lat + (Math.random() - 0.5) * jitter;
-    const lng = coords.lng + (Math.random() - 0.5) * jitter;
-    
-    const marker = L.circleMarker([lat, lng], {
-      radius: 8,
-      fillColor: cor,
-      color: cor,
-      weight: 2,
-      opacity: 0.9,
-      fillOpacity: 0.7
-    }).addTo(globoMap);
-    
-    const statusLabel = {
-      postagem: '⏳ Aguardando postagem',
-      rota: '🔵 Em rota',
-      retirada: '🟠 Aguardando retirada',
-      entregue: '🟢 Entregue',
-      devolucao: '🔴 Devolução',
-      invalido: '⚠️ Inválido'
-    }[st.tipo] || st.label;
-    
-    const popupHtml = '<div style="min-width:180px">'
-      + '<div style="font-weight:700;font-size:13px;margin-bottom:4px">' + (r.nomeCliente || '—') + '</div>'
-      + '<div style="font-size:11px;color:#aaa;margin-bottom:4px">' + r.rastreamento + '</div>'
-      + '<div style="font-size:12px;margin-bottom:4px">' + statusLabel + '</div>'
-      + '<div style="font-size:11px;color:#aaa">' + (r.trackStatus || '') + '</div>'
-      + '<div style="font-size:11px;color:#aaa;margin-top:2px">' + local + '</div>'
-      + '<div style="font-size:11px;color:#aaa">' + r.atendente.split(' ')[0] + '</div>'
-      + '</div>';
-    marker.bindPopup(popupHtml);
-    
-    globoMarkers.push(marker);
-    plotted++;
+    pontos.push({
+      lat: coords.lat + (Math.random()-0.5)*0.08,
+      lng: coords.lng + (Math.random()-0.5)*0.08,
+      cor: cores[st.tipo] || '#888',
+      label: (r.nomeCliente || '—') + '\n' + labels[st.tipo] + '\n' + local + '\n' + r.rastreamento,
+      nome: r.nomeCliente || '—',
+      status: labels[st.tipo],
+      local: local,
+      cod: r.rastreamento,
+      atend: r.atendente.split(' ')[0],
+      tipo: st.tipo
+    });
   }
-  
-  document.getElementById('globo-count').textContent = plotted + ' envio' + (plotted !== 1 ? 's' : '') + ' no mapa';
+  return pontos;
 }
+
+async function iniciarGlobo(){
+  const loading = document.getElementById('globo-loading');
+  if(loading){ loading.style.display='flex'; loading.innerHTML='<div style="font-size:40px">🌍</div><div style="color:var(--t2);font-size:14px">Carregando globo...</div>'; }
+
+  if(!window.Globe){
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/globe.gl/2.27.2/globe.gl.min.js';
+    script.onload = () => construirGlobo();
+    script.onerror = () => { if(loading) loading.innerHTML='<div style="color:var(--red)">Erro ao carregar biblioteca do globo.</div>'; };
+    document.head.appendChild(script);
+  } else {
+    construirGlobo();
+  }
+}
+
+async function construirGlobo(){
+  const container = document.getElementById('globo-container');
+  if(!container) return;
+  container.innerHTML = '';
+
+  const loading = document.getElementById('globo-loading');
+  if(loading){ loading.style.display='flex'; loading.innerHTML='<div style="font-size:40px">🌍</div><div style="color:var(--t2);font-size:14px">Buscando coordenadas...</div>'; }
+
+  const pontos = await coletarPontosGlobo();
+
+  document.getElementById('globo-count').textContent = pontos.length + ' envio' + (pontos.length !== 1 ? 's' : '') + ' no globo';
+
+  if(loading) loading.style.display = 'none';
+
+  globoInstance = Globe()(container)
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    .pointsData(pontos)
+    .pointLat('lat')
+    .pointLng('lng')
+    .pointColor('cor')
+    .pointRadius(0.5)
+    .pointAltitude(0.01)
+    .pointLabel(d => '<div style="background:rgba(0,0,0,.85);border:1px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px">'
+      + '<div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div>'
+      + '<div style="color:#ccc;margin-bottom:2px">'+d.status+'</div>'
+      + '<div style="color:#888;font-size:11px">'+d.local+'</div>'
+      + '<div style="color:#888;font-size:11px">'+d.cod+'</div>'
+      + '<div style="color:#888;font-size:11px">Atend: '+d.atend+'</div>'
+      + '</div>')
+    .width(container.offsetWidth)
+    .height(container.offsetHeight)
+    .backgroundColor('rgba(0,0,0,0)');
+
+  // Focar no Brasil
+  globoInstance.pointOfView({ lat: -15, lng: -50, altitude: 1.8 }, 1000);
+}
+
+async function renderGlobo(){
+  if(!globoInstance) return;
+  const loading = document.getElementById('globo-loading');
+  if(loading){ loading.style.display='flex'; loading.innerHTML='<div style="font-size:30px">🌍</div><div style="color:var(--t2);font-size:13px">Atualizando...</div>'; }
+  const pontos = await coletarPontosGlobo();
+  document.getElementById('globo-count').textContent = pontos.length + ' envio' + (pontos.length !== 1 ? 's' : '') + ' no globo';
+  globoInstance.pointsData(pontos);
+  if(loading) loading.style.display = 'none';
+}
+
 
 initAllSelects();
 buildOfertasGrid();
