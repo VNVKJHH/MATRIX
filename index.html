@@ -3425,7 +3425,7 @@ async function iniciarGlobo(){
 
   if(!window.Globe){
     const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/globe.gl/2.27.2/globe.gl.min.js';
+    script.src = 'https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js';
     script.onload = () => construirGlobo();
     script.onerror = () => { if(loading) loading.innerHTML='<div style="color:var(--red)">Erro ao carregar biblioteca do globo.</div>'; };
     document.head.appendChild(script);
