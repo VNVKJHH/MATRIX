@@ -653,6 +653,9 @@ tr:hover td{background:var(--neon-glow)}
     <button id="btn-atualizar-todos" class="btn btn-primary" onclick="atualizarTodosRastreios()" disabled style="opacity:.4;cursor:not-allowed">
       <i class="ti ti-refresh"></i> Atualizar rastreamentos <span id="rast-pendentes-count" style="background:rgba(0,0,0,.2);padding:2px 8px;border-radius:20px;font-size:11px;margin-left:4px">0 pendentes</span>
     </button>
+    <button class="btn btn-primary" onclick="abrirGlobo()" style="background:linear-gradient(135deg,#0369A1,#7C3AED);border-color:#7C3AED;box-shadow:0 0 16px rgba(124,58,237,.3)">
+      <i class="ti ti-world"></i> Ver no globo 🌍
+    </button>
     <span id="rast-update-status" style="font-size:12px;color:var(--t3)"></span>
   </div>
   <div class="filters" id="rast-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
@@ -1031,6 +1034,50 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+
+<!-- Modal Globo -->
+<div class="modal-overlay" id="modal-globo" onclick="if(event.target===this)fecharGlobo()" style="z-index:300">
+  <div style="background:var(--bg1);border:1px solid var(--border2);border-radius:16px;width:95vw;max-width:1100px;height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 60px rgba(0,255,128,.1)">
+    <!-- Header -->
+    <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="font-size:16px;font-weight:800;color:var(--neon)">🌍 Mapa de envios</span>
+        <div id="globo-adm-filter" style="display:none">
+          <select id="globo-atend-filter" onchange="renderGlobo()" style="font-size:12px;padding:5px 10px">
+            <option value="">Todos os atendentes</option>
+          </select>
+        </div>
+        <select id="globo-status-filter" onchange="renderGlobo()" style="font-size:12px;padding:5px 10px">
+          <option value="">Todos os status</option>
+          <option value="postagem">⏳ Aguardando postagem</option>
+          <option value="rota">🔵 Em rota</option>
+          <option value="retirada">🟠 Aguardando retirada</option>
+          <option value="entregue">🟢 Entregue</option>
+          <option value="devolucao">🔴 Devolução</option>
+        </select>
+        <span id="globo-count" style="font-size:12px;color:var(--t3)"></span>
+      </div>
+      <button class="btn btn-sm" onclick="fecharGlobo()"><i class="ti ti-x"></i> Fechar</button>
+    </div>
+    <!-- Legenda -->
+    <div style="padding:.5rem 1.5rem;border-bottom:1px solid var(--border2);display:flex;gap:16px;flex-wrap:wrap;font-size:11px">
+      <span><span style="color:#888">⏳</span> Aguardando postagem</span>
+      <span><span style="color:#0EA5E9">🔵</span> Em rota</span>
+      <span><span style="color:#F59E0B">🟠</span> Aguardando retirada</span>
+      <span><span style="color:#00FF80">🟢</span> Entregue</span>
+      <span><span style="color:#EF4444">🔴</span> Devolução</span>
+    </div>
+    <!-- Mapa -->
+    <div style="flex:1;position:relative;overflow:hidden">
+      <div id="globo-container" style="width:100%;height:100%"></div>
+      <div id="globo-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg1);z-index:10;flex-direction:column;gap:12px">
+        <div style="font-size:40px">🌍</div>
+        <div style="color:var(--t2);font-size:14px">Carregando mapa...</div>
+      </div>
+      <div id="globo-tooltip" style="display:none;position:absolute;background:rgba(0,0,0,.9);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:20;max-width:220px"></div>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -3277,6 +3324,210 @@ try{
     fazerLogin();
   }
 }catch(e){}
+
+
+// ===== GLOBO 3D =====
+let globoMap = null;
+let globoMarkers = [];
+
+function abrirGlobo(){
+  document.getElementById('modal-globo').classList.add('open');
+  // Show ADM filter if admin
+  const admFilter = document.getElementById('globo-adm-filter');
+  if(admFilter) admFilter.style.display = adminLogado ? 'block' : 'none';
+  // Populate atendente filter
+  const atendSel = document.getElementById('globo-atend-filter');
+  if(atendSel && adminLogado){
+    atendSel.innerHTML = '<option value="">Todos os atendentes</option>';
+    getNomes().forEach(n => {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = n;
+      atendSel.appendChild(o);
+    });
+  }
+  setTimeout(iniciarGlobo, 100);
+}
+
+function fecharGlobo(){
+  document.getElementById('modal-globo').classList.remove('open');
+}
+
+function iniciarGlobo(){
+  const container = document.getElementById('globo-container');
+  if(!container) return;
+  
+  // Load Leaflet if not loaded
+  if(!window.L){
+    // Load Leaflet CSS
+    if(!document.getElementById('leaflet-css')){
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+      document.head.appendChild(link);
+    }
+    // Load Leaflet JS
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    script.onload = () => criarMapa();
+    document.head.appendChild(script);
+  } else {
+    criarMapa();
+  }
+}
+
+function criarMapa(){
+  const container = document.getElementById('globo-container');
+  if(!container) return;
+  
+  // Destroy existing map
+  if(globoMap){ globoMap.remove(); globoMap = null; }
+  
+  // Create map centered on Brazil
+  globoMap = L.map('globo-container', {
+    center: [-15, -50],
+    zoom: 4,
+    zoomControl: true,
+    attributionControl: false
+  });
+  
+  // Dark tile layer
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+  }).addTo(globoMap);
+  
+  // Hide loading
+  const loading = document.getElementById('globo-loading');
+  if(loading) loading.style.display = 'none';
+  
+  renderGlobo();
+}
+
+// Cache de geocoding
+const geoCache = {};
+
+async function geocodificarCidade(local){
+  if(!local) return null;
+  if(geoCache[local]) return geoCache[local];
+  
+  // Parse "CIDADE/UF" format
+  const match = local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
+  if(!match) return null;
+  
+  const cidade = match[1].trim();
+  const uf = match[2];
+  const query = cidade + ', ' + uf + ', Brasil';
+  
+  try{
+    const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1&countrycodes=br');
+    const data = await res.json();
+    if(data && data[0]){
+      const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      geoCache[local] = coords;
+      return coords;
+    }
+  } catch(e){ console.error('Geocoding error:', e); }
+  
+  return null;
+}
+
+async function renderGlobo(){
+  if(!globoMap) return;
+  
+  const atendFil = document.getElementById('globo-atend-filter')?.value || '';
+  const statusFil = document.getElementById('globo-status-filter')?.value || '';
+  const userAtend = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
+  
+  // Clear existing markers
+  globoMarkers.forEach(m => globoMap.removeLayer(m));
+  globoMarkers = [];
+  
+  // Filter dados
+  let rows = [...dados];
+  if(userAtend) rows = rows.filter(r => r.atendente === userAtend);
+  if(atendFil) rows = rows.filter(r => r.atendente === atendFil);
+  // Only rows with rastreamento and trackData/trackHistorico with location
+  rows = rows.filter(r => r.rastreamento && (r.trackData || (r.trackHistorico && r.trackHistorico.length > 0)));
+  
+  if(statusFil) rows = rows.filter(r => getStatusCorreios(r).tipo === statusFil);
+  
+  document.getElementById('globo-count').textContent = rows.length + ' envio' + (rows.length !== 1 ? 's' : '');
+  
+  const tooltip = document.getElementById('globo-tooltip');
+  
+  // Process each row
+  let plotted = 0;
+  for(const r of rows){
+    // Get location from trackData or last event
+    let local = '';
+    if(r.trackHistorico && r.trackHistorico.length > 0){
+      // Use most recent event with location
+      for(const e of r.trackHistorico){
+        if(e.local && e.local.match(/\/[A-Z]{2}$/)){
+          local = e.local;
+          break;
+        }
+      }
+    }
+    if(!local && r.trackData){
+      const match = r.trackData.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+\/[A-Z]{2})/);
+      if(match) local = match[1];
+    }
+    if(!local) continue;
+    
+    const coords = await geocodificarCidade(local);
+    if(!coords) continue;
+    
+    const st = getStatusCorreios(r);
+    const colors = {
+      postagem: '#888888',
+      rota: '#0EA5E9',
+      retirada: '#F59E0B',
+      entregue: '#00FF80',
+      devolucao: '#EF4444',
+      invalido: '#EF4444'
+    };
+    const cor = colors[st.tipo] || '#888';
+    
+    // Add slight jitter to avoid overlapping
+    const jitter = 0.05;
+    const lat = coords.lat + (Math.random() - 0.5) * jitter;
+    const lng = coords.lng + (Math.random() - 0.5) * jitter;
+    
+    const marker = L.circleMarker([lat, lng], {
+      radius: 8,
+      fillColor: cor,
+      color: cor,
+      weight: 2,
+      opacity: 0.9,
+      fillOpacity: 0.7
+    }).addTo(globoMap);
+    
+    const statusLabel = {
+      postagem: '⏳ Aguardando postagem',
+      rota: '🔵 Em rota',
+      retirada: '🟠 Aguardando retirada',
+      entregue: '🟢 Entregue',
+      devolucao: '🔴 Devolução',
+      invalido: '⚠️ Inválido'
+    }[st.tipo] || st.label;
+    
+    const popupHtml = '<div style="min-width:180px">'
+      + '<div style="font-weight:700;font-size:13px;margin-bottom:4px">' + (r.nomeCliente || '—') + '</div>'
+      + '<div style="font-size:11px;color:#aaa;margin-bottom:4px">' + r.rastreamento + '</div>'
+      + '<div style="font-size:12px;margin-bottom:4px">' + statusLabel + '</div>'
+      + '<div style="font-size:11px;color:#aaa">' + (r.trackStatus || '') + '</div>'
+      + '<div style="font-size:11px;color:#aaa;margin-top:2px">' + local + '</div>'
+      + '<div style="font-size:11px;color:#aaa">' + r.atendente.split(' ')[0] + '</div>'
+      + '</div>';
+    marker.bindPopup(popupHtml);
+    
+    globoMarkers.push(marker);
+    plotted++;
+  }
+  
+  document.getElementById('globo-count').textContent = plotted + ' envio' + (plotted !== 1 ? 's' : '') + ' no mapa';
+}
 
 initAllSelects();
 buildOfertasGrid();
