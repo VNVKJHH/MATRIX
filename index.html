@@ -2664,8 +2664,7 @@ function renderRastreamento(){
 
     let rastreioCell='';
     const entregue=r.entregue||false;
-    const entregaCell = ''; // Status handled by new status cell
-
+const st=getStatusCorreios(r);const prazoRet=st.tipo==='retirada'?getPrazoRetirada(r):null;let statusBadge='';if(st.tipo==='devolucao'){statusBadge=`<div style="background:rgba(239,68,68,.15);border:1px solid var(--red)
     if(adminLogado){
       rastreioCell=`<td>
         <div id="rview-${gi}" style="display:flex;align-items:center;gap:6px">
