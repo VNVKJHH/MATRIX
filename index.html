@@ -3451,25 +3451,36 @@ async function construirGlobo(){
   globoInstance = Globe()(container)
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    // Pontos principais - marcadores grandes e visíveis
     .pointsData(pontos)
     .pointLat('lat')
     .pointLng('lng')
     .pointColor('cor')
-    .pointRadius(0.5)
-    .pointAltitude(0.01)
-    .pointLabel(d => '<div style="background:rgba(0,0,0,.85);border:1px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px">'
-      + '<div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div>'
-      + '<div style="color:#ccc;margin-bottom:2px">'+d.status+'</div>'
-      + '<div style="color:#888;font-size:11px">'+d.local+'</div>'
-      + '<div style="color:#888;font-size:11px">'+d.cod+'</div>'
-      + '<div style="color:#888;font-size:11px">Atend: '+d.atend+'</div>'
+    .pointRadius(d => d.tipo === 'devolucao' ? 0.7 : d.tipo === 'entregue' ? 0.55 : 0.6)
+    .pointAltitude(0.02)
+    .pointsMerge(false)
+    .pointLabel(d => '<div style="background:rgba(0,0,0,.92);border:2px solid '+d.cor+';padding:10px 14px;border-radius:10px;font-size:12px;min-width:180px;box-shadow:0 0 20px '+d.cor+'55">'
+      + '<div style="font-weight:800;color:'+d.cor+';margin-bottom:6px;font-size:13px">'+d.nome+'</div>'
+      + '<div style="color:#fff;margin-bottom:4px;font-size:12px">'+d.status+'</div>'
+      + '<div style="color:#aaa;font-size:11px;margin-bottom:2px">📍 '+d.local+'</div>'
+      + '<div style="color:#888;font-size:11px;margin-bottom:2px">📦 '+d.cod+'</div>'
+      + '<div style="color:#888;font-size:11px">👤 '+d.atend+'</div>'
       + '</div>')
+    // Anéis pulsantes nos pontos para mais visibilidade
+    .ringsData(pontos)
+    .ringLat('lat')
+    .ringLng('lng')
+    .ringColor(d => d.cor)
+    .ringMaxRadius(d => d.tipo === 'devolucao' ? 4 : d.tipo === 'entregue' ? 3 : 2.5)
+    .ringPropagationSpeed(2)
+    .ringRepeatPeriod(1200)
+    .ringAltitude(0.005)
     .width(container.offsetWidth)
     .height(container.offsetHeight)
     .backgroundColor('rgba(0,0,0,0)');
 
   // Focar no Brasil
-  globoInstance.pointOfView({ lat: -15, lng: -50, altitude: 1.8 }, 1000);
+  globoInstance.pointOfView({ lat: -15, lng: -50, altitude: 1.5 }, 1200);
 }
 
 async function renderGlobo(){
@@ -3478,7 +3489,7 @@ async function renderGlobo(){
   if(loading){ loading.style.display='flex'; loading.innerHTML='<div style="font-size:30px">🌍</div><div style="color:var(--t2);font-size:13px">Atualizando...</div>'; }
   const pontos = await coletarPontosGlobo();
   document.getElementById('globo-count').textContent = pontos.length + ' envio' + (pontos.length !== 1 ? 's' : '') + ' no globo';
-  globoInstance.pointsData(pontos);
+  globoInstance.pointsData(pontos).ringsData(pontos);
   if(loading) loading.style.display = 'none';
 }
 
