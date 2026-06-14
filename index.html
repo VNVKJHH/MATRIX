@@ -1560,20 +1560,23 @@ function renderRanking(){
   let html='';
   resumos.forEach((r,i)=>{
     const val=ordem==='bruto'||ordem==='lucro'||ordem==='ticket'?fmt(r[ordem]):ordem==='conv'?r.conv+'%':r[ordem];
-    html+=`<div class="ranking-item">
-      <div class="rank-num">${medals[i]||i+1}</div>
-      <div class="rank-info">
-        <div class="rank-name">${r.nome}</div>
-        <div class="rank-meta">Bruto: ${fmt(r.bruto)} · Vendas: ${r.vendas} · Frascos: ${r.frascos}</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0}%;background:${colors[i]||'#888'}"></div></div>
-      </div>
-      <div class="rank-value" style="color:${colors[i]||'#888'}">${val}</div>
-    </div>`;
+    const rankColor = colors[i]||'#888';
+    const rankWidth = resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0;
+    html+='<div class="ranking-item">'
+      +'<div class="rank-num">'+(medals[i]||i+1)+'</div>'
+      +'<div class="rank-info">'
+      +'<div class="rank-name">'+r.nome+'</div>'
+      +'<div class="rank-meta">Bruto: '+fmt(r.bruto)+' · Vendas: '+r.vendas+' · Frascos: '+r.frascos+'</div>'
+      +'<div class="progress-bar"><div class="progress-fill" style="width:'+rankWidth+'%;background:'+rankColor+'"></div></div>'
+      +'</div>'
+      +'<div class="rank-value" style="color:'+rankColor+'">'+val+'</div>'
+      +'</div>';
   });
   document.getElementById('rank-list').innerHTML=html||'<div class="empty"><i class="ti ti-inbox"></i>Sem dados</div>';
   dc('rank');
   if(resumos.length>0)charts['rank']=new Chart(document.getElementById('ch-rank'),{type:'bar',data:{labels:resumos.map(r=>r.nome.split(' ')[0]),datasets:[{label:'Receita',data:resumos.map(r=>R(r.bruto,2)),backgroundColor:colors.slice(0,resumos.length),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
 }
+
 
 // ===== METAS =====
 function renderMetas(){
@@ -2616,6 +2619,21 @@ function salvarNegPad(gi){
 }
 
 // ===== RASTREAMENTO =====
+function renderStatusBadge(r){
+  const st=getStatusCorreios(r);
+  if(st.tipo==='devolucao') return '<span style="color:var(--red);font-weight:700;font-size:12px">🔴 DEVOLUÇÃO</span>';
+  if(st.tipo==='retirada'){
+    const pr=getPrazoRetirada(r);
+    const dr=pr?pr.diasRestantes:null;
+    const cp=dr!==null?(dr<=2?'color:var(--red)':dr<=4?'color:var(--amber)':'color:var(--t2)'):'color:var(--t2)';
+    return '<div style="color:var(--amber);font-weight:700;font-size:12px">🟠 Aguardando retirada</div>'+(pr?'<div style="'+cp+';font-size:11px;font-weight:700">⏰ '+(dr>0?dr+'d restantes':'PRAZO VENCIDO!')+'</div>':'');
+  }
+  if(st.tipo==='entregue') return '<span style="color:var(--neon);font-weight:700;font-size:12px">🟢 Entregue</span>';
+  if(st.tipo==='rota') return '<span style="color:var(--blue);font-weight:700;font-size:12px">🔵 Em rota</span>';
+  if(st.tipo==='invalido') return '<span style="color:var(--red);font-size:11px;font-weight:600">⚠️ Código inválido</span>';
+  return '<span style="color:var(--t3);font-size:11px">⏳ Aguardando postagem</span>';
+}
+
 function renderRastreamento(){
   // Mostrar filtros só para ADM
   const filtrosAdm=document.getElementById('rast-filters-adm');
@@ -2664,7 +2682,8 @@ function renderRastreamento(){
 
     let rastreioCell='';
     const entregue=r.entregue||false;
-const st=getStatusCorreios(r);const prazoRet=st.tipo==='retirada'?getPrazoRetirada(r):null;let statusBadge='';if(st.tipo==='devolucao'){statusBadge=`<div style="background:rgba(239,68,68,.15);border:1px solid var(--red)
+    const entregaCell = ''; // Status handled by new status cell
+
     if(adminLogado){
       rastreioCell=`<td>
         <div id="rview-${gi}" style="display:flex;align-items:center;gap:6px">
@@ -2727,9 +2746,9 @@ const st=getStatusCorreios(r);const prazoRet=st.tipo==='retirada'?getPrazoRetira
           const diasTransito = primeiroEvento && !isNaN(primeiroEvento) ? Math.floor((hoje - primeiroEvento) / 86400000) : null;
           return '<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há ' + diasTotal + 'd</div>' +
                  (diasTransito !== null ? '<div style="color:var(--amber);margin-top:2px"><i class="ti ti-truck-delivery" style="font-size:10px"></i> ' + diasTransito + 'd em rota</div>' : '');
-})()}
+        })()}
       </td>
-      ${(()=>{const st=getStatusCorreios(r);if(st.tipo==='devolucao')return '<td><span style="color:var(--red);font-weight:700">🔴 DEVOLUÇÃO</span></td>';if(st.tipo==='retirada')return '<td><span style="color:var(--amber);font-weight:700">🟠 Aguardando retirada</span></td>';if(st.tipo==='entregue')return '<td><span style="color:var(--neon);font-weight:700">🟢 Entregue</span></td>';if(st.tipo==='rota')return '<td><span style="color:var(--blue);font-weight:700">🔵 Em rota</span></td>';if(st.tipo==='invalido')return '<td><span style="color:var(--red)">⚠️ Inválido</span></td>';return '<td><span style="color:var(--t3)">⏳ Aguardando postagem</span></td>';})()}
+      <td style="min-width:140px">${renderStatusBadge(r)}</td>
     </tr>`;
   });
 
