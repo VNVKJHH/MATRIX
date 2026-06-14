@@ -2663,10 +2663,21 @@ function renderRastreamento(){
   if(mesFiltro) rows=rows.filter(r=>r.mes===mesFiltro);
   // Status filter
   const statusFil = adminLogado?(document.getElementById('rast-status')?.value||''):'';
-  if(statusFil === 'pendente') rows = rows.filter(r => getStatusCorreios(r).tipo === 'postagem');
-  else if(statusFil === 'transito') rows = rows.filter(r => getStatusCorreios(r).tipo === 'rota');
-  else if(statusFil === 'retirada') rows = rows.filter(r => getStatusCorreios(r).tipo === 'retirada');
-  else if(statusFil === 'entregue') rows = rows.filter(r => getStatusCorreios(r).tipo === 'entregue');
+  if(statusFil === 'postagem'){
+    // Sem código OU com código mas sem status ainda
+    rows = rows.filter(r => !r.rastreamento || (!r.trackStatus && !r.trackInvalido));
+  } else if(statusFil === 'rota'){
+    // Tem código, tem status, está em rota (não entregue, não devolvido, não aguardando retirada, não inválido)
+    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'rota');
+  } else if(statusFil === 'retirada'){
+    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'retirada');
+  } else if(statusFil === 'entregue'){
+    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'entregue');
+  } else if(statusFil === 'devolucao'){
+    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'devolucao');
+  } else if(statusFil === 'invalido'){
+    rows = rows.filter(r => r.trackInvalido === true);
+  }
   else if(statusFil === 'devolucao') rows = rows.filter(r => getStatusCorreios(r).tipo === 'devolucao');
   else if(statusFil === 'invalido') rows = rows.filter(r => getStatusCorreios(r).tipo === 'invalido');
 
