@@ -218,7 +218,9 @@ tr:hover td{background:var(--neon-glow)}
 
 
 
+.mobile-header{display:none}
 @media(max-width:768px){
+  .mobile-header{display:flex}
   .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;padding:.75rem}
   .logo{width:100%;padding-bottom:.5rem;margin-bottom:0;border-bottom:none}
   .main{margin-left:0;padding:1rem}
@@ -2770,7 +2772,16 @@ function cancelarRastreio(gi){
 
 function salvarRastreio(gi){
   const codigo=document.getElementById('rinp-'+gi).value.trim();
+  const codigoAnterior=dados[gi].rastreamento;
   dados[gi].rastreamento=codigo;
+  // Se o código mudou, limpa os dados de rastreamento antigos
+  if(codigo !== codigoAnterior){
+    dados[gi].trackStatus='';
+    dados[gi].trackData='';
+    dados[gi].trackHistorico=[];
+    dados[gi].trackInvalido=false;
+    dados[gi].previsaoEntrega='';
+  }
   if(window.fbSave && dados[gi].fbId) window.fbSave('dados', dados[gi].fbId, dados[gi]);
   renderRastreamento();
   atualizarBotaoRastreio();
