@@ -109,7 +109,11 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI'
 .nav-item.active{background:var(--neon-glow);color:var(--neon);font-weight:600;border-left:2px solid var(--neon)}
 .nav-item i{font-size:16px}
 .nav-section{font-size:9px;color:var(--neon-dim);font-weight:700;letter-spacing:1.5px;padding:12px 12px 4px;text-transform:uppercase;opacity:.7}
+/* FIX: main area - dashboard-adm page takes full viewport */
 .main{margin-left:230px;padding:2rem;min-height:100vh;background:transparent;position:relative;z-index:1}
+/* FIX: dashboard-adm page gets special treatment - no padding, full height */
+#page-dashboard-adm.active ~ * { display: none; }
+.main:has(#page-dashboard-adm.active) { padding: 0 !important; }
 .page{display:none}.page.active{display:block}
 .page-title{font-size:22px;font-weight:800;margin-bottom:1.5rem;color:var(--t1);letter-spacing:-.3px}
 .filters{display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;align-items:flex-end}
@@ -216,7 +220,37 @@ tr:hover td{background:var(--neon-glow)}
 .oferta-valor-edit input{width:100px;font-size:13px;font-weight:700;padding:4px 8px;border-radius:var(--r-sm);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1)}
 .oferta-confirm{font-size:11px;color:var(--blue-t);font-weight:600;margin-top:4px}
 
-
+/* ===== FIX DASHBOARD ADM - GLOBO FULL SCREEN ===== */
+#page-dashboard-adm {
+  position: fixed !important;
+  top: 0 !important;
+  left: 230px !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: calc(100vw - 230px) !important;
+  height: 100vh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: #0a0a0f !important;
+}
+#page-dashboard-adm.active {
+  display: block !important;
+}
+#dash-globo-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0 !important;
+}
+#dash-globo-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
 
 @media(max-width:768px){
   .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;padding:.75rem}
@@ -226,6 +260,7 @@ tr:hover td{background:var(--neon-glow)}
   #page-lancamentos>div{grid-template-columns:1fr!important}
   .form-grid,.ofertas-grid{grid-template-columns:1fr}
   .preview-grid{grid-template-columns:1fr 1fr}
+  #page-dashboard-adm{left:0!important;width:100vw!important}
 }
 @media print{.sidebar,.filters,.btn,.modal-overlay,.senha-overlay{display:none!important}.main{margin:0;padding:0}}
 </style>
@@ -247,21 +282,18 @@ tr:hover td{background:var(--neon-glow)}
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Save to Firestore
   window.fbSave = async (colName, id, data) => {
     try {
       await setDoc(doc(db, colName, String(id)), data);
     } catch(e) { console.error('fbSave error:', e); }
   };
 
-  // Delete from Firestore
   window.fbDelete = async (colName, id) => {
     try {
       await deleteDoc(doc(db, colName, String(id)));
     } catch(e) { console.error('fbDelete error:', e); }
   };
 
-  // Debounce to avoid multiple rapid re-renders
   let renderTimer = null;
   function scheduleRender(){
     clearTimeout(renderTimer);
@@ -270,7 +302,6 @@ tr:hover td{background:var(--neon-glow)}
       initAllSelects();
       buildOfertasGrid();
       if(typeof atualizarBotaoRastreio === 'function') setTimeout(atualizarBotaoRastreio, 100);
-      // Re-render current active page
       const activePage = document.querySelector('.page.active');
       if(activePage){
         const pageId = activePage.id.replace('page-','');
@@ -282,11 +313,9 @@ tr:hover td{background:var(--neon-glow)}
     }, 300);
   }
 
-  // Real-time listeners
   function initListeners(){
     let firstLoad = {dados:true, pads:true, adminLancs:true, metas:true};
 
-    // dados listener
     onSnapshot(collection(db, 'dados'), snap => {
       const fbDados = [];
       snap.forEach(d => fbDados.push(d.data()));
@@ -301,7 +330,6 @@ tr:hover td{background:var(--neon-glow)}
       }
     });
 
-    // pads listener
     onSnapshot(collection(db, 'pads'), snap => {
       const fbPads = [];
       snap.forEach(d => fbPads.push(d.data()));
@@ -314,7 +342,6 @@ tr:hover td{background:var(--neon-glow)}
       }
     });
 
-    // adminLancs listener
     onSnapshot(collection(db, 'adminLancs'), snap => {
       const fbAdm = [];
       snap.forEach(d => fbAdm.push(d.data()));
@@ -327,7 +354,6 @@ tr:hover td{background:var(--neon-glow)}
       }
     });
 
-    // metas listener
     onSnapshot(collection(db, 'metas'), snap => {
       const fbMetas = [];
       snap.forEach(d => fbMetas.push(d.data()));
@@ -344,20 +370,15 @@ tr:hover td{background:var(--neon-glow)}
     window.fbReady = true;
   }
 
-  // Auto migrate if Firebase is empty
   async function autoMigrate(){
     if(!window.fbSave) return;
-    // Backup current local data
     const localDados = [...dados];
     const localPads = [...pads];
     const localAdm = [...adminLancs];
     const localMetas = [...metas];
-    
     const total = localDados.length + localPads.length + localAdm.length + localMetas.length;
     if(total === 0) return;
-
     console.log('Auto-migrating', total, 'records to Firebase...');
-    
     for(let i=0;i<localDados.length;i++){
       const d=localDados[i];
       if(!d.fbId) d.fbId='dado_'+Date.now()+'_'+i;
@@ -381,7 +402,6 @@ tr:hover td{background:var(--neon-glow)}
     console.log('Auto-migration complete!');
   }
 
-  // Start listeners when page loads
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initListeners, 500);
   });
@@ -398,10 +418,8 @@ tr:hover td{background:var(--neon-glow)}
   <div id="mobile-user-avatar" style="width:32px;height:32px;border-radius:50%;background:var(--neon);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#000"></div>
 </div>
 
-<!-- Sidebar overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileMenu()"></div>
 
-<!-- Bottom nav (mobile only) -->
 <div class="mobile-bottom-nav" id="mobile-bottom-nav">
   <button class="mob-nav-btn active" id="mob-dashboard" onclick="mobileNav('dashboard-adm','mob-dashboard')">
     <i class="ti ti-layout-dashboard"></i>
@@ -425,13 +443,12 @@ tr:hover td{background:var(--neon-glow)}
   </button>
 </div>
 
-<canvas id="matrix-canvas"  style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity 1s"></canvas>
+<canvas id="matrix-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:0;transition:opacity 1s"></canvas>
 
 <nav class="sidebar" style="position:fixed;z-index:100">
   <div class="logo">MATRIX<span>Gestão comercial</span></div>
   <div id="sidebar-user"></div>
 
-  <!-- MENU ADM -->
   <div id="menu-adm" style="display:none;flex-direction:column;gap:3px;width:100%">
     <div class="nav-section">Principal</div>
     <button class="nav-item" onclick="showPage('dashboard-adm')" id="nav-dashboard-adm"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
@@ -454,7 +471,6 @@ tr:hover td{background:var(--neon-glow)}
     <button class="nav-item" onclick="fazerLogout()" style="color:var(--red-t)"><i class="ti ti-power"></i> Sair</button>
   </div>
 
-  <!-- MENU COMUM -->
   <div id="menu-comum" style="display:none;flex-direction:column;gap:3px;width:100%">
     <div class="nav-section">Principal</div>
     <button class="nav-item" onclick="showPage('dashboard')" id="nav-dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
@@ -514,8 +530,6 @@ tr:hover td{background:var(--neon-glow)}
 <div class="page" id="page-lancamentos">
   <p class="page-title">Novo lançamento</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
-
-    <!-- LADO ESQUERDO: formulário -->
     <div class="table-card">
       <div style="padding:1.25rem">
         <div class="form-grid" style="margin-bottom:1rem">
@@ -526,12 +540,10 @@ tr:hover td{background:var(--neon-glow)}
           <div class="form-group"><label>Nome do cliente</label><input type="text" id="f-nome-cliente" placeholder="Ex: João Silva"></div>
           <div class="form-group"><label>Telefone</label><input type="text" id="f-telefone" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
         </div>
-
         <div style="margin-bottom:.75rem">
           <p style="font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Selecione a oferta vendida</p>
           <div class="ofertas-grid" id="ofertas-grid"></div>
         </div>
-
         <div class="preview-box" id="preview-box" style="display:block">
           <h4>Resumo desta venda</h4>
           <div class="preview-grid" id="preview-items">
@@ -540,7 +552,6 @@ tr:hover td{background:var(--neon-glow)}
             <div id="prev-envio" style="display:none"></div>
           </div>
         </div>
-
         <div style="margin-bottom:12px">
           <button type="button" id="btn-recuperacao" onclick="toggleRecuperacao()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-md);border:2px solid var(--border2);background:var(--bg1);color:var(--t2);cursor:pointer;font-size:13px;font-weight:600;width:100%;transition:all .18s">
             <span id="icon-recuperacao" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s"></span>
@@ -553,8 +564,6 @@ tr:hover td{background:var(--neon-glow)}
         </div>
       </div>
     </div>
-
-    <!-- LADO DIREITO: registros do dia -->
     <div>
       <div class="table-card" id="card-registros-dia">
         <div class="table-header">
@@ -579,7 +588,6 @@ tr:hover td{background:var(--neon-glow)}
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -666,18 +674,9 @@ tr:hover td{background:var(--neon-glow)}
     <div class="tw">
       <table>
         <thead><tr>
-          <th>#</th>
-          <th>Data</th>
-          <th>Atendente</th>
-          <th>Cliente</th>
-          <th>Telefone</th>
-          <th>Oferta</th>
-          <th>Valor</th>
-          <th>Rastreamento</th>
-          <th>Acompanhamento</th>
-          <th>Previsão</th>
-          <th>Tempo</th>
-          <th>Status</th>
+          <th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Telefone</th>
+          <th>Oferta</th><th>Valor</th><th>Rastreamento</th><th>Acompanhamento</th>
+          <th>Previsão</th><th>Tempo</th><th>Status</th>
         </tr></thead>
         <tbody id="rast-tbody"></tbody>
       </table>
@@ -688,15 +687,11 @@ tr:hover td{background:var(--neon-glow)}
 <!-- PAD -->
 <div class="page" id="page-pad">
   <p class="page-title">Pay After Delivery</p>
-
-  <!-- Filtros ADM -->
   <div id="pad-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
     <div><label style="font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Atendente</label>
       <select id="pad-atend-fil" onchange="renderPad()"><option value="">Todos</option></select>
     </div>
   </div>
-
-  <!-- Tabs + botão lançar -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:.5rem">
       <button id="pad-tab-aberto" onclick="setPadTab('aberto')"
@@ -720,8 +715,6 @@ tr:hover td{background:var(--neon-glow)}
     </div>
     <button class="btn btn-primary" onclick="openPadModal()"><i class="ti ti-plus"></i> Lançar PAD</button>
   </div>
-
-  <!-- Tabela -->
   <div class="table-card">
     <div class="tw">
       <table>
@@ -803,9 +796,7 @@ tr:hover td{background:var(--neon-glow)}
     <div><label>Ano</label><select id="adm-ano" onchange="renderAdmin()"></select></div>
     <div style="margin-top:18px"><button class="btn btn-primary" onclick="openAdminLancModal()"><i class="ti ti-plus"></i> Lançar Meta Ads</button></div>
   </div>
-
   <div class="metrics" id="adm-metrics"></div>
-
   <div class="table-card">
     <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Meta Ads — Investimentos e leads por dia</p></div>
     <div class="tw"><table>
@@ -813,7 +804,6 @@ tr:hover td{background:var(--neon-glow)}
       <tbody id="adm-inv-tbody"></tbody>
     </table></div>
   </div>
-
   <div class="table-card">
     <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Envios por dia (calculado pelos lançamentos)</p></div>
     <div class="tw"><table>
@@ -823,11 +813,12 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- DASHBOARD ADM com GLOBO -->
-<div class="page" id="page-dashboard-adm" style="padding:0;height:calc(100vh - 0px);overflow:hidden;position:relative">
-  <!-- Globo ocupa tela toda -->
-  <div id="dash-globo-container" style="position:absolute;inset:0;z-index:0"></div>
-  
+<!-- DASHBOARD ADM - GLOBO FULL SCREEN (SEM BLOCO DUPLICADO) -->
+<div class="page" id="page-dashboard-adm">
+
+  <!-- Globo ocupa tudo -->
+  <div id="dash-globo-container"></div>
+
   <!-- Header flutuante -->
   <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)">
     <div>
@@ -849,7 +840,7 @@ tr:hover td{background:var(--neon-glow)}
       <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px"><option value="">Todos</option></select>
     </div>
   </div>
-  
+
   <!-- Legenda status -->
   <div style="position:absolute;top:70px;right:1.5rem;z-index:10;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;backdrop-filter:blur(8px)">
     <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Status</div>
@@ -862,64 +853,27 @@ tr:hover td{background:var(--neon-glow)}
 
   <!-- Métricas flutuantes na parte inferior -->
   <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);padding:1.5rem 1.5rem 1rem">
-    <!-- Cards métricas principais -->
     <div id="adm-dash-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:.75rem"></div>
-    <!-- Cards métricas secundárias (scrollável) -->
     <div id="adm-dash-metrics2" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none"></div>
   </div>
-  
+
   <!-- Loading overlay -->
   <div id="dash-globo-loading" style="position:absolute;inset:0;z-index:20;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
     <div style="font-size:60px">🌍</div>
     <div style="color:var(--t2);font-size:14px" id="dash-globo-loading-text">Carregando globo...</div>
   </div>
-  
-  <!-- Painel por atendente (oculto no globo, acessível via botão) -->
+
+  <!-- Painel por atendente (oculto) -->
   <div id="adm-dash-atendentes" style="display:none"></div>
-  <!-- Gráficos (ocultos no globo) -->
+  <!-- Gráficos (ocultos) -->
   <div style="display:none">
     <canvas id="adm-ch-financeiro"></canvas>
     <canvas id="adm-ch-atend"></canvas>
     <canvas id="adm-ch-evolucao"></canvas>
   </div>
+
 </div>
-
-  <!-- Filtros -->
-  <div class="filters" style="margin-bottom:1.25rem">
-    <div>
-      <label>Visualizar</label>
-      <select id="adm-dash-modo" onchange="renderDashAdm()">
-        <option value="hoje">Hoje</option>
-        <option value="dia">Dia específico</option>
-        <option value="mes" selected>Mês</option>
-        <option value="total">Tudo</option>
-      </select>
-    </div>
-    <div id="adm-dash-dia-wrap">
-      <label>Dia</label>
-      <input type="number" id="adm-dash-dia" min="1" max="31" placeholder="Ex: 18" oninput="renderDashAdm()" style="width:80px">
-    </div>
-    <div><label>Mês</label><select id="adm-dash-mes" onchange="renderDashAdm()"></select></div>
-    <div><label>Ano</label><select id="adm-dash-ano" onchange="renderDashAdm()"></select></div>
-    <div><label>Atendente</label><select id="adm-dash-atend" onchange="renderDashAdm()"><option value="">Todos</option></select></div>
-  </div>
-
-  <!-- Cards principais -->
-  <div class="metrics" id="adm-dash-metrics"></div>
-
-  <!-- Cards secundários -->
-  <div class="metrics" id="adm-dash-metrics2" style="margin-top:-4px"></div>
-
-  <!-- Painel por atendente -->
-  <div id="adm-dash-atendentes" style="margin-bottom:1.5rem"></div>
-
-  <!-- Gráficos -->
-  <div class="charts-row">
-    <div class="chart-card"><p class="chart-title">Receita vs Meta Ads vs Lucro</p><div style="position:relative;height:220px"><canvas id="adm-ch-financeiro"></canvas></div></div>
-    <div class="chart-card"><p class="chart-title">Receita por atendente</p><div style="position:relative;height:220px"><canvas id="adm-ch-atend"></canvas></div></div>
-    <div class="chart-card full"><p class="chart-title">Evolução diária — lucro líquido</p><div style="position:relative;height:200px"><canvas id="adm-ch-evolucao"></canvas></div></div>
-  </div>
-</div>
+<!-- FIM page-dashboard-adm - SEM BLOCO DUPLICADO -->
 
 </main>
 
@@ -1002,9 +956,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-  </div>
-</div>
-
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
   <div class="login-box">
@@ -1049,7 +1000,7 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Estado</label><input type="text" id="pad-estado" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
       <div class="form-group full">
         <label>Negociação <span style="font-size:11px;color:var(--t2)">— como ficou acordado</span></label>
-        <textarea id="pad-negociacao" placeholder="Ex: Cliente aceitou pagar na entrega, combinou receber na quinta-feira..." style="width:100%;font-size:13px;padding:8px 10px;border-radius:var(--r-md);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1);resize:vertical;min-height:70px;font-family:inherit"></textarea>
+        <textarea id="pad-negociacao" placeholder="Ex: Cliente aceitou pagar na entrega..." style="width:100%;font-size:13px;padding:8px 10px;border-radius:var(--r-md);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1);resize:vertical;min-height:70px;font-family:inherit"></textarea>
       </div>
     </div>
     <div style="margin:1rem 0 .5rem">
@@ -1101,14 +1052,11 @@ function fazerLogin(){
   }
   usuarioLogado=user;
   document.getElementById('login-screen').style.display='none';
-  // Set atendente padrão no lançamento
   const fAtend=document.getElementById('f-atend');
   if(fAtend){
-    // tenta setar o nome do usuario logado
     const opt=[...fAtend.options].find(o=>o.value===user.nome);
     if(opt)fAtend.value=user.nome;
   }
-  // Mostrar nome do usuário logado no sidebar e mobile
   const userDiv=document.getElementById('sidebar-user');
   const initials=user.nome.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
   if(userDiv){
@@ -1116,12 +1064,10 @@ function fazerLogin(){
   }
   const mobileAvatar=document.getElementById('mobile-user-avatar');
   if(mobileAvatar)mobileAvatar.textContent=initials;
-  // Update bottom nav for common users
   if(!user.adm){
     const mobDash=document.getElementById('mob-dashboard');
     if(mobDash)mobDash.onclick=()=>mobileNav('dashboard','mob-dashboard');
   }
-  // Se ADM, mostrar menu admin
   if(user.adm){
     adminLogado=true;
     document.getElementById('menu-adm').style.display='flex';
@@ -1133,7 +1079,6 @@ function fazerLogin(){
     showPage('dashboard');
     renderDashboard();
   }
-  // Pré-preencher atendente no lançamento
   setTimeout(()=>{
     const fA=document.getElementById('f-atend');
     if(fA){const opt=[...fA.options].find(o=>o.value===user.nome);if(opt)fA.value=user.nome;}
@@ -1171,7 +1116,6 @@ let atendentes=[
   {nome:'Gabriel Vicente',comissao:0}
 ];
 
-// ofertaId, bruto (valor editado), qtd_vendas, frascos calculados
 let dados=[
   {mes:'Janeiro',ano:2025,atendente:'Alexsander Pereira',dia:1,ofertaId:7,bruto:35001,qtd_vendas:15},
   {mes:'Maio',ano:2026,atendente:'Gabriel Vicente',dia:5,ofertaId:6,bruto:1500,qtd_vendas:15},
@@ -1182,7 +1126,6 @@ let dados=[
   {mes:'Maio',ano:2026,atendente:'Alexsander Pereira',dia:18,ofertaId:6,bruto:894,qtd_vendas:2},
 ];
 
-// investimentos e leads (administração)
 let adminLancs=[
   {dia:1,mes:'Janeiro',ano:2025,atendente:'Alexsander Pereira',investido:1000,leads:100},
   {dia:5,mes:'Maio',ano:2026,atendente:'Gabriel Vicente',investido:1500,leads:150},
@@ -1194,7 +1137,6 @@ let charts={};
 let ofertaSelecionada=null;
 let valorEditado=null;
 
-// ===== UTILS =====
 function R(v,d=2){return isNaN(v)||!isFinite(v)?0:parseFloat(v.toFixed(d))}
 function fmt(v){return'R$ '+R(v,2).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
 
@@ -1202,24 +1144,20 @@ function getComissao(nome){
   const a=atendentes.find(x=>x.nome===nome);
   return a?(a.comissao/100):0.05;
 }
-
 function getFrascos(ofertaId){
   const o=OFERTAS.find(x=>x.id===ofertaId);
   return o?o.frascos:0;
 }
-
 function getNomeOferta(ofertaId){
   const o=OFERTAS.find(x=>x.id===ofertaId);
   return o?o.nome:'—';
 }
-
 function calcCustoEnvio(ofertaId,qtd){
   const frascos=getFrascos(ofertaId)*qtd;
   const custoFrascos=frascos*CUSTO_FRASCO;
   const custoEnv=qtd*CUSTO_ENVIO;
   return{frascos,custoFrascos,custoEnv,total:custoFrascos+custoEnv};
 }
-
 function calcRow(r){
   const bruto=r.bruto||0,qtd=r.qtd_vendas||0;
   const impPJ=R(bruto*TAX_PJ);
@@ -1229,9 +1167,7 @@ function calcRow(r){
   const ticket=qtd>0?R(bruto/qtd,2):0;
   return{impPJ,pctAtend,subtotal,ticket,frascos:env.frascos,custoFrascos:env.custoFrascos,custoEnv:env.custoEnv,custoEnvTotal:env.total};
 }
-
 function calcPadCustos(filtro){
-  // filtro: {dia, mes, ano, atendente} - any can be empty/null for all
   const padsFil=pads.filter(p=>{
     if(filtro.dia&&p.dia!==filtro.dia)return false;
     if(filtro.mes&&p.mes!==filtro.mes)return false;
@@ -1243,45 +1179,33 @@ function calcPadCustos(filtro){
   padsFil.forEach(p=>{
     const o=OFERTAS.find(x=>x.id===p.ofertaId)||{frascos:0};
     const nFrascos=o.frascos;
-    const cFrascos=nFrascos*CUSTO_FRASCO;
-    const cEnvio=CUSTO_ENVIO;
-    custoFrascos+=cFrascos;
-    custoEnvio+=cEnvio;
+    custoFrascos+=nFrascos*CUSTO_FRASCO;
+    custoEnvio+=CUSTO_ENVIO;
     frascos+=nFrascos;
     qtd++;
-    // Se pago, conta receita e encargos
     if(p.status==='Pago'){
       bruto+=p.bruto||0;
       impPJ+=R((p.bruto||0)*TAX_PJ);
       pctAtend+=R((p.bruto||0)*getComissao(p.atendente));
     }
   });
-  const totalCustos=custoFrascos+custoEnvio+impPJ+pctAtend;
-  return{custoFrascos,custoEnvio,impPJ,pctAtend,totalCustos,bruto,qtd,frascos};
+  return{custoFrascos,custoEnvio,impPJ,pctAtend,totalCustos:custoFrascos+custoEnvio+impPJ+pctAtend,bruto,qtd,frascos};
 }
-
 function calcLucroDia(dia,mes,ano,atendente){
-  // Vendas diretas (excluindo isPad)
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&(!atendente||d.atendente===atendente)&&!d.isPad);
   let totalSub=0;
   rows.forEach(r=>{const c=calcRow(r);totalSub+=c.subtotal;});
-
-  // Meta Ads do dia
   const admFil=adminLancs.filter(a=>a.dia===dia&&a.mes===mes&&a.ano===ano&&(!atendente||!a.atendente||a.atendente===atendente));
   let metaAds=0;
   admFil.forEach(a=>metaAds+=a.investido||0);
-
-  // PAD: receita dos pagos - todos os custos (frascos + envio + impPJ + pctAtend)
   const padC=calcPadCustos({dia,mes,ano,atendente:atendente||null});
   const padLucro=padC.bruto-padC.totalCustos;
-
   return R(totalSub+padLucro-metaAds);
 }
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 function getNomes(){return atendentes.map(a=>a.nome)}
 function getAnos(){return[...new Set([...dados.map(d=>d.ano),...adminLancs.map(a=>a.ano)])].sort()}
-
 function addOpt(sel,val,label){const o=document.createElement('option');o.value=val;o.textContent=label||val;sel.appendChild(o)}
 
 function initAllSelects(){
@@ -1304,7 +1228,7 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     MESES.forEach(m=>addOpt(el,m,m));if(v)el.value=v;
   });
-  ['f-mes','m-mes','pan-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-mes','al-mes','adm-dash-mes','pad-mes','pub-dash-mes'].forEach(id=>{
+  ['f-mes','m-mes','pan-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-mes','al-mes','adm-dash-mes','pad-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     MESES.forEach(m=>addOpt(el,m,m));
@@ -1325,7 +1249,6 @@ function initAllSelects(){
     if(v)el.value=v;else{el.value=anos[anos.length-1]||'2026';}
     if(id==='cmp-ano-b')el.value=anos[0]||'2025';
   });
-  // oferta select no modal edição
   const mOf=document.getElementById('m-oferta');
   if(mOf){mOf.innerHTML='';OFERTAS.forEach(o=>addOpt(mOf,o.id,o.nome+' — '+fmt(o.valor)));}
 }
@@ -1339,7 +1262,6 @@ function filtrar(atend,mes,ano){
   });
 }
 
-// ===== OFERTAS GRID =====
 function buildOfertasGrid(){
   const grid=document.getElementById('ofertas-grid');
   grid.innerHTML='';
@@ -1347,35 +1269,19 @@ function buildOfertasGrid(){
     const div=document.createElement('div');
     div.className='oferta-item';
     div.dataset.id=o.id;
-    div.innerHTML=`
-      <div class="oferta-check"><i class="ti ti-check"></i></div>
-      <div class="oferta-nome">${o.nome}</div>
-      <div class="oferta-valor">Valor padrão: ${fmt(o.valor)}</div>
-      <div class="oferta-confirm" id="oconf-${o.id}" style="display:none"></div>
-      <div class="oferta-valor-edit">
-        <span style="font-size:12px;color:var(--t2)">Valor (R$):</span>
-        <input type="number" id="oval-${o.id}" value="${o.valor}" step="0.01" min="0" onclick="event.stopPropagation()" oninput="editarValorOferta(${o.id})">
-      </div>
-    `;
+    div.innerHTML=`<div class="oferta-check"><i class="ti ti-check"></i></div><div class="oferta-nome">${o.nome}</div><div class="oferta-valor">Valor padrão: ${fmt(o.valor)}</div><div class="oferta-confirm" id="oconf-${o.id}" style="display:none"></div><div class="oferta-valor-edit"><span style="font-size:12px;color:var(--t2)">Valor (R$):</span><input type="number" id="oval-${o.id}" value="${o.valor}" step="0.01" min="0" onclick="event.stopPropagation()" oninput="editarValorOferta(${o.id})"></div>`;
     div.addEventListener('click',()=>selecionarOferta(o.id));
     grid.appendChild(div);
   });
 }
 
 function selecionarOferta(id){
-  // desseleciona todas
-  document.querySelectorAll('.oferta-item').forEach(el=>{
-    el.classList.remove('selected');
-    const conf=document.getElementById('oconf-'+el.dataset.id);
-    if(conf)conf.style.display='none';
-  });
-  // seleciona a clicada
+  document.querySelectorAll('.oferta-item').forEach(el=>{el.classList.remove('selected');const conf=document.getElementById('oconf-'+el.dataset.id);if(conf)conf.style.display='none';});
   const item=document.querySelector(`.oferta-item[data-id="${id}"]`);
   if(!item)return;
   item.classList.add('selected');
   ofertaSelecionada=id;
   const o=OFERTAS.find(x=>x.id===id);
-  // mostra valor para confirmar
   const conf=document.getElementById('oconf-'+id);
   const inputVal=document.getElementById('oval-'+id);
   valorEditado=parseFloat(inputVal.value)||o.valor;
@@ -1392,17 +1298,11 @@ function editarValorOferta(id){
 }
 
 function atualizarResumoLanc(){
-  if(!ofertaSelecionada){
-    document.getElementById('prev-bruto').textContent='R$ 0,00';
-    document.getElementById('prev-frascos').textContent='0';
-    document.getElementById('prev-envio').textContent='R$ 0,00';
-    return;
-  }
+  if(!ofertaSelecionada){document.getElementById('prev-bruto').textContent='R$ 0,00';document.getElementById('prev-frascos').textContent='0';return;}
   const bruto=valorEditado||0;
   const env=calcCustoEnvio(ofertaSelecionada,1);
   document.getElementById('prev-bruto').textContent=fmt(bruto);
   document.getElementById('prev-frascos').textContent=env.frascos;
-  document.getElementById('prev-envio').textContent=fmt(env.total)+' ('+fmt(env.custoFrascos)+' frascos + '+fmt(env.custoEnv)+' envio)';
 }
 
 function showPage(p){
@@ -1411,53 +1311,44 @@ function showPage(p){
   const pg=document.getElementById('page-'+p);
   if(pg)pg.classList.add('active');
   ['nav-'+p,'nav-'+p+'-adm'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('active');});
+
+  // FIX: adjust main padding when dashboard-adm is active
+  const mainEl = document.querySelector('.main');
+  if(p === 'dashboard-adm'){
+    if(mainEl) mainEl.style.padding = '0';
+  } else {
+    if(mainEl) mainEl.style.padding = '2rem';
+  }
+
   const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:renderAdmin,lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
-  window.allRenders = fns;
+  window.allRenders=fns;
   if(fns[p])fns[p]();
 }
 
 function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-// ===== DASHBOARD =====
 function onDbModo(){
   const modo=document.getElementById('db-modo')?.value||'mes';
   const mw=document.getElementById('db-mes-wrap');
   const aw=document.getElementById('db-ano-wrap');
-  if(modo==='hoje'||modo==='tudo'){
-    if(mw)mw.style.display='none';
-    if(aw)aw.style.display='none';
-  } else {
-    if(mw)mw.style.display='block';
-    if(aw)aw.style.display='block';
-  }
+  if(modo==='hoje'||modo==='tudo'){if(mw)mw.style.display='none';if(aw)aw.style.display='none';}
+  else{if(mw)mw.style.display='block';if(aw)aw.style.display='block';}
   renderDashboard();
 }
 
 function renderDashboard(){
-  // Usuário comum só vê os próprios dados
   const atend=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:'';
   const modo=document.getElementById('db-modo')?.value||'mes';
   let mes=document.getElementById('db-mes')?.value||'';
   let ano=document.getElementById('db-ano')?.value||'';
-  if(modo==='hoje'){
-    const hoje=new Date();
-    mes=MESES[hoje.getMonth()];
-    ano=String(hoje.getFullYear());
-  }
+  if(modo==='hoje'){const hoje=new Date();mes=MESES[hoje.getMonth()];ano=String(hoje.getFullYear());}
   let rows=filtrar(atend,mes,ano);
-  if(modo==='hoje'){
-    const hoje=new Date();
-    rows=rows.filter(r=>r.dia===hoje.getDate());
-  }
-  let tBruto=0,tVendas=0,tLucro=0,tFrascos=0,tEnvio=0;
-  // leads/investido do admin
-  // Update title with user name
+  if(modo==='hoje'){const hoje=new Date();rows=rows.filter(r=>r.dia===hoje.getDate());}
+  let tBruto=0,tVendas=0,tLucro=0,tFrascos=0;
   const tituloEl=document.getElementById('db-titulo');
-  if(tituloEl&&!adminLogado&&usuarioLogado) tituloEl.textContent='Dashboard — '+usuarioLogado.nome.split(' ')[0];
+  if(tituloEl&&!adminLogado&&usuarioLogado)tituloEl.textContent='Dashboard — '+usuarioLogado.nome.split(' ')[0];
   const admRows=adminLancs.filter(a=>(!mes||a.mes===mes)&&(!ano||String(a.ano)===String(ano)));
-  let tInv=0,tLeads=0;
-  admRows.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
-  rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;});
+  rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;});
   const diasUnicos=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
   diasUnicos.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
   document.getElementById('db-metrics').innerHTML=`
@@ -1466,7 +1357,6 @@ function renderDashboard(){
     <div class="metric-card"><div class="metric-label">Frascos enviados</div><div class="metric-value">${tFrascos}</div></div>
     <div class="metric-card"><div class="metric-label">Ticket médio</div><div class="metric-value">${tVendas>0?fmt(tBruto/tVendas):'—'}</div></div>
   `;
-  // Ocultar dados sensíveis para usuário comum (lucro, leads, conversão já não estão no dashboard público)
   const byM={};rows.forEach(r=>{if(!byM[r.mes])byM[r.mes]=0;byM[r.mes]+=(r.bruto||0);});
   const mL=MESES.filter(m=>byM[m]);
   dc('receita');
@@ -1485,13 +1375,12 @@ function renderDashboard(){
   const fA=ano||(rows.length?String(rows[rows.length-1].ano):'2026');
   const atendFix=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:atend;
   const dr=dados.filter(d=>d.mes===fM&&String(d.ano)===fA&&(!atendFix||d.atendente===atendFix));
-  const dias={};dr.forEach(r=>{const c=calcRow(r);if(!dias[r.dia])dias[r.dia]=0;dias[r.dia]+=c.lucro;});
+  const dias={};dr.forEach(r=>{if(!dias[r.dia])dias[r.dia]=0;dias[r.dia]+=calcRow(r).subtotal;});
   const dk=Object.keys(dias).map(Number).sort((a,b)=>a-b);
   dc('lucro');
   if(dk.length>0)charts['lucro']=new Chart(document.getElementById('ch-lucro'),{type:'line',data:{labels:dk,datasets:[{label:'Lucro',data:dk.map(d=>R(dias[d],2)),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#0F6E56'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
 }
 
-// ===== PANORAMA =====
 function renderPanorama(){
   const mes=document.getElementById('pan-mes').value;
   const ano=document.getElementById('pan-ano').value;
@@ -1507,23 +1396,8 @@ function renderPanorama(){
     byD[r.dia].bruto+=(r.bruto||0);byD[r.dia].vendas+=(r.qtd_vendas||0);byD[r.dia].impPJ+=c.impPJ;byD[r.dia].pct+=c.pctAtend;byD[r.dia].frascos+=c.frascos;byD[r.dia].envio+=c.custoEnvTotal;
     tBruto+=(r.bruto||0);tVendas+=(r.qtd_vendas||0);tImpPJ+=c.impPJ;tPct+=c.pctAtend;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;
   });
-  // Add PAD costs per day
-  const padDias=[...new Set(pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano)&&(!atend||p.atendente===atend)).map(p=>p.dia))];
-  padDias.forEach(d=>{
-    if(!byD[d])byD[d]={bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
-    const pc=calcPadCustos({dia:d,mes,ano:parseInt(ano),atendente:atend||null});
-    byD[d].frascos+=pc.frascos;
-    byD[d].envio+=pc.custoEnvio+pc.custoFrascos;
-    byD[d].impPJ+=pc.impPJ;
-    byD[d].pct+=pc.pctAtend;
-    byD[d].bruto+=pc.bruto;
-    tFrascos+=pc.frascos;tEnvio+=pc.custoEnvio+pc.custoFrascos;tImpPJ+=pc.impPJ;tPct+=pc.pctAtend;tBruto+=pc.bruto;
-  });
   admRows.forEach(a=>{if(byD[a.dia]){byD[a.dia].investido+=(a.investido||0);byD[a.dia].leads+=(a.leads||0);}});
-  Object.keys(byD).forEach(d=>{
-    byD[d].lucro=calcLucroDia(parseInt(d),mes,parseInt(ano),atend);
-    tLucro+=byD[d].lucro;
-  });
+  Object.keys(byD).forEach(d=>{byD[d].lucro=calcLucroDia(parseInt(d),mes,parseInt(ano),atend);tLucro+=byD[d].lucro;});
   document.getElementById('pan-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
     <div class="metric-card"><div class="metric-label">Investimento</div><div class="metric-value mv-amber">${fmt(tInv)}</div></div>
@@ -1545,7 +1419,6 @@ function renderPanorama(){
   document.getElementById('pan-tbody').innerHTML=tb;
 }
 
-// ===== COMPARATIVO =====
 function renderComparativo(){
   const mA=document.getElementById('cmp-mes-a').value,aA=document.getElementById('cmp-ano-a').value,atA=document.getElementById('cmp-atend-a').value;
   const mB=document.getElementById('cmp-mes-b').value,aB=document.getElementById('cmp-ano-b').value,atB=document.getElementById('cmp-atend-b').value;
@@ -1577,27 +1450,17 @@ function renderComparativo(){
     {label:'Conversão',a:rA.conv+'%',b:rB.conv+'%',wa:rA.conv>=rB.conv,wb:rB.conv>rA.conv},
   ];
   document.getElementById('comp-cards').innerHTML=`
-    <div class="comp-card">
-      <div class="comp-header" style="color:var(--blue)">A — ${lA()}</div>
-      ${metrics.map(m=>`<div class="comp-row"><span class="comp-label">${m.label}</span><span class="comp-val ${m.wa?'winner':''}">${m.a}</span></div>`).join('')}
-    </div>
-    <div class="comp-card">
-      <div class="comp-header" style="color:var(--amber)">B — ${lB()}</div>
-      ${metrics.map(m=>`<div class="comp-row"><span class="comp-label">${m.label}</span><span class="comp-val ${m.wb?'winner':''}">${m.b}</span></div>`).join('')}
-    </div>
+    <div class="comp-card"><div class="comp-header" style="color:var(--blue)">A — ${lA()}</div>${metrics.map(m=>`<div class="comp-row"><span class="comp-label">${m.label}</span><span class="comp-val ${m.wa?'winner':''}">${m.a}</span></div>`).join('')}</div>
+    <div class="comp-card"><div class="comp-header" style="color:var(--amber)">B — ${lB()}</div>${metrics.map(m=>`<div class="comp-row"><span class="comp-label">${m.label}</span><span class="comp-val ${m.wb?'winner':''}">${m.b}</span></div>`).join('')}</div>
   `;
   dc('comp');
   charts['comp']=new Chart(document.getElementById('ch-comp'),{type:'bar',data:{labels:['Receita','Investimento','Lucro','Leads','Vendas'],datasets:[{label:lA(),data:[rA.bruto,rA.inv,rA.lucro,rA.leads,rA.vendas],backgroundColor:'#378ADD',borderRadius:4},{label:lB(),data:[rB.bruto,rB.inv,rB.lucro,rB.leads,rB.vendas],backgroundColor:'#EF9F27',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>Number(v).toLocaleString('pt-BR')}}}}});
 }
 
-// ===== RANKING =====
 function renderRanking(){
   const mes=document.getElementById('rank-mes').value;
   const ano=document.getElementById('rank-ano').value;
   const ordem=document.getElementById('rank-ordem').value;
-  // Update title with user name
-  const tituloEl=document.getElementById('db-titulo');
-  if(tituloEl&&!adminLogado&&usuarioLogado) tituloEl.textContent='Dashboard — '+usuarioLogado.nome.split(' ')[0];
   const admRows=adminLancs.filter(a=>(!mes||a.mes===mes)&&(!ano||String(a.ano)===String(ano)));
   let tLeads=0;admRows.forEach(a=>tLeads+=a.leads||0);
   const nomes=getNomes();
@@ -1617,22 +1480,13 @@ function renderRanking(){
   let html='';
   resumos.forEach((r,i)=>{
     const val=ordem==='bruto'||ordem==='lucro'||ordem==='ticket'?fmt(r[ordem]):ordem==='conv'?r.conv+'%':r[ordem];
-    html+=`<div class="ranking-item">
-      <div class="rank-num">${medals[i]||i+1}</div>
-      <div class="rank-info">
-        <div class="rank-name">${r.nome}</div>
-        <div class="rank-meta">Bruto: ${fmt(r.bruto)} · Vendas: ${r.vendas} · Frascos: ${r.frascos}</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0}%;background:${colors[i]||'#888'}"></div></div>
-      </div>
-      <div class="rank-value" style="color:${colors[i]||'#888'}">${val}</div>
-    </div>`;
+    html+=`<div class="ranking-item"><div class="rank-num">${medals[i]||i+1}</div><div class="rank-info"><div class="rank-name">${r.nome}</div><div class="rank-meta">Bruto: ${fmt(r.bruto)} · Vendas: ${r.vendas} · Frascos: ${r.frascos}</div><div class="progress-bar"><div class="progress-fill" style="width:${resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0}%;background:${colors[i]||'#888'}"></div></div></div><div class="rank-value" style="color:${colors[i]||'#888'}">${val}</div></div>`;
   });
   document.getElementById('rank-list').innerHTML=html||'<div class="empty"><i class="ti ti-inbox"></i>Sem dados</div>';
   dc('rank');
   if(resumos.length>0)charts['rank']=new Chart(document.getElementById('ch-rank'),{type:'bar',data:{labels:resumos.map(r=>r.nome.split(' ')[0]),datasets:[{label:'Receita',data:resumos.map(r=>R(r.bruto,2)),backgroundColor:colors.slice(0,resumos.length),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
 }
 
-// ===== METAS =====
 function renderMetas(){
   const mes=document.getElementById('meta-mes-fil').value;
   const ano=document.getElementById('meta-ano-fil').value;
@@ -1645,7 +1499,6 @@ function renderMetas(){
     rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
     const admRows=adminLancs.filter(a=>a.mes===mes&&String(a.ano)===String(ano));
     let leads=0;admRows.forEach(a=>leads+=a.leads||0);
-    // Conversão PAD = pagos / (pagos + frustrados) * 100
     const padPeriodo=pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano)&&(!meta.atendente||p.atendente===meta.atendente));
     const padPagos=padPeriodo.filter(p=>p.status==='Pago').length;
     const padFrustrados=padPeriodo.filter(p=>p.status==='Frustrado').length;
@@ -1653,7 +1506,6 @@ function renderMetas(){
     const convPAD=padTotal>0?R(padPagos/padTotal*100,1):0;
     const META_PAD=70;
     const recup=meta.recuperacao||0;
-
     function bar(real,metaV,lbl,isPerc){
       if(!metaV||metaV<=0)return'';
       const p=Math.min(R(real/metaV*100,1),100);
@@ -1661,59 +1513,19 @@ function renderMetas(){
       const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';
       const realLabel=isPerc?real+'%':fmt(real);
       const metaLabel=isPerc?metaV+'%':fmt(metaV);
-      return`<div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
-          <span style="color:var(--t2);font-weight:600">${lbl}</span>
-          <span style="font-weight:700">${p}% — ${status}</span>
-        </div>
-        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p}%;background:${cor}"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px">
-          <span>Realizado: <strong style="color:var(--t1)">${realLabel}</strong></span>
-          <span>Meta: <strong style="color:var(--t1)">${metaLabel}</strong></span>
-        </div>
-      </div>`;
+      return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">${lbl}</span><span style="font-weight:700">${p}% — ${status}</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p}%;background:${cor}"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">${realLabel}</strong></span><span>Meta: <strong style="color:var(--t1)">${metaLabel}</strong></span></div></div>`;
     }
-
     const pPAD=Math.min(R(convPAD/META_PAD*100,1),100);
     const corPAD=convPAD>=META_PAD?'var(--green)':convPAD>=META_PAD*0.5?'var(--amber)':'var(--red)';
     const statusPAD=convPAD>=META_PAD?'✅ Atingida':convPAD>=META_PAD*0.5?'⚠️ Em andamento':'❌ Abaixo';
-    const padBlock=`<div style="margin-bottom:14px;background:var(--blue-l);padding:12px;border-radius:var(--r-md)">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
-        <span style="color:var(--blue-t);font-weight:700">Conversão de PAD <span style="font-weight:400;font-size:11px">(meta fixa: ${META_PAD}%)</span></span>
-        <span style="font-weight:700;color:var(--blue-t)">${convPAD}% — ${statusPAD}</span>
-      </div>
-      <div class="progress-bar" style="height:10px;background:rgba(24,95,165,.15)"><div class="progress-fill" style="width:${pPAD}%;background:var(--blue)"></div></div>
-      <div style="font-size:11px;color:var(--blue-t);margin-top:4px">${padTotal>0?padPagos+' pagos de '+padTotal+' definidos ('+padFrustrados+' frustrado'+(padFrustrados!==1?'s':'')+')':'Sem PADs finalizados neste período'}</div>
-    </div>`;
-
-    html+=`<div class="table-card" style="margin-bottom:14px">
-      <div class="table-header">
-        <div>
-          <p style="font-size:14px;font-weight:700">${meta.atendente||'Todos os atendentes'}</p>
-          <p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano}</p>
-        </div>
-        <button class="btn btn-danger btn-sm" onclick="deleteMeta(${mi})"><i class="ti ti-trash"></i></button>
-      </div>
-      <div style="padding:1rem">
-        ${bar(bruto,meta.receita,'Meta de receita (R$)',false)}
-        ${(()=>{
-          if(!recup||recup<=0) return '';
-          const qtdRecup=rows.filter(r=>r.recuperacao).length;
-          const p=Math.min(R(qtdRecup/recup*100,1),100);
-          const cor=p>=100?'var(--green)':p>=60?'var(--amber)':'var(--red)';
-          const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';
-          return '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">Recuperação de vendas</span><span style="font-weight:700">'+p+'% — '+status+'</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:'+p+'%;background:'+cor+'"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">'+qtdRecup+' vendas</strong></span><span>Meta: <strong style="color:var(--t1)">'+recup+' vendas</strong></span></div></div>';
-        })()}
-        ${padBlock}
-      </div>
-    </div>`;
+    const padBlock=`<div style="margin-bottom:14px;background:var(--blue-l);padding:12px;border-radius:var(--r-md)"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--blue-t);font-weight:700">Conversão de PAD <span style="font-weight:400;font-size:11px">(meta fixa: ${META_PAD}%)</span></span><span style="font-weight:700;color:var(--blue-t)">${convPAD}% — ${statusPAD}</span></div><div class="progress-bar" style="height:10px;background:rgba(24,95,165,.15)"><div class="progress-fill" style="width:${pPAD}%;background:var(--blue)"></div></div><div style="font-size:11px;color:var(--blue-t);margin-top:4px">${padTotal>0?padPagos+' pagos de '+padTotal+' definidos ('+padFrustrados+' frustrado'+(padFrustrados!==1?'s':'')+')':'Sem PADs finalizados neste período'}</div></div>`;
+    html+=`<div class="table-card" style="margin-bottom:14px"><div class="table-header"><div><p style="font-size:14px;font-weight:700">${meta.atendente||'Todos os atendentes'}</p><p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano}</p></div><button class="btn btn-danger btn-sm" onclick="deleteMeta(${mi})"><i class="ti ti-trash"></i></button></div><div style="padding:1rem">${bar(bruto,meta.receita,'Meta de receita (R$)',false)}${(()=>{if(!recup||recup<=0)return'';const qtdRecup=rows.filter(r=>r.recuperacao).length;const p=Math.min(R(qtdRecup/recup*100,1),100);const cor=p>=100?'var(--green)':p>=60?'var(--amber)':'var(--red)';const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';return'<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">Recuperação de vendas</span><span style="font-weight:700">'+p+'% — '+status+'</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:'+p+'%;background:'+cor+'"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">'+qtdRecup+' vendas</strong></span><span>Meta: <strong style="color:var(--t1)">'+recup+' vendas</strong></span></div></div>';})()}${padBlock}</div></div>`;
   });
   document.getElementById('metas-container').innerHTML=html;
 }
 
 function deleteMeta(idx){if(confirm('Remover?')){metas.splice(idx,1);renderMetas();toast('Meta removida.');}}
 
-// ===== DADOS =====
 function renderDados(){
   const atend=document.getElementById('dados-atend').value;
   const mes=document.getElementById('dados-mes').value;
@@ -1730,7 +1542,6 @@ function renderDados(){
   document.getElementById('dados-tbody').innerHTML=tb;
 }
 
-// ===== ATENDENTES =====
 function renderAtendentes(){
   let tb='';
   atendentes.forEach((a,i)=>{
@@ -1752,49 +1563,23 @@ function salvarAtendente(){
 }
 function deleteAtend(idx){if(confirm('Remover?')){atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');}}
 
-// ===== ADMINISTRAÇÃO =====
-
-function sairAdmin(){
-  fazerLogout();
-}
-function pedirSenha(){
-  if(adminLogado){showPage('dashboard-adm');}
-}
-
 function renderAdmin(){
   const mes=document.getElementById('adm-mes').value;
   const ano=document.getElementById('adm-ano').value;
   const admFil=adminLancs.filter(a=>a.mes===mes&&String(a.ano)===String(ano));
   let tInv=0,tLeads=0;
   admFil.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
-
   const rows=filtrar('',mes,ano).filter(r=>!r.isPad);
   let tBruto=0,tFrascos=0,tEnvio=0,tVendas=0;
-  rows.forEach(r=>{
-    const c=calcRow(r);
-    tBruto+=r.bruto||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tVendas+=r.qtd_vendas||0;
-  });
-
-  // PAD costs
+  rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tVendas+=r.qtd_vendas||0;});
   const padCAdm=calcPadCustos({mes,ano:parseInt(ano)});
-  tFrascos+=padCAdm.frascos;
-  tBruto+=padCAdm.bruto;
-
-  // Lucro: collect ALL unique days from dados + adminLancs + pads for this period
+  tFrascos+=padCAdm.frascos;tBruto+=padCAdm.bruto;
   const diasSet=new Set();
   rows.forEach(r=>diasSet.add(r.dia+'|'+r.mes+'|'+r.ano));
   admFil.forEach(a=>diasSet.add(a.dia+'|'+a.mes+'|'+a.ano));
   pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano)).forEach(p=>diasSet.add(p.dia+'|'+p.mes+'|'+p.ano));
-
   let tLucro=0;
-  diasSet.forEach(k=>{
-    const[dd,mm,aa]=k.split('|');
-    tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');
-  });
-
-  const padCusto=padCAdm.custoFrascos+padCAdm.custoEnvio;
-  const padEnvio=padCAdm.custoEnvio;
-
+  diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
   document.getElementById('adm-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Investimento Meta Ads</div><div class="metric-value mv-amber">${fmt(tInv)}</div></div>
     <div class="metric-card"><div class="metric-label">Leads</div><div class="metric-value">${tLeads}</div></div>
@@ -1803,12 +1588,10 @@ function renderAdmin(){
     <div class="metric-card"><div class="metric-label">Custo frascos (vendas)</div><div class="metric-value mv-red">${fmt(rows.reduce((s,r)=>s+(calcRow(r).frascos*CUSTO_FRASCO),0))}</div></div>
     <div class="metric-card"><div class="metric-label">Custo frascos (PAD)</div><div class="metric-value mv-red">${fmt(padCAdm.custoFrascos)}</div></div>
     <div class="metric-card"><div class="metric-label">Custo envios (vendas)</div><div class="metric-value mv-red">${fmt(tVendas*CUSTO_ENVIO)}</div></div>
-    <div class="metric-card"><div class="metric-label">Custo envios (PAD)</div><div class="metric-value mv-red">${fmt(padEnvio)}</div></div>
+    <div class="metric-card"><div class="metric-label">Custo envios (PAD)</div><div class="metric-value mv-red">${fmt(padCAdm.custoEnvio)}</div></div>
     <div class="metric-card"><div class="metric-label">PADs pagos</div><div class="metric-value mv-green">${fmt(padCAdm.bruto)}</div></div>
     <div class="metric-card"><div class="metric-label">Lucro líquido</div><div class="metric-value ${tLucro>=0?'mv-green':'mv-red'}">${fmt(tLucro)}</div></div>
   `;
-
-  // Tabela investimentos/leads
   let tb1='';
   admFil.sort((a,b)=>a.dia-b.dia).forEach((a,i)=>{
     const idx2=adminLancs.indexOf(a);
@@ -1817,39 +1600,28 @@ function renderAdmin(){
   });
   if(!tb1)tb1='<tr><td colspan="8" class="empty"><i class="ti ti-inbox"></i>Nenhum lançamento</td></tr>';
   document.getElementById('adm-inv-tbody').innerHTML=tb1;
-
-  // Tabela envios
   const rowsEnvio=filtrar('',mes,ano).filter(r=>!r.isPad);
   let tb2='';
   rowsEnvio.sort((a,b)=>a.dia-b.dia).forEach(r=>{
     const c=calcRow(r);
     tb2+=`<tr><td style="font-weight:700">${r.dia}</td><td>${r.atendente}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${getNomeOferta(r.ofertaId)}</td><td>${r.qtd_vendas||0}</td><td>${c.frascos}</td><td>${fmt(c.custoFrascos)}</td><td>${fmt((r.qtd_vendas||0)*CUSTO_ENVIO)}</td><td style="font-weight:600">${fmt(c.custoEnvTotal)}</td></tr>`;
   });
-  // Add PAD rows
   const padRows=pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano));
   padRows.sort((a,b)=>a.dia-b.dia).forEach(p=>{
     const o=OFERTAS.find(x=>x.id===p.ofertaId)||{frascos:0};
-    const nFrascos=o.frascos;
-    const cFrascos=nFrascos*CUSTO_FRASCO;
-    const cEnvio=CUSTO_ENVIO;
-    tb2+=`<tr style="background:var(--purple-l)"><td style="font-weight:700">${p.dia}</td><td>${p.atendente} <span class="badge b-purple" style="font-size:9px">PAD</span></td><td>${getNomeOferta(p.ofertaId)}</td><td>1</td><td>${nFrascos}</td><td>${fmt(cFrascos)}</td><td>${fmt(cEnvio)}</td><td style="font-weight:600">${fmt(cFrascos+cEnvio)}</td></tr>`;
+    tb2+=`<tr style="background:var(--purple-l)"><td style="font-weight:700">${p.dia}</td><td>${p.atendente} <span class="badge b-purple" style="font-size:9px">PAD</span></td><td>${getNomeOferta(p.ofertaId)}</td><td>1</td><td>${o.frascos}</td><td>${fmt(o.frascos*CUSTO_FRASCO)}</td><td>${fmt(CUSTO_ENVIO)}</td><td style="font-weight:600">${fmt(o.frascos*CUSTO_FRASCO+CUSTO_ENVIO)}</td></tr>`;
   });
   if(!tb2)tb2='<tr><td colspan="8" class="empty"><i class="ti ti-inbox"></i>Nenhum envio</td></tr>';
   document.getElementById('adm-envios-tbody').innerHTML=tb2;
 }
 
-
 function openAdminLancModal(){
-  editAdmIdx=-1;
-  initAllSelects();
+  editAdmIdx=-1;initAllSelects();
   document.getElementById('adm-lanc-title').textContent='Lançar Meta Ads';
   ['al-dia','al-inv','al-leads'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('al-ano').value='2026';
-  // Set default month to current
-  const alMes=document.getElementById('al-mes');
-  if(alMes&&!alMes.value)alMes.value=MESES[new Date().getMonth()];
-  const alAtend=document.getElementById('al-atend');
-  if(alAtend&&alAtend.options.length>0)alAtend.selectedIndex=0;
+  const alMes=document.getElementById('al-mes');if(alMes&&!alMes.value)alMes.value=MESES[new Date().getMonth()];
+  const alAtend=document.getElementById('al-atend');if(alAtend&&alAtend.options.length>0)alAtend.selectedIndex=0;
   document.getElementById('modal-adm-lanc').classList.add('open');
 }
 function closeAdminLancModal(){document.getElementById('modal-adm-lanc').classList.remove('open');}
@@ -1863,14 +1635,13 @@ function salvarAdminLanc(){
   const rec={dia:parseInt(document.getElementById('al-dia').value)||0,mes:document.getElementById('al-mes').value,ano:parseInt(document.getElementById('al-ano').value)||2026,atendente:document.getElementById('al-atend').value,investido:parseFloat(document.getElementById('al-inv').value)||0,leads:parseInt(document.getElementById('al-leads').value)||0};
   if(!rec.dia){toast('Informe o dia!');return;}
   if(!rec.mes){toast('Informe o mês!');return;}
-  rec.fbId = rec.fbId || Date.now().toString();
+  rec.fbId=rec.fbId||Date.now().toString();
   if(editAdmIdx>=0){adminLancs[editAdmIdx]=rec;}else{adminLancs.push(rec);}
-  if(window.fbSave) window.fbSave('adminLancs', rec.fbId, rec);
+  if(window.fbSave)window.fbSave('adminLancs',rec.fbId,rec);
   closeAdminLancModal();initAllSelects();renderAdmin();toast('Salvo!');
 }
 function deleteAdmLanc(idx){if(confirm('Remover?')){adminLancs.splice(idx,1);renderAdmin();toast('Removido.');}}
 
-// ===== LANÇAMENTO =====
 function salvarLancamento(){
   const dia=parseInt(document.getElementById('f-dia').value);
   const mes=document.getElementById('f-mes').value;
@@ -1881,16 +1652,16 @@ function salvarLancamento(){
   const bruto=valorEditado||0;
   const nomeCliente=document.getElementById('f-nome-cliente').value.trim();
   const telefone=document.getElementById('f-telefone').value.trim();
-  dados.push({mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone,recuperacao:isRecuperacao});
+  const rec={mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone,recuperacao:isRecuperacao};
+  rec.fbId='dado_'+Date.now();
+  dados.push(rec);
+  if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
   isRecuperacao=false;
   const btnR=document.getElementById('btn-recuperacao');
   const iconR=document.getElementById('icon-recuperacao');
   if(btnR){btnR.style.borderColor='';btnR.style.background='';btnR.style.color='';}
   if(iconR){iconR.style.borderColor='';iconR.style.background='';iconR.innerHTML='';}
-  limparOferta();
-  initAllSelects();
-  renderRegistrosDia();
-  toast('Venda registrada!');
+  limparOferta();initAllSelects();renderRegistrosDia();toast('Venda registrada!');
 }
 function limparOferta(){
   document.querySelectorAll('.oferta-item').forEach(el=>{el.classList.remove('selected');const conf=document.getElementById('oconf-'+el.dataset.id);if(conf)conf.style.display='none';});
@@ -1901,8 +1672,7 @@ function limparOferta(){
 }
 function limparForm(){
   ['f-dia'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  limparOferta();
-  renderRegistrosDia();
+  limparOferta();renderRegistrosDia();
 }
 function renderRegistrosDia(){
   const dia=parseInt(document.getElementById('f-dia').value);
@@ -1935,7 +1705,7 @@ function renderRegistrosDia(){
         <div id="view-nome-${gi}" style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">${r.nomeCliente||'<span style="color:var(--t3)">—</span>'}${r.recuperacao?'<span class="badge b-amber" style="font-size:9px;padding:1px 5px">RECUP.</span>':''}</div>
         <div id="edit-nome-${gi}" style="display:none"><input type="text" value="${r.nomeCliente||''}" id="inp-nome-${gi}" style="width:110px;font-size:12px;padding:3px 6px"></div>
         <div style="font-size:11px;color:var(--t3)">${r.telefone||''}</div>
-        ${r.rastreamento?`<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap"><span class="badge b-green" style="font-size:9px"><i class="ti ti-truck-delivery" style="font-size:9px"></i> ${r.rastreamento}</span>${r.entregue?'<span class="badge b-green" style="font-size:9px">✅ Entregue</span>':''}</div>`:''}
+        ${r.rastreamento?`<div style="margin-top:3px"><span class="badge b-green" style="font-size:9px"><i class="ti ti-truck-delivery" style="font-size:9px"></i> ${r.rastreamento}</span></div>`:''}
         <div id="edit-tel-${gi}" style="display:none"><input type="text" value="${r.telefone||''}" id="inp-tel-${gi}" style="width:110px;font-size:12px;padding:3px 6px" oninput="mascaraTel(this)"></div>
       </td>
       <td>
@@ -1960,31 +1730,11 @@ function toggleRecuperacao(){
   isRecuperacao=!isRecuperacao;
   const btn=document.getElementById('btn-recuperacao');
   const icon=document.getElementById('icon-recuperacao');
-  if(isRecuperacao){
-    btn.style.borderColor='var(--amber)';
-    btn.style.background='var(--amber-l)';
-    btn.style.color='var(--amber-t)';
-    icon.style.borderColor='var(--amber)';
-    icon.style.background='var(--amber)';
-    icon.innerHTML='<i class="ti ti-check" style="font-size:11px;color:#fff"></i>';
-  } else {
-    btn.style.borderColor='var(--border2)';
-    btn.style.background='var(--bg1)';
-    btn.style.color='var(--t2)';
-    icon.style.borderColor='var(--border2)';
-    icon.style.background='transparent';
-    icon.innerHTML='';
-  }
+  if(isRecuperacao){btn.style.borderColor='var(--amber)';btn.style.background='var(--amber-l)';btn.style.color='var(--amber-t)';icon.style.borderColor='var(--amber)';icon.style.background='var(--amber)';icon.innerHTML='<i class="ti ti-check" style="font-size:11px;color:#fff"></i>';}
+  else{btn.style.borderColor='var(--border2)';btn.style.background='var(--bg1)';btn.style.color='var(--t2)';icon.style.borderColor='var(--border2)';icon.style.background='transparent';icon.innerHTML='';}
 }
 
-function deletarVendaDia(idx){
-  if(confirm('Remover esta venda?')){
-    dados.splice(idx,1);
-    initAllSelects();
-    renderRegistrosDia();
-    toast('Venda removida.');
-  }
-}
+function deletarVendaDia(idx){if(confirm('Remover esta venda?')){dados.splice(idx,1);initAllSelects();renderRegistrosDia();toast('Venda removida.');}}
 
 function toggleEditVenda(gi){
   ['nome','tel','valor'].forEach(f=>{
@@ -1998,28 +1748,16 @@ function toggleEditVenda(gi){
   if(btnEdit)btnEdit.style.display='none';
   if(btnSave)btnSave.style.display='inline-flex';
 }
-
 function salvarEditVenda(gi){
   const nome=document.getElementById('inp-nome-'+gi)?.value.trim()||'';
   const tel=document.getElementById('inp-tel-'+gi)?.value.trim()||'';
   const valor=parseFloat(document.getElementById('inp-valor-'+gi)?.value)||dados[gi].bruto;
-  dados[gi].nomeCliente=nome;
-  dados[gi].telefone=tel;
-  dados[gi].bruto=valor;
-  renderRegistrosDia();
-  toast('Venda atualizada!');
+  dados[gi].nomeCliente=nome;dados[gi].telefone=tel;dados[gi].bruto=valor;
+  if(window.fbSave&&dados[gi].fbId)window.fbSave('dados',dados[gi].fbId,dados[gi]);
+  renderRegistrosDia();toast('Venda atualizada!');
 }
+function mascaraTel(el){let v=el.value.replace(/\D/g,'');if(v.length>11)v=v.substring(0,11);if(v.length>6)v='('+v.substring(0,2)+') '+v.substring(2,7)+'-'+v.substring(7);else if(v.length>2)v='('+v.substring(0,2)+') '+v.substring(2);else if(v.length>0)v='('+v;el.value=v;}
 
-function mascaraTel(el){
-  let v=el.value.replace(/\D/g,'');
-  if(v.length>11)v=v.substring(0,11);
-  if(v.length>6)v='('+v.substring(0,2)+') '+v.substring(2,7)+'-'+v.substring(7);
-  else if(v.length>2)v='('+v.substring(0,2)+') '+v.substring(2);
-  else if(v.length>0)v='('+v;
-  el.value=v;
-}
-
-// ===== MODAL REGISTRO (editar) =====
 function openModal(){editIdx=-1;document.getElementById('modal-title').textContent='Novo registro';['m-dia','m-bruto','m-qtdv'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-ano').value='2026';document.getElementById('modal').classList.add('open');}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 function editRow(idx){
@@ -2033,35 +1771,31 @@ function salvarModal(){
   if(editIdx>=0)dados[editIdx]=rec;else dados.push(rec);
   closeModal();initAllSelects();renderDados();toast(editIdx>=0?'Atualizado!':'Adicionado!');
 }
-
 function deleteRow(idx){if(confirm('Remover?')){dados.splice(idx,1);initAllSelects();renderDados();toast('Removido.');}}
 
-// ===== METAS MODAL =====
 function openMetaModal(){['mm-receita','mm-recuperacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('modal-meta').classList.add('open');}
 function closeMetaModal(){document.getElementById('modal-meta').classList.remove('open');}
 function salvarMeta(){
   const mes=document.getElementById('mm-mes').value,ano=parseInt(document.getElementById('mm-ano').value)||2026,atendente=document.getElementById('mm-atend').value;
-  metas.push({mes,ano,atendente,receita:parseFloat(document.getElementById('mm-receita').value)||0,recuperacao:parseFloat(document.getElementById('mm-recuperacao').value)||0});
+  const rec={mes,ano,atendente,receita:parseFloat(document.getElementById('mm-receita').value)||0,recuperacao:parseFloat(document.getElementById('mm-recuperacao').value)||0};
+  rec.fbId='meta_'+Date.now();
+  metas.push(rec);
+  if(window.fbSave)window.fbSave('metas',rec.fbId,rec);
   closeMetaModal();document.getElementById('meta-mes-fil').value=mes;document.getElementById('meta-ano-fil').value=String(ano);renderMetas();toast('Meta salva!');
 }
 
-// ===== DASHBOARD ADM =====
-// ===== GLOBO DASHBOARD =====
-let dashGloboInstance = null;
-let dashGloboLoaded = false;
+// ===== GLOBO =====
+let dashGloboInstance=null;
+let dashGloboLoaded=false;
 
 function iniciarDashGlobo(){
-  if(dashGloboLoaded) return;
-  dashGloboLoaded = true;
-  
+  if(dashGloboLoaded)return;
+  dashGloboLoaded=true;
   if(!window.Globe){
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js';
-    s.onload = () => construirDashGlobo();
-    s.onerror = () => {
-      const el = document.getElementById('dash-globo-loading');
-      if(el) el.style.display = 'none';
-    };
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js';
+    s.onload=()=>construirDashGlobo();
+    s.onerror=()=>{const el=document.getElementById('dash-globo-loading');if(el)el.style.display='none';};
     document.head.appendChild(s);
   } else {
     construirDashGlobo();
@@ -2069,125 +1803,84 @@ function iniciarDashGlobo(){
 }
 
 async function construirDashGlobo(){
-  const container = document.getElementById('dash-globo-container');
-  if(!container) return;
-  
-  const loadingEl = document.getElementById('dash-globo-loading');
-  const loadingText = document.getElementById('dash-globo-loading-text');
+  const container=document.getElementById('dash-globo-container');
+  if(!container)return;
+  const loadingEl=document.getElementById('dash-globo-loading');
 
-  dashGloboInstance = Globe()(container)
+  // FIX: ensure container has correct dimensions before init
+  const w=container.offsetWidth||window.innerWidth-230;
+  const h=container.offsetHeight||window.innerHeight;
+
+  dashGloboInstance=Globe()(container)
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-    .width(container.offsetWidth)
-    .height(container.offsetHeight)
+    .width(w)
+    .height(h)
     .backgroundColor('rgba(0,0,0,0)')
     .showAtmosphere(true)
     .atmosphereColor('rgba(0,80,255,0.12)')
     .atmosphereAltitude(0.15)
-    .pointOfView({ lat: -15, lng: -50, altitude: 1.8 }, 1500);
+    .pointOfView({lat:-15,lng:-50,altitude:1.8},1500);
 
-  // Auto-rotate slowly
-  dashGloboInstance.controls().autoRotate = true;
-  dashGloboInstance.controls().autoRotateSpeed = 0.3;
+  dashGloboInstance.controls().autoRotate=true;
+  dashGloboInstance.controls().autoRotateSpeed=0.3;
 
-  // Hide loading
-  if(loadingEl) loadingEl.style.display = 'none';
+  if(loadingEl)loadingEl.style.display='none';
 
-  // Resize on window resize
-  window.addEventListener('resize', () => {
-    if(dashGloboInstance && container){
-      dashGloboInstance.width(container.offsetWidth).height(container.offsetHeight);
+  window.addEventListener('resize',()=>{
+    if(dashGloboInstance&&container){
+      const nw=container.offsetWidth||window.innerWidth-230;
+      const nh=container.offsetHeight||window.innerHeight;
+      dashGloboInstance.width(nw).height(nh);
     }
   });
 
-  // Load markers
   await atualizarPontosDashGlobo();
 }
 
-const geoCacheDash = {};
+const geoCacheDash={};
 async function geocodDash(local){
-  if(!local) return null;
-  if(geoCacheDash[local]) return geoCacheDash[local];
-  const match = local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
-  if(!match) return null;
+  if(!local)return null;
+  if(geoCacheDash[local])return geoCacheDash[local];
+  const match=local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
+  if(!match)return null;
   try{
-    const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(match[1].trim() + ', ' + match[2] + ', Brasil') + '&limit=1&countrycodes=br';
-    const res = await fetch(url);
-    const data = await res.json();
-    if(data && data[0]){
-      const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      geoCacheDash[local] = coords;
-      return coords;
-    }
-  } catch(e){}
+    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(match[1].trim()+', '+match[2]+', Brasil')+'&limit=1&countrycodes=br';
+    const res=await fetch(url);
+    const data=await res.json();
+    if(data&&data[0]){const coords={lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};geoCacheDash[local]=coords;return coords;}
+  }catch(e){}
   return null;
 }
 
 async function atualizarPontosDashGlobo(){
-  if(!dashGloboInstance) return;
-
-  const atend = document.getElementById('adm-dash-atend')?.value || '';
-  const userAtend = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
-  const cores = { postagem:'#888888', rota:'#0EA5E9', retirada:'#F59E0B', entregue:'#00FF80', devolucao:'#EF4444', invalido:'#EF4444' };
-  const labels = { postagem:'Aguardando postagem', rota:'Em rota', retirada:'Aguardando retirada', entregue:'Entregue', devolucao:'Devolução' };
-
-  let rows = [...dados];
-  if(userAtend) rows = rows.filter(r => r.atendente === userAtend);
-  if(atend) rows = rows.filter(r => r.atendente === atend);
-  rows = rows.filter(r => r.rastreamento && (r.trackData || (r.trackHistorico && r.trackHistorico.length > 0)));
-
-  const pontos = [];
+  if(!dashGloboInstance)return;
+  const atend=document.getElementById('adm-dash-atend')?.value||'';
+  const userAtend=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:'';
+  const cores={postagem:'#888888',rota:'#0EA5E9',retirada:'#F59E0B',entregue:'#00FF80',devolucao:'#EF4444',invalido:'#EF4444'};
+  const labels={postagem:'Aguardando postagem',rota:'Em rota',retirada:'Aguardando retirada',entregue:'Entregue',devolucao:'Devolução'};
+  let rows=[...dados];
+  if(userAtend)rows=rows.filter(r=>r.atendente===userAtend);
+  if(atend)rows=rows.filter(r=>r.atendente===atend);
+  rows=rows.filter(r=>r.rastreamento&&(r.trackData||(r.trackHistorico&&r.trackHistorico.length>0)));
+  const pontos=[];
   for(const r of rows){
-    let local = '';
-    if(r.trackHistorico && r.trackHistorico.length > 0){
-      for(const e of r.trackHistorico){
-        if(e.local && e.local.includes('/')){ local = e.local.trim(); break; }
-      }
-    }
-    if(!local && r.trackData){
-      const m = r.trackData.match(/—\s*([^\n]+\/[A-Z]{2})/);
-      if(m) local = m[1].trim();
-    }
-    if(!local) continue;
-    const coords = await geocodDash(local);
-    if(!coords) continue;
-    const st = getStatusCorreios(r);
-    pontos.push({
-      lat: coords.lat + (Math.random()-0.5)*0.05,
-      lng: coords.lng + (Math.random()-0.5)*0.05,
-      cor: cores[st.tipo] || '#888',
-      nome: r.nomeCliente || '—',
-      status: labels[st.tipo] || st.label,
-      local, cod: r.rastreamento,
-      atend: r.atendente.split(' ')[0]
-    });
-    await new Promise(res => setTimeout(res, 200));
+    let local='';
+    if(r.trackHistorico&&r.trackHistorico.length>0){for(const e of r.trackHistorico){if(e.local&&e.local.includes('/')){local=e.local.trim();break;}}}
+    if(!local&&r.trackData){const m=r.trackData.match(/—\s*([^\n]+\/[A-Z]{2})/);if(m)local=m[1].trim();}
+    if(!local)continue;
+    const coords=await geocodDash(local);
+    if(!coords)continue;
+    const st=getStatusCorreios(r);
+    pontos.push({lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,cor:cores[st.tipo]||'#888',nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,local,cod:r.rastreamento,atend:r.atendente.split(' ')[0]});
+    await new Promise(res=>setTimeout(res,200));
   }
-
-  const sub = document.getElementById('dash-globo-subtitle');
-  if(sub) sub.textContent = pontos.length + ' envio' + (pontos.length !== 1 ? 's' : '') + ' no mapa';
-
+  const sub=document.getElementById('dash-globo-subtitle');
+  if(sub)sub.textContent=pontos.length+' envio'+(pontos.length!==1?'s':'')+' no mapa';
   dashGloboInstance
-    .pointsData(pontos)
-    .pointLat('lat').pointLng('lng')
-    .pointColor('cor')
-    .pointRadius(0.4)
-    .pointAltitude(0.02)
-    .pointLabel(d =>
-      '<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px">'
-      + '<div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div>'
-      + '<div style="color:#ddd;margin-bottom:3px">'+d.status+'</div>'
-      + '<div style="color:#aaa;font-size:11px">📍 '+d.local+'</div>'
-      + '<div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div>'
-      + '</div>'
-    )
-    .ringsData(pontos)
-    .ringLat('lat').ringLng('lng')
-    .ringColor(d => d.cor)
-    .ringMaxRadius(2)
-    .ringPropagationSpeed(1.5)
-    .ringRepeatPeriod(1600)
-    .ringAltitude(0.005);
+    .pointsData(pontos).pointLat('lat').pointLng('lng').pointColor('cor').pointRadius(0.4).pointAltitude(0.02)
+    .pointLabel(d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div></div>')
+    .ringsData(pontos).ringLat('lat').ringLng('lng').ringColor(d=>d.cor).ringMaxRadius(2).ringPropagationSpeed(1.5).ringRepeatPeriod(1600).ringAltitude(0.005);
 }
 
 function renderDashAdm(){
@@ -2197,23 +1890,12 @@ function renderDashAdm(){
   const ano=document.getElementById('adm-dash-ano').value;
   const atend=document.getElementById('adm-dash-atend').value;
   const diaWrap=document.getElementById('adm-dash-dia-wrap');
-
-  // show/hide dia field
   diaWrap.style.display=(modo==='dia')?'block':'none';
-
-  let filDia='', filMes='', filAno='';
+  let filDia='',filMes='',filAno='';
   const hoje=new Date();
-  if(modo==='hoje'){
-    filDia=hoje.getDate();
-    filMes=MESES[hoje.getMonth()];
-    filAno=hoje.getFullYear();
-  } else if(modo==='dia'){
-    filDia=parseInt(diaEl.value)||'';
-    filMes=mes; filAno=ano;
-  } else if(modo==='mes'){
-    filMes=mes; filAno=ano;
-  }
-  // filtrar dados
+  if(modo==='hoje'){filDia=hoje.getDate();filMes=MESES[hoje.getMonth()];filAno=hoje.getFullYear();}
+  else if(modo==='dia'){filDia=parseInt(diaEl.value)||'';filMes=mes;filAno=ano;}
+  else if(modo==='mes'){filMes=mes;filAno=ano;}
   let rows=dados.filter(d=>{
     if(atend&&d.atendente!==atend)return false;
     if(filMes&&d.mes!==filMes)return false;
@@ -2227,50 +1909,30 @@ function renderDashAdm(){
     if(filDia&&a.dia!==parseInt(filDia))return false;
     return true;
   });
-
   let tBruto=0,tVendas=0,tFrascos=0,tEnvio=0,tImpPJ=0,tPctAtend=0;
-  rows.filter(r=>!r.isPad).forEach(r=>{
-    const c=calcRow(r);
-    tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;
-    tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;
-    tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;
-  });
+  rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
   let tMetaAds=0,tLeads=0;
   admFil.forEach(a=>{tMetaAds+=a.investido||0;tLeads+=a.leads||0;});
-  // PAD costs
   const padC=calcPadCustos({mes:filMes||null,ano:filAno||null,atendente:atend||null});
-  tFrascos+=padC.frascos;
-  tEnvio+=padC.custoEnvio+padC.custoFrascos;
-  tImpPJ+=padC.impPJ;
-  tPctAtend+=padC.pctAtend;
-  tBruto+=padC.bruto;
-  tVendas+=padC.qtd;
-
-  // lucro total
-  // Collect ALL unique days: vendas + adminLancs + pads
+  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;tBruto+=padC.bruto;tVendas+=padC.qtd;
   const diasSet2=new Set();
   rows.filter(r=>!r.isPad).forEach(r=>diasSet2.add(r.dia+'|'+r.mes+'|'+r.ano));
   admFil.forEach(a=>diasSet2.add(a.dia+'|'+a.mes+'|'+a.ano));
   pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)).forEach(p=>diasSet2.add(p.dia+'|'+p.mes+'|'+p.ano));
   let tLucro=0;
   diasSet2.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
-
   const roas=tMetaAds>0?R(tBruto/tMetaAds,2):0;
   const cpl=tLeads>0?R(tMetaAds/tLeads,2):0;
   const margem=tBruto>0?R(tLucro/tBruto*100,1):0;
   const ticket=tVendas>0?R(tBruto/tVendas,2):0;
   const conv=tLeads>0?R(tVendas/tLeads*100,1):0;
-
-  // Cards principais
-  const cardStyle = 'background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.8rem 1rem;backdrop-filter:blur(12px);';
+  const cardStyle='background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.8rem 1rem;backdrop-filter:blur(12px);';
   document.getElementById('adm-dash-metrics').innerHTML=
     '<div style="'+cardStyle+'border-left:3px solid var(--blue)"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">'+fmt(tBruto)+'</div></div>'
     +'<div style="'+cardStyle+'border-left:3px solid '+(tLucro>=0?'var(--green)':'var(--red)')+'"><div class="metric-label">Lucro líquido</div><div class="metric-value '+(tLucro>=0?'mv-green':'mv-red')+'">'+fmt(tLucro)+'</div><div style="font-size:10px;color:var(--t3)">Margem: '+margem+'%</div></div>'
     +'<div style="'+cardStyle+'border-left:3px solid var(--amber)"><div class="metric-label">Meta Ads</div><div class="metric-value mv-amber">'+fmt(tMetaAds)+'</div><div style="font-size:10px;color:var(--t3)">ROAS: '+(roas>0?roas+'x':'—')+'</div></div>'
     +'<div style="'+cardStyle+'border-left:3px solid var(--purple)"><div class="metric-label">Leads</div><div class="metric-value mv-purple">'+tLeads+'</div><div style="font-size:10px;color:var(--t3)">CPL: '+(cpl>0?fmt(cpl):'—')+'</div></div>';
-
-  // Cards secundários
-  const card2Style = 'background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.6rem .9rem;backdrop-filter:blur(10px);flex-shrink:0;min-width:110px;';
+  const card2Style='background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.6rem .9rem;backdrop-filter:blur(10px);flex-shrink:0;min-width:110px;';
   document.getElementById('adm-dash-metrics2').innerHTML=
     '<div style="'+card2Style+'"><div class="metric-label">Vendas</div><div class="metric-value">'+tVendas+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">Ticket médio</div><div class="metric-value">'+(ticket>0?fmt(ticket):'—')+'</div></div>'
@@ -2280,103 +1942,16 @@ function renderDashAdm(){
     +'<div style="'+card2Style+'"><div class="metric-label">Imp. PJ 10%</div><div class="metric-value">'+fmt(tImpPJ)+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">% Atendentes</div><div class="metric-value">'+fmt(tPctAtend)+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">Conversão</div><div class="metric-value">'+(conv>0?conv+'%':'—')+'</div></div>'
-    +(()=>{
-      const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Pago').length;
-      const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;
-      const pt=pp+pf;
-      const convPad=pt>0?R(pp/pt*100,1):0;
-      const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';
-      return '<div style="'+card2Style+'border-left:3px solid '+corPad+'"><div class="metric-label">Conv. PAD</div><div class="metric-value" style="color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</div><div style="font-size:10px;color:var(--t3)">'+(pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs')+'</div></div>';
-    })();
-
-  // Painel por atendente
-  const nomes=getNomes();
-  let atendHtml='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:1.5rem">';
-  nomes.forEach(nome=>{
-    const aRows=rows.filter(r=>r.atendente===nome);
-    let aBruto=0,aVendas=0,aFrascos=0,aEnvio=0;
-    aRows.forEach(r=>{const c=calcRow(r);aBruto+=r.bruto||0;aVendas+=r.qtd_vendas||0;aFrascos+=c.frascos;aEnvio+=c.custoEnvTotal;});
-    const aDiasU=[...new Set(aRows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
-    let aLucro=0;
-    aDiasU.forEach(k=>{const[dd,mm,aa]=k.split('|');aLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),nome);});
-    const aMargem=aBruto>0?R(aLucro/aBruto*100,1):0;
-    const aTicket=aVendas>0?R(aBruto/aVendas,2):0;
-    const initials=nome.split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
-    atendHtml+=`
-      <div class="table-card" style="overflow:visible">
-        <div style="padding:1rem">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
-            <div style="width:40px;height:40px;border-radius:50%;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--blue-t)">${initials}</div>
-            <div>
-              <div style="font-weight:700;font-size:14px">${nome}</div>
-              <div style="font-size:11px;color:var(--t2)">${aVendas} venda${aVendas!==1?'s':''} · ${aFrascos} frascos</div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div class="metric-card" style="padding:.6rem"><div class="metric-label">Receita</div><div style="font-size:15px;font-weight:700;color:var(--blue)">${fmt(aBruto)}</div></div>
-            <div class="metric-card" style="padding:.6rem"><div class="metric-label">Lucro</div><div style="font-size:15px;font-weight:700;color:${aLucro>=0?'var(--green)':'var(--red)'}">${fmt(aLucro)}</div></div>
-            <div class="metric-card" style="padding:.6rem"><div class="metric-label">Ticket médio</div><div style="font-size:15px;font-weight:700">${aTicket>0?fmt(aTicket):'—'}</div></div>
-            <div class="metric-card" style="padding:.6rem"><div class="metric-label">Margem</div><div style="font-size:15px;font-weight:700;color:${aLucro>=0?'var(--green)':'var(--red)'}">${aMargem}%</div></div>
-          </div>
-        </div>
-      </div>`;
-  });
-  atendHtml+='</div>';
-  // Atendentes panel hidden in globe mode
-  // document.getElementById('adm-dash-atendentes').innerHTML=atendHtml;
-
-  // Charts hidden in globe dashboard mode
-  if(false){ dc('adm-fin');
-  const byM={bruto:{},meta:{},lucro:{}};
-  rows.forEach(r=>{if(!byM.bruto[r.mes])byM.bruto[r.mes]=0;byM.bruto[r.mes]+=r.bruto||0;});
-  admFil.forEach(a=>{if(!byM.meta[a.mes])byM.meta[a.mes]=0;byM.meta[a.mes]+=a.investido||0;});
-  const allMeses=MESES.filter(m=>byM.bruto[m]||byM.meta[m]);
-  allMeses.forEach(m=>{
-    const mRows=rows.filter(r=>r.mes===m);
-    const mAdm=admFil.filter(a=>a.mes===m);
-    const diasM=[...new Set(mRows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
-    let lm=0;diasM.forEach(k=>{const[dd,mm,aa]=k.split('|');lm+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
-    byM.lucro[m]=lm;
-  });
-  if(allMeses.length>0){
-    charts['adm-fin']=new Chart(document.getElementById('adm-ch-financeiro'),{type:'bar',data:{labels:allMeses.map(m=>m.substring(0,3)),datasets:[
-      {label:'Receita',data:allMeses.map(m=>R(byM.bruto[m]||0,2)),backgroundColor:'#378ADD',borderRadius:4},
-      {label:'Meta Ads',data:allMeses.map(m=>R(byM.meta[m]||0,2)),backgroundColor:'#EF9F27',borderRadius:4},
-      {label:'Lucro',data:allMeses.map(m=>R(byM.lucro[m]||0,2)),backgroundColor:'#1D9E75',borderRadius:4}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
-  }
-
-  // Gráfico por atendente
-  dc('adm-atend');
-  const byA={};rows.forEach(r=>{if(!byA[r.atendente])byA[r.atendente]=0;byA[r.atendente]+=r.bruto||0;});
-  const aNames=Object.keys(byA),aColors=['#378ADD','#5DCAA5','#EF9F27','#D85A30','#7F77DD'];
-  if(aNames.length>0){charts['adm-atend']=new Chart(document.getElementById('adm-ch-atend'),{type:'doughnut',data:{labels:aNames,datasets:[{data:aNames.map(a=>R(byA[a],2)),backgroundColor:aColors.slice(0,aNames.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});}
-
-  // Gráfico evolução diária
-  dc('adm-evol');
-  const byDia={};
-  rows.forEach(r=>{const k=r.dia+'|'+r.mes+'|'+r.ano;if(!byDia[k])byDia[k]={dia:r.dia,mes:r.mes,ano:r.ano};});
-  const diaKeys=Object.keys(byDia).sort((a,b)=>{const[da,ma,aa]=a.split('|');const[db,mb,ab]=b.split('|');return new Date(aa,MESES.indexOf(ma),da)-new Date(ab,MESES.indexOf(mb),db);});
-  const diaLabels=diaKeys.map(k=>{const[d,m]=k.split('|');return d+'/'+m.substring(0,3);});
-  const diaLucros=diaKeys.map(k=>{const[dd,mm,aa]=k.split('|');return calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
-  if(diaKeys.length>0){charts['adm-evol']=new Chart(document.getElementById('adm-ch-evolucao'),{type:'line',data:{labels:diaLabels,datasets:[{label:'Lucro líquido',data:diaLucros.map(v=>R(v,2)),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#0F6E56'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});} } // end if(false)
-
-  // Init or update globe
-  if(!dashGloboLoaded){
-    iniciarDashGlobo();
-  } else if(dashGloboInstance){
-    setTimeout(atualizarPontosDashGlobo, 100);
-  }
+    +(()=>{const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+card2Style+'border-left:3px solid '+corPad+'"><div class="metric-label">Conv. PAD</div><div class="metric-value" style="color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</div><div style="font-size:10px;color:var(--t3)">'+(pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs')+'</div></div>';})();
+  if(!dashGloboLoaded){iniciarDashGlobo();}else if(dashGloboInstance){setTimeout(atualizarPontosDashGlobo,100);}
 }
 
-// ===== RANKING PÚBLICO =====
 function renderRankingPublico(){
   const hoje=new Date();
   const mes=MESES[hoje.getMonth()];
   const ano=hoje.getFullYear();
   const periodoEl=document.getElementById('rank-pub-periodo');
-  if(periodoEl) periodoEl.textContent=mes+' de '+ano;
-
+  if(periodoEl)periodoEl.textContent=mes+' de '+ano;
   const nomes=getNomes();
   const resumos=nomes.map(nome=>{
     const rows=filtrar(nome,mes,String(ano));
@@ -2385,43 +1960,18 @@ function renderRankingPublico(){
     return{nome,bruto,vendas};
   });
   resumos.sort((a,b)=>b.vendas-a.vendas);
-
   const medals=['🥇','🥈','🥉'];
   const colors=['#378ADD','#5DCAA5','#EF9F27','#D85A30','#7F77DD'];
   let html='';
   resumos.forEach((r,i)=>{
     const pct=resumos[0].vendas>0?Math.round(r.vendas/resumos[0].vendas*100):0;
-    html+=`<div class="ranking-item">
-      <div class="rank-num">${medals[i]||i+1}</div>
-      <div class="rank-info">
-        <div class="rank-name">${r.nome}</div>
-        <div class="rank-meta">${r.vendas} venda${r.vendas!==1?'s':''} · ${fmt(r.bruto)}</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${colors[i]||'#888'}"></div></div>
-      </div>
-      <div class="rank-value" style="color:${colors[i]||'#888'}">${r.vendas}</div>
-    </div>`;
+    html+=`<div class="ranking-item"><div class="rank-num">${medals[i]||i+1}</div><div class="rank-info"><div class="rank-name">${r.nome}</div><div class="rank-meta">${r.vendas} venda${r.vendas!==1?'s':''} · ${fmt(r.bruto)}</div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${colors[i]||'#888'}"></div></div></div><div class="rank-value" style="color:${colors[i]||'#888'}">${r.vendas}</div></div>`;
   });
   const listEl=document.getElementById('rank-pub-list');
-  if(listEl) listEl.innerHTML=html||'<div class="empty"><i class="ti ti-inbox"></i>Sem dados este mês</div>';
-
+  if(listEl)listEl.innerHTML=html||'<div class="empty"><i class="ti ti-inbox"></i>Sem dados este mês</div>';
   dc('rank-pub');
-  const aColors2=['#378ADD','#5DCAA5','#EF9F27','#D85A30','#7F77DD'];
   const canvas=document.getElementById('ch-rank-pub');
-  if(canvas&&resumos.length>0){
-    charts['rank-pub']=new Chart(canvas,{
-      type:'bar',
-      data:{
-        labels:resumos.map(r=>r.nome.split(' ')[0]),
-        datasets:[{
-          label:'Receita',
-          data:resumos.map(r=>R(r.bruto,2)),
-          backgroundColor:aColors2.slice(0,resumos.length),
-          borderRadius:5
-        }]
-      },
-      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}
-    });
-  }
+  if(canvas&&resumos.length>0){charts['rank-pub']=new Chart(canvas,{type:'bar',data:{labels:resumos.map(r=>r.nome.split(' ')[0]),datasets:[{label:'Receita',data:resumos.map(r=>R(r.bruto,2)),backgroundColor:colors.slice(0,resumos.length),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});}
 }
 
 // ===== PAD =====
@@ -2430,206 +1980,103 @@ let padTab='aberto';
 
 function setPadTab(tab){
   padTab=tab;
-  const cfg={
-    aberto:{bg:'linear-gradient(135deg,#0369A1,#0EA5E9)',color:'#fff',border:'#0EA5E9',shadow:'0 4px 20px rgba(14,165,233,.4)',nbg:'rgba(0,0,0,.25)'},
-    pago:  {bg:'linear-gradient(135deg,#00994D,#00FF80)',color:'#000',border:'#00FF80',shadow:'0 4px 20px rgba(0,255,128,.4)',nbg:'rgba(0,0,0,.2)'},
-    frustrado:{bg:'linear-gradient(135deg,#991B1B,#EF4444)',color:'#fff',border:'#EF4444',shadow:'0 4px 20px rgba(239,68,68,.4)',nbg:'rgba(0,0,0,.25)'}
-  };
-  const dimcfg={
-    aberto:{bg:'linear-gradient(135deg,#1a4a6b,#2980B9)',color:'#fff',border:'#2980B9',shadow:'none',nbg:'rgba(0,0,0,.2)'},
-    pago:  {bg:'linear-gradient(135deg,#1a4a2a,#2E8B57)',color:'#fff',border:'#2E8B57',shadow:'none',nbg:'rgba(0,0,0,.2)'},
-    frustrado:{bg:'linear-gradient(135deg,#4a1a1a,#C0392B)',color:'#fff',border:'#C0392B',shadow:'none',nbg:'rgba(0,0,0,.2)'}
-  };
+  const cfg={aberto:{bg:'linear-gradient(135deg,#0369A1,#0EA5E9)',color:'#fff',border:'#0EA5E9',shadow:'0 4px 20px rgba(14,165,233,.4)',nbg:'rgba(0,0,0,.25)'},pago:{bg:'linear-gradient(135deg,#00994D,#00FF80)',color:'#000',border:'#00FF80',shadow:'0 4px 20px rgba(0,255,128,.4)',nbg:'rgba(0,0,0,.2)'},frustrado:{bg:'linear-gradient(135deg,#991B1B,#EF4444)',color:'#fff',border:'#EF4444',shadow:'0 4px 20px rgba(239,68,68,.4)',nbg:'rgba(0,0,0,.25)'}};
+  const dimcfg={aberto:{bg:'linear-gradient(135deg,#1a4a6b,#2980B9)',color:'#fff',border:'#2980B9',shadow:'none',nbg:'rgba(0,0,0,.2)'},pago:{bg:'linear-gradient(135deg,#1a4a2a,#2E8B57)',color:'#fff',border:'#2E8B57',shadow:'none',nbg:'rgba(0,0,0,.2)'},frustrado:{bg:'linear-gradient(135deg,#4a1a1a,#C0392B)',color:'#fff',border:'#C0392B',shadow:'none',nbg:'rgba(0,0,0,.2)'}};
   ['aberto','pago','frustrado'].forEach(t=>{
     const btn=document.getElementById('pad-tab-'+t);
     const nbadge=document.getElementById('pad-n-'+t);
     if(!btn)return;
     const c=t===tab?cfg[t]:dimcfg[t];
-    btn.style.background=c.bg;
-    btn.style.color=c.color;
-    btn.style.borderColor=c.border;
-    btn.style.boxShadow=c.shadow;
-    btn.style.opacity=t===tab?'1':'0.6';
+    btn.style.background=c.bg;btn.style.color=c.color;btn.style.borderColor=c.border;btn.style.boxShadow=c.shadow;btn.style.opacity=t===tab?'1':'0.6';
     if(nbadge)nbadge.style.background=c.nbg;
   });
   renderPad();
 }
+
 let padOfertaSelecionada=null;
 let padValorEditado=null;
 
 const PAD_STATUS=['Aguardando postagem','Em rota','Aguardando pagamento','Pago','Frustrado'];
-const PAD_STATUS_COLORS={
-  'Aguardando postagem':'b-amber',
-  'Em rota':'b-blue',
-  'Aguardando pagamento':'b-purple',
-  'Pago':'b-green',
-  'Frustrado':'b-red'
-};
 
 function openPadModal(){
   padOfertaSelecionada=null;padValorEditado=null;
-  ['pad-dia','pad-nome','pad-tel','pad-cep','pad-numero','pad-endereco','pad-bairro','pad-complemento','pad-cidade','pad-estado','pad-negociacao'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.value='';
-  });
+  ['pad-dia','pad-nome','pad-tel','pad-cep','pad-numero','pad-endereco','pad-bairro','pad-complemento','pad-cidade','pad-estado','pad-negociacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('pad-ano').value='2026';
-  // Ensure pad-atend has options
   initAllSelects();
-  // Set atendente to logged user
   const pa=document.getElementById('pad-atend');
-  if(pa&&usuarioLogado){
-    // Try to find user in options
-    const opt=[...pa.options].find(o=>o.value===usuarioLogado.nome);
-    if(opt){pa.value=usuarioLogado.nome;}
-    else if(pa.options.length>0){pa.selectedIndex=0;}
-  }
+  if(pa&&usuarioLogado){const opt=[...pa.options].find(o=>o.value===usuarioLogado.nome);if(opt){pa.value=usuarioLogado.nome;}else if(pa.options.length>0){pa.selectedIndex=0;}}
   buildPadOfertasGrid();
   document.getElementById('modal-pad').classList.add('open');
 }
 function closePadModal(){
   document.getElementById('modal-pad').classList.remove('open');
-  // Reset modal button to new PAD mode
   const saveBtn=document.querySelector('#modal-pad .btn-primary');
   if(saveBtn){saveBtn.onclick=salvarPad;saveBtn.innerHTML='<i class="ti ti-device-floppy"></i> Lançar PAD';}
   const title=document.querySelector('#modal-pad .modal-title');
   if(title)title.textContent='Lançar PAD';
 }
-
-function mascaraCEP(el){
-  let v=el.value.replace(/\D/g,'');
-  if(v.length>8)v=v.substring(0,8);
-  if(v.length>5)v=v.substring(0,5)+'-'+v.substring(5);
-  el.value=v;
-}
-
+function mascaraCEP(el){let v=el.value.replace(/\D/g,'');if(v.length>8)v=v.substring(0,8);if(v.length>5)v=v.substring(0,5)+'-'+v.substring(5);el.value=v;}
 async function buscarCEP(){
   const cep=document.getElementById('pad-cep').value.replace(/\D/g,'');
   if(cep.length!==8)return;
-  try{
-    const res=await fetch('https://viacep.com.br/ws/'+cep+'/json/');
-    const data=await res.json();
-    if(!data.erro){
-      document.getElementById('pad-endereco').value=data.logradouro||'';
-      document.getElementById('pad-bairro').value=data.bairro||'';
-      document.getElementById('pad-cidade').value=data.localidade||'';
-      document.getElementById('pad-estado').value=data.uf||'';
-      document.getElementById('pad-numero').focus();
-      toast('Endereço encontrado!');
-    } else { toast('CEP não encontrado.'); }
-  } catch(e){ toast('Erro ao buscar CEP.'); }
+  try{const res=await fetch('https://viacep.com.br/ws/'+cep+'/json/');const data=await res.json();if(!data.erro){document.getElementById('pad-endereco').value=data.logradouro||'';document.getElementById('pad-bairro').value=data.bairro||'';document.getElementById('pad-cidade').value=data.localidade||'';document.getElementById('pad-estado').value=data.uf||'';document.getElementById('pad-numero').focus();toast('Endereço encontrado!');}else{toast('CEP não encontrado.');}}catch(e){toast('Erro ao buscar CEP.');}
 }
-
 function buildPadOfertasGrid(){
   const grid=document.getElementById('pad-ofertas-grid');
   if(!grid)return;
   grid.innerHTML='';
   OFERTAS.forEach(o=>{
     const div=document.createElement('div');
-    div.className='oferta-item';
-    div.dataset.id=o.id;
-    div.innerHTML=`
-      <div class="oferta-check"><i class="ti ti-check"></i></div>
-      <div class="oferta-nome">${o.nome}</div>
-      <div class="oferta-valor">Valor padrão: ${fmt(o.valor)}</div>
-      <div class="oferta-confirm" id="padoconf-${o.id}" style="display:none"></div>
-      <div class="oferta-valor-edit">
-        <span style="font-size:12px;color:var(--t2)">Valor (R$):</span>
-        <input type="number" id="padoval-${o.id}" value="${o.valor}" step="0.01" min="0" onclick="event.stopPropagation()" oninput="editarValorPadOferta(${o.id})">
-      </div>`;
+    div.className='oferta-item';div.dataset.id=o.id;
+    div.innerHTML=`<div class="oferta-check"><i class="ti ti-check"></i></div><div class="oferta-nome">${o.nome}</div><div class="oferta-valor">Valor padrão: ${fmt(o.valor)}</div><div class="oferta-confirm" id="padoconf-${o.id}" style="display:none"></div><div class="oferta-valor-edit"><span style="font-size:12px;color:var(--t2)">Valor (R$):</span><input type="number" id="padoval-${o.id}" value="${o.valor}" step="0.01" min="0" onclick="event.stopPropagation()" oninput="editarValorPadOferta(${o.id})"></div>`;
     div.addEventListener('click',()=>selecionarPadOferta(o.id));
     grid.appendChild(div);
   });
 }
-
 function selecionarPadOferta(id){
-  document.querySelectorAll('#pad-ofertas-grid .oferta-item').forEach(el=>{
-    el.classList.remove('selected');
-    const c=document.getElementById('padoconf-'+el.dataset.id);
-    if(c)c.style.display='none';
-  });
+  document.querySelectorAll('#pad-ofertas-grid .oferta-item').forEach(el=>{el.classList.remove('selected');const c=document.getElementById('padoconf-'+el.dataset.id);if(c)c.style.display='none';});
   const item=document.querySelector(`#pad-ofertas-grid .oferta-item[data-id="${id}"]`);
   if(!item)return;
-  item.classList.add('selected');
-  padOfertaSelecionada=id;
+  item.classList.add('selected');padOfertaSelecionada=id;
   const o=OFERTAS.find(x=>x.id===id);
   const inp=document.getElementById('padoval-'+id);
   padValorEditado=parseFloat(inp.value)||o.valor;
   const conf=document.getElementById('padoconf-'+id);
   if(conf){conf.textContent='✓ Valor: '+fmt(padValorEditado);conf.style.display='block';}
 }
-
 function editarValorPadOferta(id){
   const inp=document.getElementById('padoval-'+id);
   padValorEditado=parseFloat(inp.value)||0;
   const conf=document.getElementById('padoconf-'+id);
   if(conf)conf.textContent='✓ Valor: '+fmt(padValorEditado);
 }
-
 function salvarPad(){
   const dia=parseInt(document.getElementById('pad-dia').value);
   const mes=document.getElementById('pad-mes').value;
   const ano=parseInt(document.getElementById('pad-ano').value)||2026;
   const atendente=document.getElementById('pad-atend').value;
   const nome=document.getElementById('pad-nome').value.trim();
-  const tel=document.getElementById('pad-tel').value.trim();
-  if(!dia){toast('Informe o dia!');return;}
-  if(!mes){toast('Informe o mês!');return;}
-  if(!atendente){toast('Selecione o atendente!');return;}
-  if(!nome){toast('Informe o nome do cliente!');return;}
-  if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
-  pads.push({
-    dia,mes,ano,atendente,
-    nomeCliente:nome,
-    telefone:tel,
-    cep:document.getElementById('pad-cep').value,
-    endereco:document.getElementById('pad-endereco').value,
-    numero:document.getElementById('pad-numero').value,
-    bairro:document.getElementById('pad-bairro').value,
-    complemento:document.getElementById('pad-complemento').value,
-    cidade:document.getElementById('pad-cidade').value,
-    estado:document.getElementById('pad-estado').value,
-    negociacao:document.getElementById('pad-negociacao').value.trim(),
-    ofertaId:padOfertaSelecionada,
-    bruto:padValorEditado||0,
-    status:'Aguardando postagem',
-    rastreamento:'',
-    id:Date.now()
-  });
-  const lastPad = pads[pads.length-1];
-  lastPad.fbId = lastPad.fbId || Date.now().toString();
-  if(window.fbSave) window.fbSave('pads', lastPad.fbId, lastPad);
-  closePadModal();
-  setPadTab('aberto');
-  toast('PAD lançado!');
+  if(!dia){toast('Informe o dia!');return;}if(!mes){toast('Informe o mês!');return;}if(!atendente){toast('Selecione o atendente!');return;}if(!nome){toast('Informe o nome do cliente!');return;}if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
+  const rec={dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),cep:document.getElementById('pad-cep').value,endereco:document.getElementById('pad-endereco').value,numero:document.getElementById('pad-numero').value,bairro:document.getElementById('pad-bairro').value,complemento:document.getElementById('pad-complemento').value,cidade:document.getElementById('pad-cidade').value,estado:document.getElementById('pad-estado').value,negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0,status:'Aguardando postagem',rastreamento:'',id:Date.now()};
+  rec.fbId='pad_'+Date.now();
+  pads.push(rec);
+  if(window.fbSave)window.fbSave('pads',rec.fbId,rec);
+  closePadModal();setPadTab('aberto');toast('PAD lançado!');
 }
 
 function renderPad(){
   const filtrosAdm=document.getElementById('pad-filters-adm');
   if(filtrosAdm)filtrosAdm.style.display=adminLogado?'flex':'none';
   const atendFil=adminLogado?(document.getElementById('pad-atend-fil')?.value||''):(usuarioLogado?.nome||'');
-
   let rows=[...pads];
   if(atendFil)rows=rows.filter(p=>p.atendente===atendFil);
-  rows.sort((a,b)=>{
-    if(a.ano!==b.ano)return a.ano-b.ano;
-    const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);
-    if(mi!==mj)return mi-mj;
-    return a.dia-b.dia;
-  });
-
+  rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const abertos=rows.filter(p=>['Aguardando postagem','Em rota','Aguardando pagamento'].includes(p.status));
   const pagos=rows.filter(p=>p.status==='Pago');
   const frustrados=rows.filter(p=>p.status==='Frustrado');
-
-  // Atualizar contadores das abas
   const setN=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  setN('pad-n-aberto',abertos.length);
-  setN('pad-n-pago',pagos.length);
-  setN('pad-n-frustrado',frustrados.length);
-
-  // Selecionar grupo da aba ativa
+  setN('pad-n-aberto',abertos.length);setN('pad-n-pago',pagos.length);setN('pad-n-frustrado',frustrados.length);
   const lista=padTab==='pago'?pagos:padTab==='frustrado'?frustrados:abertos;
-
-  // Construir linhas
   let tb='';
   lista.forEach((p,i)=>{
     const gi=pads.indexOf(p);
@@ -2637,239 +2084,74 @@ function renderPad(){
     const nomeCurto=o.nome.replace(' de Maximus V6','').replace('Frascos','fr.').replace('Frasco','fr.');
     const statusOpts=PAD_STATUS.map(s=>'<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s+'</option>').join('');
     const statusCell='<select onchange="mudarStatusPad('+gi+',this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:.5px solid var(--border2);background:var(--bg1);color:var(--t1)">'+statusOpts+'</select>';
-
     let rastrCol='';
     if(adminLogado){
       const rval=p.rastreamento||'';
-      rastrCol='<td>'
-        +'<div id="prview-'+gi+'" style="display:flex;align-items:center;gap:6px">'
-        +(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Sem código</span>')
-        +'<button class="btn btn-sm" onclick="editarRastPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button>'
-        +'</div>'
-        +'<div id="predit-'+gi+'" style="display:none;gap:6px;align-items:center">'
-        +'<input type="text" id="prinp-'+gi+'" value="'+rval+'" placeholder="Código..." style="width:110px;font-size:12px;padding:4px 7px">'
-        +'<button class="btn btn-success btn-sm" onclick="salvarRastPad('+gi+')"><i class="ti ti-check"></i></button>'
-        +'<button class="btn btn-sm" onclick="cancelarRastPad('+gi+')"><i class="ti ti-x"></i></button>'
-        +'</div></td>';
-    } else {
+      rastrCol='<td><div id="prview-'+gi+'" style="display:flex;align-items:center;gap:6px">'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Sem código</span>')+'<button class="btn btn-sm" onclick="editarRastPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button></div><div id="predit-'+gi+'" style="display:none;gap:6px;align-items:center"><input type="text" id="prinp-'+gi+'" value="'+rval+'" placeholder="Código..." style="width:110px;font-size:12px;padding:4px 7px"><button class="btn btn-success btn-sm" onclick="salvarRastPad('+gi+')"><i class="ti ti-check"></i></button><button class="btn btn-sm" onclick="cancelarRastPad('+gi+')"><i class="ti ti-x"></i></button></div></td>';
+    }else{
       const rval=p.rastreamento||'';
       rastrCol='<td>'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Aguardando</span>')+'</td>';
     }
-
-    const acoes=adminLogado
-      ?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>'
-      :'<td></td>';
-
+    const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':'<td></td>';
     const neg=p.negociacao?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
     const cidade=p.cidade?'<div style="font-size:10px;color:var(--t3)">'+p.cidade+(p.estado?' - '+p.estado:'')+'</div>':'';
-
-    tb+='<tr>'
-      +'<td style="color:var(--t3);font-weight:600">'+(i+1)+'</td>'
-      +'<td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td>'
-      +'<td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td>'
-      +'<td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td>'
-      +'<td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'
-      +rastrCol
-      +'<td>'+statusCell+'</td>'
-      +acoes
-      +'</tr>';
+    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+rastrCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
   });
-
   if(!tb)tb='<tr><td colspan="8" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
   const tbody=document.getElementById('pad-tbody');
   if(tbody)tbody.innerHTML=tb;
 }
 
-
 function mudarStatusPad(gi,novoStatus){
   pads[gi].status=novoStatus;
-  if(window.fbSave && pads[gi].fbId) window.fbSave('pads', pads[gi].fbId, pads[gi]);
+  if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);
   if(novoStatus==='Pago'){
     const p=pads[gi];
-    // Cria registro na aba de lançamentos com denominação PAD
-    dados.push({
-      mes:p.mes,ano:p.ano,atendente:p.atendente,dia:p.dia,
-      ofertaId:p.ofertaId,bruto:p.bruto,qtd_vendas:1,
-      nomeCliente:p.nomeCliente+' (PAD)',
-      telefone:p.telefone,
-      recuperacao:false,
-      rastreamento:p.rastreamento||'',
-      isPad:true
-    });
+    const rec={mes:p.mes,ano:p.ano,atendente:p.atendente,dia:p.dia,ofertaId:p.ofertaId,bruto:p.bruto,qtd_vendas:1,nomeCliente:p.nomeCliente+' (PAD)',telefone:p.telefone,recuperacao:false,rastreamento:p.rastreamento||'',isPad:true};
+    rec.fbId='dado_pad_'+Date.now();
+    dados.push(rec);
+    if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
     initAllSelects();
     toast('✅ PAD marcado como Pago! Venda registrada em Lançamentos.');
-  } else {
-    toast('Status atualizado!');
-  }
+  }else{toast('Status atualizado!');}
   renderPad();
 }
-
-function editarRastPad(gi){
-  document.getElementById('prview-'+gi).style.display='none';
-  document.getElementById('predit-'+gi).style.display='flex';
-  document.getElementById('prinp-'+gi).focus();
-}
-function cancelarRastPad(gi){
-  document.getElementById('prview-'+gi).style.display='flex';
-  document.getElementById('predit-'+gi).style.display='none';
-}
-function salvarRastPad(gi){
-  pads[gi].rastreamento=document.getElementById('prinp-'+gi).value.trim();
-  renderPad();
-  toast('Código salvo!');
-}
-
+function editarRastPad(gi){document.getElementById('prview-'+gi).style.display='none';document.getElementById('predit-'+gi).style.display='flex';document.getElementById('prinp-'+gi).focus();}
+function cancelarRastPad(gi){document.getElementById('prview-'+gi).style.display='flex';document.getElementById('predit-'+gi).style.display='none';}
+function salvarRastPad(gi){pads[gi].rastreamento=document.getElementById('prinp-'+gi).value.trim();if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);renderPad();toast('Código salvo!');}
 function editarPad(gi){
   const p=pads[gi];
-  // Fill modal with existing data
-  document.getElementById('pad-dia').value=p.dia;
-  document.getElementById('pad-mes').value=p.mes;
-  document.getElementById('pad-ano').value=p.ano;
-  document.getElementById('pad-atend').value=p.atendente;
-  document.getElementById('pad-nome').value=p.nomeCliente||'';
-  document.getElementById('pad-tel').value=p.telefone||'';
-  document.getElementById('pad-cep').value=p.cep||'';
-  document.getElementById('pad-endereco').value=p.endereco||'';
-  document.getElementById('pad-numero').value=p.numero||'';
-  document.getElementById('pad-bairro').value=p.bairro||'';
-  document.getElementById('pad-complemento').value=p.complemento||'';
-  document.getElementById('pad-cidade').value=p.cidade||'';
-  document.getElementById('pad-estado').value=p.estado||'';
-  document.getElementById('pad-negociacao').value=p.negociacao||'';
-  // Build ofertas grid and select current
-  buildPadOfertasGrid();
-  padOfertaSelecionada=p.ofertaId;
-  padValorEditado=p.bruto;
-  setTimeout(()=>{
-    const item=document.querySelector('#pad-ofertas-grid .oferta-item[data-id="'+p.ofertaId+'"]');
-    if(item){
-      item.classList.add('selected');
-      const inp=document.getElementById('padoval-'+p.ofertaId);
-      if(inp)inp.value=p.bruto;
-      const conf=document.getElementById('padoconf-'+p.ofertaId);
-      if(conf){conf.textContent='✓ Valor: '+fmt(p.bruto);conf.style.display='block';}
-    }
-  },50);
-  // Change modal title and button
+  document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-cep').value=p.cep||'';document.getElementById('pad-endereco').value=p.endereco||'';document.getElementById('pad-numero').value=p.numero||'';document.getElementById('pad-bairro').value=p.bairro||'';document.getElementById('pad-complemento').value=p.complemento||'';document.getElementById('pad-cidade').value=p.cidade||'';document.getElementById('pad-estado').value=p.estado||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
+  buildPadOfertasGrid();padOfertaSelecionada=p.ofertaId;padValorEditado=p.bruto;
+  setTimeout(()=>{const item=document.querySelector('#pad-ofertas-grid .oferta-item[data-id="'+p.ofertaId+'"]');if(item){item.classList.add('selected');const inp=document.getElementById('padoval-'+p.ofertaId);if(inp)inp.value=p.bruto;const conf=document.getElementById('padoconf-'+p.ofertaId);if(conf){conf.textContent='✓ Valor: '+fmt(p.bruto);conf.style.display='block';}}},50);
   document.querySelector('#modal-pad .modal-title').textContent='Editar PAD';
   const saveBtn=document.querySelector('#modal-pad .btn-primary');
-  saveBtn.onclick=()=>salvarEdicaoPad(gi);
-  saveBtn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar alterações';
+  saveBtn.onclick=()=>salvarEdicaoPad(gi);saveBtn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar alterações';
   document.getElementById('modal-pad').classList.add('open');
 }
-
 function salvarEdicaoPad(gi){
-  const dia=parseInt(document.getElementById('pad-dia').value);
-  const mes=document.getElementById('pad-mes').value;
-  const ano=parseInt(document.getElementById('pad-ano').value)||2026;
-  const atendente=document.getElementById('pad-atend').value;
-  const nome=document.getElementById('pad-nome').value.trim();
-  if(!dia){toast('Informe o dia!');return;}
-  if(!mes){toast('Informe o mês!');return;}
-  if(!atendente){toast('Selecione o atendente!');return;}
-  if(!nome){toast('Informe o nome do cliente!');return;}
-  if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
-  pads[gi]={
-    ...pads[gi],
-    dia,mes,ano,atendente,
-    nomeCliente:nome,
-    telefone:document.getElementById('pad-tel').value.trim(),
-    cep:document.getElementById('pad-cep').value,
-    endereco:document.getElementById('pad-endereco').value,
-    numero:document.getElementById('pad-numero').value,
-    bairro:document.getElementById('pad-bairro').value,
-    complemento:document.getElementById('pad-complemento').value,
-    cidade:document.getElementById('pad-cidade').value,
-    estado:document.getElementById('pad-estado').value,
-    negociacao:document.getElementById('pad-negociacao').value.trim(),
-    ofertaId:padOfertaSelecionada,
-    bruto:padValorEditado||0,
-  };
-  closePadModal();
-  // Reset modal button back to new PAD mode
-  const saveBtn=document.querySelector('#modal-pad .btn-primary');
-  saveBtn.onclick=salvarPad;
-  saveBtn.innerHTML='<i class="ti ti-device-floppy"></i> Lançar PAD';
-  document.querySelector('#modal-pad .modal-title').textContent='Lançar PAD';
-  renderPad();
-  toast('PAD atualizado!');
+  const dia=parseInt(document.getElementById('pad-dia').value);const mes=document.getElementById('pad-mes').value;const ano=parseInt(document.getElementById('pad-ano').value)||2026;const atendente=document.getElementById('pad-atend').value;const nome=document.getElementById('pad-nome').value.trim();
+  if(!dia){toast('Informe o dia!');return;}if(!mes){toast('Informe o mês!');return;}if(!atendente){toast('Selecione o atendente!');return;}if(!nome){toast('Informe o nome do cliente!');return;}if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
+  pads[gi]={...pads[gi],dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),cep:document.getElementById('pad-cep').value,endereco:document.getElementById('pad-endereco').value,numero:document.getElementById('pad-numero').value,bairro:document.getElementById('pad-bairro').value,complemento:document.getElementById('pad-complemento').value,cidade:document.getElementById('pad-cidade').value,estado:document.getElementById('pad-estado').value,negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0};
+  if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);
+  closePadModal();renderPad();toast('PAD atualizado!');
 }
-
-function deletarPad(gi){
-  if(confirm('Remover este PAD?')){
-    pads.splice(gi,1);
-    renderPad();
-    toast('PAD removido.');
-  }
-}
-
-function editarCampoPad(campo,gi){
-  document.getElementById(campo+'-view-'+gi).style.display='none';
-  const editEl=document.getElementById(campo+'-edit-'+gi);
-  editEl.style.display=campo==='pneg'?'block':'flex';
-  const inp=document.getElementById(campo+'-inp-'+gi);
-  if(inp)inp.focus();
-}
-
-function cancelarEditPad(campo,gi){
-  const viewEl=document.getElementById(campo+'-view-'+gi);
-  if(viewEl)viewEl.style.display='flex';
-  document.getElementById(campo+'-edit-'+gi).style.display='none';
-}
-
-function salvarValorPad(gi){
-  const val=parseFloat(document.getElementById('pval-inp-'+gi).value)||0;
-  pads[gi].bruto=val;
-  renderPad();
-  toast('Valor atualizado!');
-}
-
-function salvarNegPad(gi){
-  const neg=document.getElementById('pneg-inp-'+gi).value.trim();
-  pads[gi].negociacao=neg;
-  renderPad();
-  toast('Negociação atualizada!');
-}
+function deletarPad(gi){if(confirm('Remover este PAD?')){if(window.fbDelete&&pads[gi].fbId)window.fbDelete('pads',pads[gi].fbId);pads.splice(gi,1);renderPad();toast('PAD removido.');}}
 
 // ===== RASTREAMENTO =====
 function renderRastreamento(){
-  // Mostrar filtros só para ADM
   const filtrosAdm=document.getElementById('rast-filters-adm');
-  if(filtrosAdm) filtrosAdm.style.display=adminLogado?'flex':'none';
-
+  if(filtrosAdm)filtrosAdm.style.display=adminLogado?'flex':'none';
   const atendFiltro=adminLogado?(document.getElementById('rast-atend')?.value||''):(usuarioLogado?.nome||'');
   const mesFiltro=adminLogado?(document.getElementById('rast-mes')?.value||''):'';
   const busca=(document.getElementById('rast-busca')?.value||'').toLowerCase();
-
-  // Pegar todos os dados e ordenar do mais antigo ao mais recente
   let rows=[...dados];
-  if(atendFiltro) rows=rows.filter(r=>r.atendente===atendFiltro);
-  if(mesFiltro) rows=rows.filter(r=>r.mes===mesFiltro);
-  // Status filter
-  const statusFil = adminLogado?(document.getElementById('rast-status')?.value||''):'';
-  if(statusFil === 'pendente') rows = rows.filter(r => getStatusCorreios(r).tipo === 'postagem');
-  else if(statusFil === 'transito') rows = rows.filter(r => getStatusCorreios(r).tipo === 'rota');
-  else if(statusFil === 'retirada') rows = rows.filter(r => getStatusCorreios(r).tipo === 'retirada');
-  else if(statusFil === 'entregue') rows = rows.filter(r => getStatusCorreios(r).tipo === 'entregue');
-  else if(statusFil === 'devolucao') rows = rows.filter(r => getStatusCorreios(r).tipo === 'devolucao');
-  else if(statusFil === 'invalido') rows = rows.filter(r => getStatusCorreios(r).tipo === 'invalido');
-
-  if(busca) rows=rows.filter(r=>{
-    const s=((r.nomeCliente||'')+(r.telefone||'')+(r.rastreamento||'')+(r.atendente||'')).toLowerCase();
-    return s.includes(busca);
-  });
-
-  // Ordenar: ano asc, mes asc, dia asc
-  rows.sort((a,b)=>{
-    if(a.ano!==b.ano) return a.ano-b.ano;
-    const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);
-    if(mi!==mj) return mi-mj;
-    return a.dia-b.dia;
-  });
-
+  if(atendFiltro)rows=rows.filter(r=>r.atendente===atendFiltro);
+  if(mesFiltro)rows=rows.filter(r=>r.mes===mesFiltro);
+  if(busca)rows=rows.filter(r=>{const s=((r.nomeCliente||'')+(r.telefone||'')+(r.rastreamento||'')+(r.atendente||'')).toLowerCase();return s.includes(busca);});
+  rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const countEl=document.getElementById('rast-count');
-  if(countEl) countEl.textContent=rows.length+' registro'+(rows.length!==1?'s':'');
-
+  if(countEl)countEl.textContent=rows.length+' registro'+(rows.length!==1?'s':'');
   let tb='';
   rows.forEach((r,i)=>{
     const gi=dados.indexOf(r);
@@ -2877,35 +2159,10 @@ function renderRastreamento(){
     const nomeCurto=o.nome.replace(' de Maximus V6','').replace('Frascos','fr.').replace('Frasco','fr.');
     const rastreio=r.rastreamento||'';
     const temRastreio=rastreio.length>0;
-
     let rastreioCell='';
-    const entregue=r.entregue||false;
-    const entregaCell = ''; // Status handled by new status cell
-
     if(adminLogado){
-      rastreioCell=`<td>
-        <div id="rview-${gi}" style="display:flex;align-items:center;gap:6px">
-          ${temRastreio
-            ?`<span class="badge b-green" style="font-size:11px">${rastreio}</span>`
-            :`<span style="font-size:11px;color:var(--t3)">Sem código</span>`
-          }
-          <button class="btn btn-sm" onclick="editarRastreio(${gi})" title="Editar código"><i class="ti ti-edit"></i></button>
-        </div>
-        <div id="redit-${gi}" style="display:none;gap:6px;align-items:center">
-          <input type="text" id="rinp-${gi}" value="${rastreio}" placeholder="Código..." style="width:130px;font-size:12px;padding:4px 8px">
-          <button class="btn btn-success btn-sm" onclick="salvarRastreio(${gi})"><i class="ti ti-check"></i></button>
-          <button class="btn btn-sm" onclick="cancelarRastreio(${gi})"><i class="ti ti-x"></i></button>
-        </div>
-      </td>`;
-    } else {
-      rastreioCell=`<td>
-        ${temRastreio
-          ?`<span class="badge b-green" style="font-size:11px">${rastreio}</span>`
-          :`<span style="font-size:11px;color:var(--t3)">Aguardando</span>`
-        }
-      </td>`;
-    }
-
+      rastreioCell=`<td><div id="rview-${gi}" style="display:flex;align-items:center;gap:6px">${temRastreio?`<span class="badge b-green" style="font-size:11px">${rastreio}</span>`:`<span style="font-size:11px;color:var(--t3)">Sem código</span>`}<button class="btn btn-sm" onclick="editarRastreio(${gi})" title="Editar código"><i class="ti ti-edit"></i></button></div><div id="redit-${gi}" style="display:none;gap:6px;align-items:center"><input type="text" id="rinp-${gi}" value="${rastreio}" placeholder="Código..." style="width:130px;font-size:12px;padding:4px 8px"><button class="btn btn-success btn-sm" onclick="salvarRastreio(${gi})"><i class="ti ti-check"></i></button><button class="btn btn-sm" onclick="cancelarRastreio(${gi})"><i class="ti ti-x"></i></button></div></td>`;
+    }else{rastreioCell=`<td>${temRastreio?`<span class="badge b-green" style="font-size:11px">${rastreio}</span>`:`<span style="font-size:11px;color:var(--t3)">Aguardando</span>`}</td>`;}
     tb+=`<tr>
       <td style="color:var(--t3);font-weight:600">${i+1}</td>
       <td style="white-space:nowrap"><span style="font-weight:600">${r.dia}</span> <span style="color:var(--t2);font-size:11px">${r.mes.substring(0,3)} ${r.ano}</span></td>
@@ -2915,532 +2172,171 @@ function renderRastreamento(){
       <td style="font-size:11px;color:var(--t2)">${nomeCurto}</td>
       <td style="font-weight:600;color:var(--green)">${fmt(r.bruto)}</td>
       ${rastreioCell}
-      <td id="track-cell-${gi}" style="min-width:200px">
-        ${r.rastreamento ? `
-          <div>
-            ${r.trackInvalido ? `<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>` :
-              r.trackStatus ? `
-                <div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div>
-                <div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>
-              ` : `<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`
-            }
-            ${r.trackHistorico&&r.trackHistorico.length>0?`
-              <button class="btn btn-sm" onclick="verHistorico(${gi})" style="font-size:11px;padding:3px 8px">
-                <i class="ti ti-list"></i> Histórico
-              </button>`:''
-            }
-          </div>
-        ` : '<span style="font-size:11px;color:var(--t3)">—</span>'}
-      </td>
-      <td style="font-size:11px;white-space:nowrap">
-        ${r.previsaoEntrega ? `<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> ${new Date(r.previsaoEntrega).toLocaleDateString('pt-BR')}</span>` : '<span style="color:var(--t3)">—</span>'}
-      </td>
-      <td style="font-size:11px;white-space:nowrap;min-width:120px">
-        ${(()=>{
-          const hoje = new Date();
-          const lancado = new Date(r.ano, MESES.indexOf(r.mes), r.dia);
-          const diasTotal = Math.floor((hoje - lancado) / 86400000);
-          const primeiroEvento = r.trackHistorico && r.trackHistorico.length > 0 ? new Date(r.trackHistorico[r.trackHistorico.length-1].data?.split('/').reverse().join('-')) : null;
-          const diasTransito = primeiroEvento && !isNaN(primeiroEvento) ? Math.floor((hoje - primeiroEvento) / 86400000) : null;
-          return '<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há ' + diasTotal + 'd</div>' +
-                 (diasTransito !== null ? '<div style="color:var(--amber);margin-top:2px"><i class="ti ti-truck-delivery" style="font-size:10px"></i> ' + diasTransito + 'd em rota</div>' : '');
-        })()}
-      </td>
-      ${entregaCell}
+      <td id="track-cell-${gi}" style="min-width:200px">${r.rastreamento?`<div>${r.trackInvalido?`<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>`:r.trackStatus?`<div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>`:`<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`}${r.trackHistorico&&r.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi})" style="font-size:11px;padding:3px 8px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>
+      <td style="font-size:11px;white-space:nowrap">${r.previsaoEntrega?`<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> ${new Date(r.previsaoEntrega).toLocaleDateString('pt-BR')}</span>`:'<span style="color:var(--t3)">—</span>'}</td>
+      <td style="font-size:11px;white-space:nowrap;min-width:120px">${(()=>{const hoje=new Date();const lancado=new Date(r.ano,MESES.indexOf(r.mes),r.dia);const diasTotal=Math.floor((hoje-lancado)/86400000);return'<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há '+diasTotal+'d</div>';})()}</td>
     </tr>`;
   });
-
-  if(!tb) tb='<tr><td colspan="9" class="empty"><i class="ti ti-truck-delivery"></i>Nenhum registro encontrado</td></tr>';
+  if(!tb)tb='<tr><td colspan="12" class="empty"><i class="ti ti-truck-delivery"></i>Nenhum registro encontrado</td></tr>';
   document.getElementById('rast-tbody').innerHTML=tb;
 }
 
-function editarRastreio(gi){
-  document.getElementById('rview-'+gi).style.display='none';
-  const editDiv=document.getElementById('redit-'+gi);
-  editDiv.style.display='flex';
-  document.getElementById('rinp-'+gi).focus();
-}
-
-function cancelarRastreio(gi){
-  document.getElementById('rview-'+gi).style.display='flex';
-  document.getElementById('redit-'+gi).style.display='none';
-}
-
+function editarRastreio(gi){document.getElementById('rview-'+gi).style.display='none';document.getElementById('redit-'+gi).style.display='flex';document.getElementById('rinp-'+gi).focus();}
+function cancelarRastreio(gi){document.getElementById('rview-'+gi).style.display='flex';document.getElementById('redit-'+gi).style.display='none';}
 function salvarRastreio(gi){
   const codigo=document.getElementById('rinp-'+gi).value.trim();
   dados[gi].rastreamento=codigo;
-  if(window.fbSave && dados[gi].fbId) window.fbSave('dados', dados[gi].fbId, dados[gi]);
-  renderRastreamento();
-  atualizarBotaoRastreio();
-  toast('Código salvo!');
+  if(window.fbSave&&dados[gi].fbId)window.fbSave('dados',dados[gi].fbId,dados[gi]);
+  renderRastreamento();atualizarBotaoRastreio();toast('Código salvo!');
 }
 
-function confirmarEntrega(gi){
-  if(!confirm('Confirmar entrega deste pedido?')) return;
-  dados[gi].entregue=true;
-  renderRastreamento();
-  toast('Entrega confirmada! ✅');
-}
-
-// ===== RASTREAMENTO CORREIOS =====
-const ME_TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiM2E5MDY0NDc3ODQ1NTk1MjljNzM5ODMxMTc0MDI0Y2FiM2M0YzBiNDg4ODE4YTc4OWUwZjQwYTVlMjQ1OWY4MGRiNTliZTg5ZjhiMjJkMDkiLCJpYXQiOjE3ODEzNjMxNDYuOTQwMDM0LCJuYmYiOjE3ODEzNjMxNDYuOTQwMDM3LCJleHAiOjE4MTI4OTkxNDYuOTI4ODQ4LCJzdWIiOiI5ZGMxNzhhZC05YWRkLTRjMTQtYTkzMS04OTNmM2RjN2RiZWMiLCJzY29wZXMiOlsic2hpcHBpbmctdHJhY2tpbmciXX0.prxIM-RerxTJnWqOs2n7ZjkfzNbAIPWeXt0pn6pSBQRbSx7U1bLkU0QNp1euon79tZzDe5PJ9KUWKsegdpILCpR7NuLJONxdMUSpVpVhvCAHqWkXbCt7e96ZWMvH5-XqDFGr7tnRhJHBgxKD3eVezkk-Oo5y-UDNa-39UEl-6QMQKOf0Xb04YHS92uBAa3_pqZxbSni32tx3tJocsfMNUzm5fRc91AjO2Plj_3ddFd_xj9AyDq4T9CQ6GZxhSh2APayMh8xDgdMDfkCcdDnxOUtYu9jOQaZHuw8LWi-z7r2cwoyhQoazNJMIGtc14fTMF6TVl85IehXvgJSrbgisKuHwQmPWjPaOaxtEYYBcXPynIN4KksP1MDqKoub0EU7utvu8cU70fyprzmT_0pRf_IpFaZUYNGWKPY-Khpa_WxsXo9Fpp9QT4vO1-ggkvd2XLLQLEdcNZ_YSInhdNy2D2_YrRWo07YhRr0SnxhLOzHoDA_gq-25UKtcEup1wy_9gn0Ft6imKWOG2ZGVHhKLCELp16eXTnQ5r-NRzdI20rodzK9lzJI_0DsuXMZSVS49MTumZdgU4r3CzdXyqANsH8EA98bMpLpWNnlQWdXCTiof-inI_7FfwfU6viq2KBXIlQPbQO-PdlTCIdzQMZiZv4IS6jHh_rkwJpsNiP7d1Ze8';
-
-async function buscarRastreio(gi, tipo){
-  const obj = tipo==='pad' ? pads[gi] : dados[gi];
+async function buscarRastreio(gi,tipo){
+  const obj=tipo==='pad'?pads[gi]:dados[gi];
   if(!obj||!obj.rastreamento){toast('Sem código de rastreamento!');return;}
-  const codigo = obj.rastreamento.trim().toUpperCase();
-  
+  const codigo=obj.rastreamento.trim().toUpperCase();
   toast('Buscando rastreamento...');
-
   try{
-    const res = await fetch('/.netlify/functions/rastrear', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ codigo })
-    });
-
-    if(!res.ok){
-      const err = await res.text();
-      console.error('Function error:', err);
-      toast('Erro na função. Código: ' + res.status);
-      return;
-    }
-
-    const data = await res.json();
-    console.log('Tracking response:', data);
-
-    if(!data.success || data.status === 'not_found' || data.status === 'invalid_format'){
-      toast('Nenhum evento encontrado. Verifique o código.');
-      return;
-    }
-
-    // SeuRastreio format
-    const eventos = [];
-    if(data.historico && data.historico.length > 0){
-      data.historico.forEach(e => {
-        eventos.push({
-          descricao: e.descricao || '—',
-          data: e.data ? e.data.split('T')[0].split('-').reverse().join('/') : '',
-          hora: e.data ? e.data.split('T')[1]?.substring(0,5) : '',
-          local: e.local || ''
-        });
-      });
-    } else if(data.eventoMaisRecente){
-      const e = data.eventoMaisRecente;
-      eventos.push({
-        descricao: e.descricao || '—',
-        data: e.data ? e.data.split('T')[0].split('-').reverse().join('/') : '',
-        hora: e.data ? e.data.split('T')[1]?.substring(0,5) : '',
-        local: e.local || (e.destino ? '→ '+e.destino : '')
-      });
-    }
-
-    if(eventos.length === 0){
-      toast('Nenhum evento encontrado.');
-      return;
-    }
-
-    obj.trackStatus = eventos[0]?.descricao || '—';
-    obj.trackData = (eventos[0]?.data||'') + (eventos[0]?.hora?' '+eventos[0].hora:'') + (eventos[0]?.local?' — '+eventos[0].local:'');
-    obj.trackHistorico = eventos;
-    obj.previsaoEntrega = data.previsaoEntrega || '';
-    // Mark as invalid if no events found for a real code
-    obj.trackInvalido = false;
-
-    if(window.fbSave && obj.fbId) window.fbSave(tipo==='pad'?'pads':'dados', obj.fbId, obj);
-    if(tipo==='pad') renderPad(); else renderRastreamento();
+    const res=await fetch('/.netlify/functions/rastrear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
+    if(!res.ok){toast('Erro na função. Código: '+res.status);return;}
+    const data=await res.json();
+    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){toast('Nenhum evento encontrado. Verifique o código.');return;}
+    const eventos=[];
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});});}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});}
+    if(eventos.length===0){toast('Nenhum evento encontrado.');return;}
+    obj.trackStatus=eventos[0]?.descricao||'—';
+    obj.trackData=(eventos[0]?.data||'')+(eventos[0]?.hora?' '+eventos[0].hora:'')+(eventos[0]?.local?' — '+eventos[0].local:'');
+    obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;
+    if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);
+    if(tipo==='pad')renderPad();else renderRastreamento();
     toast('Rastreamento atualizado!');
-
-  } catch(e){
-    console.error('Tracking error:', e);
-    toast('Erro ao buscar. Verifique o código.');
-  }
-}
-
-
-function processarRastreio(gi, tipo, data){
-  const obj = tipo==='pad' ? pads[gi] : dados[gi];
-  const eventos = data.eventos||[];
-  if(eventos.length === 0){ toast('Nenhum evento encontrado.'); return; }
-  const ultimo = eventos[0];
-  obj.trackStatus = ultimo.descricao||ultimo.status||'—';
-  obj.trackData = (ultimo.data||'') + (ultimo.hora?' '+ultimo.hora:'') + (ultimo.local?' — '+ultimo.local:'');
-  obj.trackHistorico = eventos;
-  if(tipo==='pad') renderPad(); else renderRastreamento();
-  toast('Rastreamento atualizado!');
+  }catch(e){console.error('Tracking error:',e);toast('Erro ao buscar. Verifique o código.');}
 }
 
 async function atualizarTodosRastreios(){
-  const btn = document.getElementById('btn-atualizar-todos');
-  const status = document.getElementById('rast-update-status');
-  if(btn) btn.disabled = true;
-  
-  // Find all with rastreamento but no trackStatus
-  const pendentes = dados.filter(r => r.rastreamento && !r.trackStatus && !r.isPad);
-  const padPendentes = pads.filter(p => p.rastreamento && !p.trackStatus);
-  const total = pendentes.length + padPendentes.length;
-  
-  if(total === 0){ toast('Nenhum rastreamento pendente!'); return; }
-  
-  if(status) status.textContent = `Atualizando 0/${total}...`;
-  
-  let done = 0;
-  for(const r of pendentes){
-    const gi = dados.indexOf(r);
-    await buscarRastreioSilent(gi, 'rast');
-    done++;
-    if(status) status.textContent = `Atualizando ${done}/${total}...`;
-    await new Promise(res => setTimeout(res, 500)); // Rate limit
-  }
-  for(const p of padPendentes){
-    const gi = pads.indexOf(p);
-    await buscarRastreioSilent(gi, 'pad');
-    done++;
-    if(status) status.textContent = `Atualizando ${done}/${total}...`;
-    await new Promise(res => setTimeout(res, 500));
-  }
-  
-  if(status) status.textContent = `✅ ${total} rastreamentos atualizados!`;
-  setTimeout(()=>{ if(status) status.textContent = ''; }, 4000);
-  atualizarBotaoRastreio();
-  renderRastreamento();
-  toast(`${total} rastreamentos atualizados!`);
+  const btn=document.getElementById('btn-atualizar-todos');
+  const status=document.getElementById('rast-update-status');
+  if(btn)btn.disabled=true;
+  const pendentes=dados.filter(r=>r.rastreamento&&!r.trackStatus&&!r.isPad);
+  const padPendentes=pads.filter(p=>p.rastreamento&&!p.trackStatus);
+  const total=pendentes.length+padPendentes.length;
+  if(total===0){toast('Nenhum rastreamento pendente!');return;}
+  if(status)status.textContent=`Atualizando 0/${total}...`;
+  let done=0;
+  for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Atualizando ${done}/${total}...`;await new Promise(res=>setTimeout(res,500));}
+  for(const p of padPendentes){const gi=pads.indexOf(p);await buscarRastreioSilent(gi,'pad');done++;if(status)status.textContent=`Atualizando ${done}/${total}...`;await new Promise(res=>setTimeout(res,500));}
+  if(status)status.textContent=`✅ ${total} rastreamentos atualizados!`;
+  setTimeout(()=>{if(status)status.textContent='';},4000);
+  atualizarBotaoRastreio();renderRastreamento();toast(`${total} rastreamentos atualizados!`);
 }
 
-async function buscarRastreioSilent(gi, tipo){
-  const obj = tipo==='pad' ? pads[gi] : dados[gi];
-  if(!obj||!obj.rastreamento) return;
-  const codigo = obj.rastreamento.trim().toUpperCase();
+async function buscarRastreioSilent(gi,tipo){
+  const obj=tipo==='pad'?pads[gi]:dados[gi];
+  if(!obj||!obj.rastreamento)return;
+  const codigo=obj.rastreamento.trim().toUpperCase();
   try{
-    const res = await fetch('/.netlify/functions/rastrear', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({codigo})
-    });
-    if(!res.ok){ obj.trackInvalido = true; obj.trackStatus = '⚠️ Código inválido'; return; }
-    const data = await res.json();
-    if(!data.success || data.status==='not_found' || data.status==='invalid_format'){
-      obj.trackInvalido = true;
-      obj.trackStatus = '⚠️ Código inválido';
-      if(window.fbSave && obj.fbId) window.fbSave(tipo==='pad'?'pads':'dados', obj.fbId, obj);
-      return;
-    }
-    const eventos = [];
-    if(data.historico && data.historico.length > 0){
-      data.historico.forEach(e => eventos.push({
-        descricao: e.descricao||'—',
-        data: e.data ? e.data.split('T')[0].split('-').reverse().join('/') : '',
-        hora: e.data ? e.data.split('T')[1]?.substring(0,5) : '',
-        local: e.local||''
-      }));
-    } else if(data.eventoMaisRecente){
-      const e = data.eventoMaisRecente;
-      eventos.push({ descricao:e.descricao||'—', data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'', hora:e.data?e.data.split('T')[1]?.substring(0,5):'', local:e.local||'' });
-    }
-    if(eventos.length > 0){
-      obj.trackStatus = eventos[0].descricao;
-      obj.trackData = (eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');
-      obj.trackHistorico = eventos;
-      obj.previsaoEntrega = data.previsaoEntrega || '';
-      obj.trackInvalido = false;
-      if(window.fbSave && obj.fbId) window.fbSave(tipo==='pad'?'pads':'dados', obj.fbId, obj);
-    }
-  } catch(e){ console.error('Silent track error:', e); }
+    const res=await fetch('/.netlify/functions/rastrear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
+    if(!res.ok){obj.trackInvalido=true;obj.trackStatus='⚠️ Código inválido';return;}
+    const data=await res.json();
+    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){obj.trackInvalido=true;obj.trackStatus='⚠️ Código inválido';if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);return;}
+    const eventos=[];
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''}));}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});}
+    if(eventos.length>0){obj.trackStatus=eventos[0].descricao;obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
+  }catch(e){console.error('Silent track error:',e);}
 }
 
 function atualizarBotaoRastreio(){
-  const pendentes = dados.filter(r => r.rastreamento && !r.trackStatus && !r.isPad).length +
-                    pads.filter(p => p.rastreamento && !p.trackStatus).length;
-  const btn = document.getElementById('btn-atualizar-todos');
-  const count = document.getElementById('rast-pendentes-count');
-  if(btn){
-    if(pendentes > 0){
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
-    } else {
-      btn.disabled = true;
-      btn.style.opacity = '.4';
-      btn.style.cursor = 'not-allowed';
-    }
-  }
-  if(count) count.textContent = pendentes + ' pendente' + (pendentes!==1?'s':'');
+  const pendentes=dados.filter(r=>r.rastreamento&&!r.trackStatus&&!r.isPad).length+pads.filter(p=>p.rastreamento&&!p.trackStatus).length;
+  const btn=document.getElementById('btn-atualizar-todos');
+  const count=document.getElementById('rast-pendentes-count');
+  if(btn){if(pendentes>0){btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';}else{btn.disabled=true;btn.style.opacity='.4';btn.style.cursor='not-allowed';}}
+  if(count)count.textContent=pendentes+' pendente'+(pendentes!==1?'s':'');
 }
 
 function getStatusCorreios(r){
-  // Determina o status baseado no trackStatus dos Correios
-  if(!r.rastreamento) return {label:'Aguardando postagem', cor:'var(--t3)', icon:'ti-clock', tipo:'postagem'};
-  if(!r.trackStatus) return {label:'Aguardando postagem', cor:'var(--t3)', icon:'ti-clock', tipo:'postagem'};
-  
-  const s = r.trackStatus.toLowerCase();
-  
-  // ENTREGUE AO REMETENTE / DEVOLUÇÃO (prioridade máxima)
-  if(s.includes('entregue ao remetente') || s.includes('devolvido ao remetente') || 
-     s.includes('devolução') || s.includes('prazo de retirada encerrado') ||
-     s.includes('não entregue - prazo')) {
-    return {label:'Devolução', cor:'var(--red)', icon:'ti-arrow-back-up', tipo:'devolucao'};
-  }
-  
-  // ENTREGUE AO DESTINATÁRIO
-  if(s.includes('entregue ao destinatário') || s.includes('objeto entregue') ||
-     (s.includes('entregue') && !s.includes('remetente'))) {
-    return {label:'Entregue', cor:'var(--neon)', icon:'ti-circle-check', tipo:'entregue'};
-  }
-  
-  // AGUARDANDO RETIRADA
-  if(s.includes('aguardando retirada') || s.includes('disponível para retirada') ||
-     s.includes('destinatário ausente') || s.includes('tentativa de entrega')) {
-    return {label:'Aguardando retirada', cor:'var(--amber)', icon:'ti-building-store', tipo:'retirada'};
-  }
-  
-  // EM ROTA / TRANSFERÊNCIA
-  if(s.includes('transferência') || s.includes('em rota') || s.includes('trânsito') ||
-     s.includes('postado') || s.includes('coletado') || s.includes('saiu para entrega') ||
-     s.includes('encaminhado') || s.includes('chegou') || s.includes('objeto recebido')) {
-    return {label:'Em rota', cor:'var(--blue)', icon:'ti-truck-delivery', tipo:'rota'};
-  }
-  
-  // Código inválido
-  if(r.trackInvalido) return {label:'Código inválido', cor:'var(--red)', icon:'ti-alert-triangle', tipo:'invalido'};
-  
-  // Default - tem status mas não se encaixa em nenhuma categoria
-  return {label:'Em rota', cor:'var(--blue)', icon:'ti-truck-delivery', tipo:'rota'};
-}
-
-function getPrazoRetirada(r){
-  // Calcula prazo de retirada (7 dias corridos após tentativa de entrega)
-  if(!r.trackHistorico || r.trackHistorico.length === 0) return null;
-  // Find first "aguardando retirada" event
-  const evento = r.trackHistorico.find(e => 
-    e.descricao && (e.descricao.toLowerCase().includes('aguardando retirada') || 
-                    e.descricao.toLowerCase().includes('destinatário ausente'))
-  );
-  if(!evento || !evento.data) return null;
-  const partes = evento.data.split('/');
-  if(partes.length < 3) return null;
-  const dataEvento = new Date(partes[2], partes[1]-1, partes[0]);
-  const prazo = new Date(dataEvento);
-  prazo.setDate(prazo.getDate() + 7);
-  const hoje = new Date();
-  const diasRestantes = Math.ceil((prazo - hoje) / 86400000);
-  return { prazo, diasRestantes };
+  if(!r.rastreamento)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
+  if(!r.trackStatus)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
+  const s=r.trackStatus.toLowerCase();
+  if(s.includes('entregue ao remetente')||s.includes('devolvido ao remetente')||s.includes('devolução')||s.includes('prazo de retirada encerrado')||s.includes('não entregue - prazo'))return{label:'Devolução',cor:'var(--red)',icon:'ti-arrow-back-up',tipo:'devolucao'};
+  if(s.includes('entregue ao destinatário')||s.includes('objeto entregue')||(s.includes('entregue')&&!s.includes('remetente')))return{label:'Entregue',cor:'var(--neon)',icon:'ti-circle-check',tipo:'entregue'};
+  if(s.includes('aguardando retirada')||s.includes('disponível para retirada')||s.includes('destinatário ausente')||s.includes('tentativa de entrega'))return{label:'Aguardando retirada',cor:'var(--amber)',icon:'ti-building-store',tipo:'retirada'};
+  if(s.includes('transferência')||s.includes('em rota')||s.includes('trânsito')||s.includes('postado')||s.includes('coletado')||s.includes('saiu para entrega')||s.includes('encaminhado')||s.includes('chegou')||s.includes('objeto recebido'))return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
+  if(r.trackInvalido)return{label:'Código inválido',cor:'var(--red)',icon:'ti-alert-triangle',tipo:'invalido'};
+  return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
 }
 
 function verHistorico(gi){
-  const obj = dados[gi];
+  const obj=dados[gi];
   if(!obj||!obj.trackHistorico||obj.trackHistorico.length===0){toast('Sem histórico ainda.');return;}
-  mostrarModalHistorico(obj.rastreamento, obj.trackHistorico);
+  mostrarModalHistorico(obj.rastreamento,obj.trackHistorico);
 }
-
-function verHistoricoPad(gi){
-  const obj = pads[gi];
-  if(!obj||!obj.trackHistorico||obj.trackHistorico.length===0){toast('Sem histórico ainda.');return;}
-  mostrarModalHistorico(obj.rastreamento, obj.trackHistorico);
-}
-
-function mostrarModalHistorico(codigo, eventos){
+function mostrarModalHistorico(codigo,eventos){
   document.getElementById('track-modal-title').textContent='Rastreamento — '+codigo;
   let html='<div style="display:flex;flex-direction:column;gap:0">';
   eventos.forEach((e,i)=>{
     const isFirst=i===0;
     const cor=isFirst?'var(--neon)':'var(--border2)';
-    html+=`<div style="display:flex;gap:12px;padding-bottom:16px;position:relative">
-      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-        <div style="width:12px;height:12px;border-radius:50%;background:${cor};border:2px solid ${cor};margin-top:3px;flex-shrink:0;${isFirst?'box-shadow:0 0 8px rgba(0,255,128,.5)':''}"></div>
-        ${i<eventos.length-1?'<div style="width:2px;flex:1;background:var(--border2);margin-top:4px"></div>':''}
-      </div>
-      <div style="flex:1;padding-bottom:4px">
-        <div style="font-weight:600;font-size:13px;color:${isFirst?'var(--neon)':'var(--t1)'}">${e.descricao||e.status||'—'}</div>
-        <div style="font-size:11px;color:var(--t3);margin-top:2px">${e.data||''} ${e.hora||''}</div>
-        ${e.local?`<div style="font-size:11px;color:var(--t2);margin-top:2px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${e.local}</div>`:''}
-        ${e.detalhe?`<div style="font-size:11px;color:var(--t2);margin-top:2px">${e.detalhe}</div>`:''}
-      </div>
-    </div>`;
+    html+=`<div style="display:flex;gap:12px;padding-bottom:16px;position:relative"><div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0"><div style="width:12px;height:12px;border-radius:50%;background:${cor};border:2px solid ${cor};margin-top:3px;flex-shrink:0;${isFirst?'box-shadow:0 0 8px rgba(0,255,128,.5)':''}"></div>${i<eventos.length-1?'<div style="width:2px;flex:1;background:var(--border2);margin-top:4px"></div>':''}</div><div style="flex:1;padding-bottom:4px"><div style="font-weight:600;font-size:13px;color:${isFirst?'var(--neon)':'var(--t1)'}">${e.descricao||e.status||'—'}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${e.data||''} ${e.hora||''}</div>${e.local?`<div style="font-size:11px;color:var(--t2);margin-top:2px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${e.local}</div>`:''}</div></div>`;
   });
   html+='</div>';
   document.getElementById('track-modal-content').innerHTML=html;
   document.getElementById('modal-track').classList.add('open');
 }
 
-// ===== MIGRAÇÃO FIREBASE =====
 async function migrarParaFirebase(){
   if(!window.fbSave){toast('Firebase não conectado!');return;}
-  
-  let total = 0;
-  toast('Migrando dados...');
-
-  // Try to restore from localStorage backup if dados is empty
-  let dadosMigrar = [...dados];
-  if(dadosMigrar.length === 0){
-    try{
-      const backup = localStorage.getItem('matrix_backup_dados');
-      if(backup) dadosMigrar = JSON.parse(backup);
-    }catch(e){}
-  }
-
-  // Migrate dados
-  for(let i=0;i<dadosMigrar.length;i++){
-    const d = dadosMigrar[i];
-    if(!d.fbId) d.fbId = 'dado_'+i+'_'+Date.now();
-    await window.fbSave('dados', d.fbId, d);
-    total++;
-  }
-
-  // Migrate pads
-  for(let i=0;i<pads.length;i++){
-    const p = pads[i];
-    if(!p.fbId) p.fbId = 'pad_'+i+'_'+Date.now();
-    await window.fbSave('pads', p.fbId, p);
-    total++;
-  }
-
-  // Migrate adminLancs
-  for(let i=0;i<adminLancs.length;i++){
-    const a = adminLancs[i];
-    if(!a.fbId) a.fbId = 'adm_'+i+'_'+Date.now();
-    await window.fbSave('adminLancs', a.fbId, a);
-    total++;
-  }
-
-  // Migrate metas
-  for(let i=0;i<metas.length;i++){
-    const m = metas[i];
-    if(!m.fbId) m.fbId = 'meta_'+i+'_'+Date.now();
-    await window.fbSave('metas', m.fbId, m);
-    total++;
-  }
-
+  let total=0;toast('Migrando dados...');
+  for(let i=0;i<dados.length;i++){const d=dados[i];if(!d.fbId)d.fbId='dado_'+i+'_'+Date.now();await window.fbSave('dados',d.fbId,d);total++;}
+  for(let i=0;i<pads.length;i++){const p=pads[i];if(!p.fbId)p.fbId='pad_'+i+'_'+Date.now();await window.fbSave('pads',p.fbId,p);total++;}
+  for(let i=0;i<adminLancs.length;i++){const a=adminLancs[i];if(!a.fbId)a.fbId='adm_'+i+'_'+Date.now();await window.fbSave('adminLancs',a.fbId,a);total++;}
+  for(let i=0;i<metas.length;i++){const m=metas[i];if(!m.fbId)m.fbId='meta_'+i+'_'+Date.now();await window.fbSave('metas',m.fbId,m);total++;}
   toast('✅ '+total+' registros migrados para o Firebase!');
 }
 
-// ===== EXPORTAR =====
 function exportarCSV(){
-  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoEnvio,Imp_PJ,Pct_Atend,Lucro,Margem';
-  const rows=dados.map(r=>{const c=calcRow(r);return[r.mes,r.ano,r.atendente,r.dia,getNomeOferta(r.ofertaId),c.frascos,r.bruto,r.qtd_vendas||0,c.custoFrascos,c.custoEnvTotal,c.impPJ,c.pctAtend,c.lucro,c.margem].join(',');});
+  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoEnvio,Imp_PJ,Pct_Atend,Lucro';
+  const rows=dados.map(r=>{const c=calcRow(r);return[r.mes,r.ano,r.atendente,r.dia,getNomeOferta(r.ofertaId),c.frascos,r.bruto,r.qtd_vendas||0,c.custoFrascos,c.custoEnvTotal,c.impPJ,c.pctAtend,c.subtotal].join(',');});
   const csv=[header,...rows].join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='controle_vendas.csv';a.click();
-  URL.revokeObjectURL(url);toast('CSV exportado!');
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='controle_vendas.csv';a.click();URL.revokeObjectURL(url);toast('CSV exportado!');
 }
 
-// ===== INIT =====
 function toggleMobileMenu(){
-  const sidebar=document.querySelector('.sidebar');
-  const overlay=document.getElementById('sidebar-overlay');
-  const icon=document.getElementById('menu-icon');
-  if(sidebar){sidebar.classList.toggle('open');}
-  if(overlay){overlay.classList.toggle('open');}
-  if(icon){icon.className=sidebar&&sidebar.classList.contains('open')?'ti ti-x':'ti ti-menu-2';}
+  const sidebar=document.querySelector('.sidebar');const overlay=document.getElementById('sidebar-overlay');const icon=document.getElementById('menu-icon');
+  if(sidebar)sidebar.classList.toggle('open');if(overlay)overlay.classList.toggle('open');if(icon)icon.className=sidebar&&sidebar.classList.contains('open')?'ti ti-x':'ti ti-menu-2';
 }
-
 function closeMobileMenu(){
-  const sidebar=document.querySelector('.sidebar');
-  const overlay=document.getElementById('sidebar-overlay');
-  const icon=document.getElementById('menu-icon');
-  if(sidebar)sidebar.classList.remove('open');
-  if(overlay)overlay.classList.remove('open');
-  if(icon)icon.className='ti ti-menu-2';
+  const sidebar=document.querySelector('.sidebar');const overlay=document.getElementById('sidebar-overlay');const icon=document.getElementById('menu-icon');
+  if(sidebar)sidebar.classList.remove('open');if(overlay)overlay.classList.remove('open');if(icon)icon.className='ti ti-menu-2';
 }
-
-function mobileNav(page, btnId){
+function mobileNav(page,btnId){
   document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
-  const btn=document.getElementById(btnId);
-  if(btn)btn.classList.add('active');
-  showPage(page);
-  closeMobileMenu();
+  const btn=document.getElementById(btnId);if(btn)btn.classList.add('active');
+  showPage(page);closeMobileMenu();
 }
 
 function toggleTema(){
-  const body=document.body;
-  const isClaro=body.classList.toggle('tema-claro');
-  const icon=document.getElementById('tema-icon');
-  const label=document.getElementById('tema-label');
-  const ball=document.getElementById('tema-ball');
-  const toggle=document.getElementById('tema-toggle');
-  if(isClaro){
-    if(icon)icon.className='ti ti-moon';
-    if(label)label.textContent='Modo escuro';
-    if(ball)ball.style.transform='translateX(16px)';
-    if(toggle)toggle.style.background='var(--neon-glow)';
-    if(window.matrixStop)window.matrixStop();
-  }else{
-    if(icon)icon.className='ti ti-sun';
-    if(label)label.textContent='Modo claro';
-    if(ball)ball.style.transform='translateX(0)';
-    if(toggle)toggle.style.background='var(--border2)';
-    if(window.matrixStart)window.matrixStart();
-  }
+  const body=document.body;const isClaro=body.classList.toggle('tema-claro');
+  const icon=document.getElementById('tema-icon');const label=document.getElementById('tema-label');const ball=document.getElementById('tema-ball');const toggle=document.getElementById('tema-toggle');
+  if(isClaro){if(icon)icon.className='ti ti-moon';if(label)label.textContent='Modo escuro';if(ball)ball.style.transform='translateX(16px)';if(toggle)toggle.style.background='var(--neon-glow)';if(window.matrixStop)window.matrixStop();}
+  else{if(icon)icon.className='ti ti-sun';if(label)label.textContent='Modo claro';if(ball)ball.style.transform='translateX(0)';if(toggle)toggle.style.background='var(--border2)';if(window.matrixStart)window.matrixStart();}
 }
 
-// ===== MATRIX RAIN =====
+// MATRIX RAIN
 (function(){
-  const canvas=document.getElementById('matrix-canvas');
-  const ctx=canvas.getContext('2d');
+  const canvas=document.getElementById('matrix-canvas');const ctx=canvas.getContext('2d');
   const chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF01';
-  let drops=[];
-  let animId=null;
-  let running=false;
-
-  function resize(){
-    canvas.width=window.innerWidth;
-    canvas.height=window.innerHeight;
-    const cols=Math.floor(canvas.width/16);
-    drops=Array(cols).fill(1).map(()=>Math.random()*-100);
-  }
-
-  function draw(){
-    ctx.fillStyle='rgba(10,10,10,0.03)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.font='14px monospace';
-    drops.forEach((y,i)=>{
-      const ch=chars[Math.floor(Math.random()*chars.length)];
-      // First char brighter
-      const bright=y===Math.floor(y);
-      ctx.fillStyle=bright?'rgba(0,255,128,0.9)':'rgba(0,255,128,0.35)';
-      ctx.fillText(ch,i*16,y*16);
-      if(y*16>canvas.height&&Math.random()>0.975) drops[i]=0;
-      drops[i]+=0.18;
-    });
-    animId=requestAnimationFrame(draw);
-  }
-
-  function start(){
-    if(running)return;
-    running=true;
-    resize();
-    draw();
-    canvas.style.opacity='0.22';
-  }
-
-  function stop(){
-    if(!running)return;
-    running=false;
-    cancelAnimationFrame(animId);
-    canvas.style.opacity='0';
-    setTimeout(()=>ctx.clearRect(0,0,canvas.width,canvas.height),1000);
-  }
-
+  let drops=[];let animId=null;let running=false;
+  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;const cols=Math.floor(canvas.width/16);drops=Array(cols).fill(1).map(()=>Math.random()*-100);}
+  function draw(){ctx.fillStyle='rgba(10,10,10,0.03)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.font='14px monospace';drops.forEach((y,i)=>{const ch=chars[Math.floor(Math.random()*chars.length)];ctx.fillStyle='rgba(0,255,128,0.35)';ctx.fillText(ch,i*16,y*16);if(y*16>canvas.height&&Math.random()>0.975)drops[i]=0;drops[i]+=0.18;});animId=requestAnimationFrame(draw);}
+  function start(){if(running)return;running=true;resize();draw();canvas.style.opacity='0.22';}
+  function stop(){if(!running)return;running=false;cancelAnimationFrame(animId);canvas.style.opacity='0';setTimeout(()=>ctx.clearRect(0,0,canvas.width,canvas.height),1000);}
   window.addEventListener('resize',()=>{if(running)resize();});
-
-  // Expose to toggleTema
-  window.matrixStart=start;
-  window.matrixStop=stop;
+  window.matrixStart=start;window.matrixStop=stop;
 })();
 
-// Start matrix rain immediately on load
-if(!document.body.classList.contains('tema-claro')){
-  if(window.matrixStart)window.matrixStart();
-}
-
-// Auto-login if saved
-try{
-  const saved = localStorage.getItem('matrix_user');
-  if(saved){
-    const u = JSON.parse(saved);
-    document.getElementById('login-email').value = u.email;
-    document.getElementById('login-senha').value = u.senha;
-    fazerLogin();
-  }
-}catch(e){}
+if(!document.body.classList.contains('tema-claro')){if(window.matrixStart)window.matrixStart();}
 
 initAllSelects();
 buildOfertasGrid();
