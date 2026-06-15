@@ -218,9 +218,7 @@ tr:hover td{background:var(--neon-glow)}
 
 
 
-.mobile-header{display:none}.mobile-bottom-nav{display:none}
 @media(max-width:768px){
-  .mobile-header{display:flex}.mobile-bottom-nav{display:flex}
   .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;padding:.75rem}
   .logo{width:100%;padding-bottom:.5rem;margin-bottom:0;border-bottom:none}
   .main{margin-left:0;padding:1rem}
@@ -653,27 +651,12 @@ tr:hover td{background:var(--neon-glow)}
     <button id="btn-atualizar-todos" class="btn btn-primary" onclick="atualizarTodosRastreios()" disabled style="opacity:.4;cursor:not-allowed">
       <i class="ti ti-refresh"></i> Atualizar rastreamentos <span id="rast-pendentes-count" style="background:rgba(0,0,0,.2);padding:2px 8px;border-radius:20px;font-size:11px;margin-left:4px">0 pendentes</span>
     </button>
-    <button class="btn btn-primary" onclick="abrirGlobo()" style="background:linear-gradient(135deg,#0369A1,#7C3AED);border-color:#7C3AED;box-shadow:0 0 16px rgba(124,58,237,.3)">
-      <i class="ti ti-world"></i> Ver no globo 🌍
-    </button>
     <span id="rast-update-status" style="font-size:12px;color:var(--t3)"></span>
   </div>
-  <div class="filters" id="rast-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
+  <div class="filters" id="rast-filters-adm" style="display:none">
     <div><label>Atendente</label><select id="rast-atend" onchange="renderRastreamento()"><option value="">Todos</option></select></div>
     <div><label>Mês</label><select id="rast-mes" onchange="renderRastreamento()"><option value="">Todos</option></select></div>
-    <div>
-      <label>Status</label>
-      <select id="rast-status" onchange="renderRastreamento()">
-        <option value="">Todos</option>
-        <option value="postagem">Aguardando postagem</option>
-        <option value="rota">Em rota</option>
-        <option value="retirada">Aguardando retirada</option>
-        <option value="entregue">Entregue</option>
-        <option value="devolucao">Devolução</option>
-        <option value="invalido">Código inválido</option>
-      </select>
-    </div>
-    <div><label>Buscar</label><input type="text" id="rast-busca" placeholder="Nome, telefone, código..." oninput="renderRastreamento()" style="width:180px"></div>
+    <div><label>Buscar</label><input type="text" id="rast-busca" placeholder="Nome, telefone..." oninput="renderRastreamento()" style="width:180px"></div>
   </div>
   <div class="table-card">
     <div class="table-header">
@@ -840,9 +823,66 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- DASHBOARD ADM -->
-<div class="page" id="page-dashboard-adm">
-  <p class="page-title">Dashboard ADM</p>
+<!-- DASHBOARD ADM com GLOBO -->
+<div class="page" id="page-dashboard-adm" style="padding:0;height:calc(100vh - 0px);overflow:hidden;position:relative">
+  <!-- Globo ocupa tela toda -->
+  <div id="dash-globo-container" style="position:absolute;inset:0;z-index:0"></div>
+  
+  <!-- Header flutuante -->
+  <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:var(--neon);letter-spacing:.5px">MATRIX</div>
+      <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <select id="adm-dash-modo" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px;backdrop-filter:blur(8px)">
+        <option value="hoje">Hoje</option>
+        <option value="dia">Dia específico</option>
+        <option value="mes" selected>Mês</option>
+        <option value="total">Tudo</option>
+      </select>
+      <div id="adm-dash-dia-wrap" style="display:none">
+        <input type="number" id="adm-dash-dia" min="1" max="31" placeholder="Dia" oninput="renderDashAdm()" style="width:70px;font-size:12px;padding:5px 8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px">
+      </div>
+      <select id="adm-dash-mes" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px"></select>
+      <select id="adm-dash-ano" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px"></select>
+      <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px"><option value="">Todos</option></select>
+    </div>
+  </div>
+  
+  <!-- Legenda status -->
+  <div style="position:absolute;top:70px;right:1.5rem;z-index:10;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;backdrop-filter:blur(8px)">
+    <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Status</div>
+    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#888;display:inline-block"></span>Aguardando postagem</div>
+    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#0EA5E9;display:inline-block"></span>Em rota</div>
+    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;display:inline-block"></span>Aguardando retirada</div>
+    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#00FF80;display:inline-block"></span>Entregue</div>
+    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#EF4444;display:inline-block"></span>Devolução</div>
+  </div>
+
+  <!-- Métricas flutuantes na parte inferior -->
+  <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);padding:1.5rem 1.5rem 1rem">
+    <!-- Cards métricas principais -->
+    <div id="adm-dash-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:.75rem"></div>
+    <!-- Cards métricas secundárias (scrollável) -->
+    <div id="adm-dash-metrics2" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none"></div>
+  </div>
+  
+  <!-- Loading overlay -->
+  <div id="dash-globo-loading" style="position:absolute;inset:0;z-index:20;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+    <div style="font-size:60px">🌍</div>
+    <div style="color:var(--t2);font-size:14px" id="dash-globo-loading-text">Carregando globo...</div>
+  </div>
+  
+  <!-- Painel por atendente (oculto no globo, acessível via botão) -->
+  <div id="adm-dash-atendentes" style="display:none"></div>
+  <!-- Gráficos (ocultos no globo) -->
+  <div style="display:none">
+    <canvas id="adm-ch-financeiro"></canvas>
+    <canvas id="adm-ch-atend"></canvas>
+    <canvas id="adm-ch-evolucao"></canvas>
+  </div>
+</div>
 
   <!-- Filtros -->
   <div class="filters" style="margin-bottom:1.25rem">
@@ -1030,50 +1070,6 @@ tr:hover td{background:var(--neon-glow)}
     <div id="track-modal-content"></div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="document.getElementById('modal-track').classList.remove('open')">Fechar</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal Globo -->
-<div class="modal-overlay" id="modal-globo" onclick="if(event.target===this)fecharGlobo()" style="z-index:300">
-  <div style="background:#0a0a0f;border:1px solid rgba(0,255,128,.2);border-radius:16px;width:95vw;max-width:1100px;height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 60px rgba(0,255,128,.1)">
-    <div style="padding:.75rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:rgba(0,0,0,.3)">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:15px;font-weight:800;color:#00FF80">🌍 Mapa de envios</span>
-        <div id="globo-adm-filter" style="display:none">
-          <select id="globo-atend-filter" onchange="renderGlobo()" style="font-size:12px;padding:4px 8px;background:#1a1a1a;border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px">
-            <option value="">Todos os atendentes</option>
-          </select>
-        </div>
-        <select id="globo-status-filter" onchange="renderGlobo()" style="font-size:12px;padding:4px 8px;background:#1a1a1a;border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:6px">
-          <option value="">Todos os status</option>
-          <option value="postagem">⏳ Aguardando postagem</option>
-          <option value="rota">🔵 Em rota</option>
-          <option value="retirada">🟠 Aguardando retirada</option>
-          <option value="entregue">🟢 Entregue</option>
-          <option value="devolucao">🔴 Devolução</option>
-        </select>
-        <span id="globo-count" style="font-size:11px;color:#888"></span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="display:flex;gap:12px;font-size:11px;flex-wrap:wrap">
-          <span style="color:#888">⏳ Postagem</span>
-          <span style="color:#0EA5E9">🔵 Em rota</span>
-          <span style="color:#F59E0B">🟠 Retirada</span>
-          <span style="color:#00FF80">🟢 Entregue</span>
-          <span style="color:#EF4444">🔴 Devolução</span>
-        </div>
-        <button onclick="fecharGlobo()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px">✕ Fechar</button>
-      </div>
-    </div>
-    <div style="flex:1;position:relative;overflow:hidden">
-      <div id="globo-container" style="width:100%;height:100%"></div>
-      <div id="globo-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0a0a0f;z-index:10;flex-direction:column;gap:12px">
-        <div style="font-size:48px">🌍</div>
-        <div style="color:#888;font-size:14px" id="globo-loading-text">Carregando globo 3D...</div>
-      </div>
-      <div id="globo-tooltip" style="display:none;position:absolute;background:rgba(0,0,0,.92);border:1px solid rgba(0,255,128,.3);border-radius:8px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:20;max-width:200px;color:#fff"></div>
     </div>
   </div>
 </div>
@@ -1415,7 +1411,7 @@ function showPage(p){
   const pg=document.getElementById('page-'+p);
   if(pg)pg.classList.add('active');
   ['nav-'+p,'nav-'+p+'-adm'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('active');});
-  const fns={dashboard:renderDashboard,'dashboard-adm':renderDashAdm,panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:renderAdmin,lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
+  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:renderAdmin,lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
   window.allRenders = fns;
   if(fns[p])fns[p]();
 }
@@ -1621,23 +1617,20 @@ function renderRanking(){
   let html='';
   resumos.forEach((r,i)=>{
     const val=ordem==='bruto'||ordem==='lucro'||ordem==='ticket'?fmt(r[ordem]):ordem==='conv'?r.conv+'%':r[ordem];
-    const rankColor = colors[i]||'#888';
-    const rankWidth = resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0;
-    html+='<div class="ranking-item">'
-      +'<div class="rank-num">'+(medals[i]||i+1)+'</div>'
-      +'<div class="rank-info">'
-      +'<div class="rank-name">'+r.nome+'</div>'
-      +'<div class="rank-meta">Bruto: '+fmt(r.bruto)+' · Vendas: '+r.vendas+' · Frascos: '+r.frascos+'</div>'
-      +'<div class="progress-bar"><div class="progress-fill" style="width:'+rankWidth+'%;background:'+rankColor+'"></div></div>'
-      +'</div>'
-      +'<div class="rank-value" style="color:'+rankColor+'">'+val+'</div>'
-      +'</div>';
+    html+=`<div class="ranking-item">
+      <div class="rank-num">${medals[i]||i+1}</div>
+      <div class="rank-info">
+        <div class="rank-name">${r.nome}</div>
+        <div class="rank-meta">Bruto: ${fmt(r.bruto)} · Vendas: ${r.vendas} · Frascos: ${r.frascos}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0}%;background:${colors[i]||'#888'}"></div></div>
+      </div>
+      <div class="rank-value" style="color:${colors[i]||'#888'}">${val}</div>
+    </div>`;
   });
   document.getElementById('rank-list').innerHTML=html||'<div class="empty"><i class="ti ti-inbox"></i>Sem dados</div>';
   dc('rank');
   if(resumos.length>0)charts['rank']=new Chart(document.getElementById('ch-rank'),{type:'bar',data:{labels:resumos.map(r=>r.nome.split(' ')[0]),datasets:[{label:'Receita',data:resumos.map(r=>R(r.bruto,2)),backgroundColor:colors.slice(0,resumos.length),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
 }
-
 
 // ===== METAS =====
 function renderMetas(){
@@ -2053,6 +2046,150 @@ function salvarMeta(){
 }
 
 // ===== DASHBOARD ADM =====
+// ===== GLOBO DASHBOARD =====
+let dashGloboInstance = null;
+let dashGloboLoaded = false;
+
+function iniciarDashGlobo(){
+  if(dashGloboLoaded) return;
+  dashGloboLoaded = true;
+  
+  if(!window.Globe){
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js';
+    s.onload = () => construirDashGlobo();
+    s.onerror = () => {
+      const el = document.getElementById('dash-globo-loading');
+      if(el) el.style.display = 'none';
+    };
+    document.head.appendChild(s);
+  } else {
+    construirDashGlobo();
+  }
+}
+
+async function construirDashGlobo(){
+  const container = document.getElementById('dash-globo-container');
+  if(!container) return;
+  
+  const loadingEl = document.getElementById('dash-globo-loading');
+  const loadingText = document.getElementById('dash-globo-loading-text');
+
+  dashGloboInstance = Globe()(container)
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    .width(container.offsetWidth)
+    .height(container.offsetHeight)
+    .backgroundColor('rgba(0,0,0,0)')
+    .showAtmosphere(true)
+    .atmosphereColor('rgba(0,80,255,0.12)')
+    .atmosphereAltitude(0.15)
+    .pointOfView({ lat: -15, lng: -50, altitude: 1.8 }, 1500);
+
+  // Auto-rotate slowly
+  dashGloboInstance.controls().autoRotate = true;
+  dashGloboInstance.controls().autoRotateSpeed = 0.3;
+
+  // Hide loading
+  if(loadingEl) loadingEl.style.display = 'none';
+
+  // Resize on window resize
+  window.addEventListener('resize', () => {
+    if(dashGloboInstance && container){
+      dashGloboInstance.width(container.offsetWidth).height(container.offsetHeight);
+    }
+  });
+
+  // Load markers
+  await atualizarPontosDashGlobo();
+}
+
+const geoCacheDash = {};
+async function geocodDash(local){
+  if(!local) return null;
+  if(geoCacheDash[local]) return geoCacheDash[local];
+  const match = local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
+  if(!match) return null;
+  try{
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(match[1].trim() + ', ' + match[2] + ', Brasil') + '&limit=1&countrycodes=br';
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data && data[0]){
+      const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      geoCacheDash[local] = coords;
+      return coords;
+    }
+  } catch(e){}
+  return null;
+}
+
+async function atualizarPontosDashGlobo(){
+  if(!dashGloboInstance) return;
+
+  const atend = document.getElementById('adm-dash-atend')?.value || '';
+  const userAtend = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
+  const cores = { postagem:'#888888', rota:'#0EA5E9', retirada:'#F59E0B', entregue:'#00FF80', devolucao:'#EF4444', invalido:'#EF4444' };
+  const labels = { postagem:'Aguardando postagem', rota:'Em rota', retirada:'Aguardando retirada', entregue:'Entregue', devolucao:'Devolução' };
+
+  let rows = [...dados];
+  if(userAtend) rows = rows.filter(r => r.atendente === userAtend);
+  if(atend) rows = rows.filter(r => r.atendente === atend);
+  rows = rows.filter(r => r.rastreamento && (r.trackData || (r.trackHistorico && r.trackHistorico.length > 0)));
+
+  const pontos = [];
+  for(const r of rows){
+    let local = '';
+    if(r.trackHistorico && r.trackHistorico.length > 0){
+      for(const e of r.trackHistorico){
+        if(e.local && e.local.includes('/')){ local = e.local.trim(); break; }
+      }
+    }
+    if(!local && r.trackData){
+      const m = r.trackData.match(/—\s*([^\n]+\/[A-Z]{2})/);
+      if(m) local = m[1].trim();
+    }
+    if(!local) continue;
+    const coords = await geocodDash(local);
+    if(!coords) continue;
+    const st = getStatusCorreios(r);
+    pontos.push({
+      lat: coords.lat + (Math.random()-0.5)*0.05,
+      lng: coords.lng + (Math.random()-0.5)*0.05,
+      cor: cores[st.tipo] || '#888',
+      nome: r.nomeCliente || '—',
+      status: labels[st.tipo] || st.label,
+      local, cod: r.rastreamento,
+      atend: r.atendente.split(' ')[0]
+    });
+    await new Promise(res => setTimeout(res, 200));
+  }
+
+  const sub = document.getElementById('dash-globo-subtitle');
+  if(sub) sub.textContent = pontos.length + ' envio' + (pontos.length !== 1 ? 's' : '') + ' no mapa';
+
+  dashGloboInstance
+    .pointsData(pontos)
+    .pointLat('lat').pointLng('lng')
+    .pointColor('cor')
+    .pointRadius(0.4)
+    .pointAltitude(0.02)
+    .pointLabel(d =>
+      '<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px">'
+      + '<div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div>'
+      + '<div style="color:#ddd;margin-bottom:3px">'+d.status+'</div>'
+      + '<div style="color:#aaa;font-size:11px">📍 '+d.local+'</div>'
+      + '<div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div>'
+      + '</div>'
+    )
+    .ringsData(pontos)
+    .ringLat('lat').ringLng('lng')
+    .ringColor(d => d.cor)
+    .ringMaxRadius(2)
+    .ringPropagationSpeed(1.5)
+    .ringRepeatPeriod(1600)
+    .ringAltitude(0.005);
+}
+
 function renderDashAdm(){
   const modo=document.getElementById('adm-dash-modo').value;
   const diaEl=document.getElementById('adm-dash-dia');
@@ -2125,25 +2262,32 @@ function renderDashAdm(){
   const conv=tLeads>0?R(tVendas/tLeads*100,1):0;
 
   // Cards principais
-  document.getElementById('adm-dash-metrics').innerHTML=`
-    <div class="metric-card" style="border-left:3px solid var(--blue)"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
-    <div class="metric-card" style="border-left:3px solid ${tLucro>=0?'var(--green)':'var(--red)'}"><div class="metric-label">Lucro líquido</div><div class="metric-value ${tLucro>=0?'mv-green':'mv-red'}">${fmt(tLucro)}</div><div class="metric-delta" style="color:var(--t2)">Margem: ${margem}%</div></div>
-    <div class="metric-card" style="border-left:3px solid var(--amber)"><div class="metric-label">Meta Ads</div><div class="metric-value mv-amber">${fmt(tMetaAds)}</div><div class="metric-delta" style="color:var(--t2)">ROAS: ${roas>0?roas+'x':'—'}</div></div>
-    <div class="metric-card" style="border-left:3px solid var(--purple)"><div class="metric-label">Leads</div><div class="metric-value mv-purple">${tLeads}</div><div class="metric-delta" style="color:var(--t2)">CPL: ${cpl>0?fmt(cpl):'—'}</div></div>
-  `;
+  const cardStyle = 'background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.8rem 1rem;backdrop-filter:blur(12px);';
+  document.getElementById('adm-dash-metrics').innerHTML=
+    '<div style="'+cardStyle+'border-left:3px solid var(--blue)"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">'+fmt(tBruto)+'</div></div>'
+    +'<div style="'+cardStyle+'border-left:3px solid '+(tLucro>=0?'var(--green)':'var(--red)')+'"><div class="metric-label">Lucro líquido</div><div class="metric-value '+(tLucro>=0?'mv-green':'mv-red')+'">'+fmt(tLucro)+'</div><div style="font-size:10px;color:var(--t3)">Margem: '+margem+'%</div></div>'
+    +'<div style="'+cardStyle+'border-left:3px solid var(--amber)"><div class="metric-label">Meta Ads</div><div class="metric-value mv-amber">'+fmt(tMetaAds)+'</div><div style="font-size:10px;color:var(--t3)">ROAS: '+(roas>0?roas+'x':'—')+'</div></div>'
+    +'<div style="'+cardStyle+'border-left:3px solid var(--purple)"><div class="metric-label">Leads</div><div class="metric-value mv-purple">'+tLeads+'</div><div style="font-size:10px;color:var(--t3)">CPL: '+(cpl>0?fmt(cpl):'—')+'</div></div>';
 
   // Cards secundários
-  document.getElementById('adm-dash-metrics2').innerHTML=`
-    <div class="metric-card"><div class="metric-label">Vendas</div><div class="metric-value">${tVendas}</div></div>
-    <div class="metric-card"><div class="metric-label">Ticket médio</div><div class="metric-value">${ticket>0?fmt(ticket):'—'}</div></div>
-    <div class="metric-card"><div class="metric-label">Frascos enviados</div><div class="metric-value">${tFrascos}</div></div>
-    <div class="metric-card"><div class="metric-label">Custo frascos</div><div class="metric-value mv-red">${fmt(tFrascos*CUSTO_FRASCO)}</div></div>
-    <div class="metric-card"><div class="metric-label">Custo envios</div><div class="metric-value mv-red">${fmt(tVendas*CUSTO_ENVIO)}</div></div>
-    <div class="metric-card"><div class="metric-label">Imp. PJ (10%)</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
-    <div class="metric-card"><div class="metric-label">% Atendentes</div><div class="metric-value">${fmt(tPctAtend)}</div></div>
-    <div class="metric-card"><div class="metric-label">Conversão leads</div><div class="metric-value">${conv>0?conv+'%':'—'}</div></div>
-    <div class="metric-card" style="border-left:3px solid ${(()=>{const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&p.status==='Pago').length;const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&p.status==='Frustrado').length;const pt=pp+pf;const conv=pt>0?R(pp/pt*100,1):0;return conv>=70?'var(--green)':conv>=40?'var(--amber)':'var(--red)';})()}"><div class="metric-label">Conv. PAD (+70% meta)</div><div class="metric-value">${(()=>{const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;return pt>0?R(pp/pt*100,1)+'%':'—';})()}</div><div class="metric-delta" style="color:var(--t2)">${(()=>{const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;return pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs definidos';})()}</div></div>
-  `;
+  const card2Style = 'background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.6rem .9rem;backdrop-filter:blur(10px);flex-shrink:0;min-width:110px;';
+  document.getElementById('adm-dash-metrics2').innerHTML=
+    '<div style="'+card2Style+'"><div class="metric-label">Vendas</div><div class="metric-value">'+tVendas+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">Ticket médio</div><div class="metric-value">'+(ticket>0?fmt(ticket):'—')+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">Frascos</div><div class="metric-value">'+tFrascos+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">Custo frascos</div><div class="metric-value mv-red">'+fmt(tFrascos*CUSTO_FRASCO)+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">Custo envios</div><div class="metric-value mv-red">'+fmt(tVendas*CUSTO_ENVIO)+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">Imp. PJ 10%</div><div class="metric-value">'+fmt(tImpPJ)+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">% Atendentes</div><div class="metric-value">'+fmt(tPctAtend)+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">Conversão</div><div class="metric-value">'+(conv>0?conv+'%':'—')+'</div></div>'
+    +(()=>{
+      const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Pago').length;
+      const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;
+      const pt=pp+pf;
+      const convPad=pt>0?R(pp/pt*100,1):0;
+      const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';
+      return '<div style="'+card2Style+'border-left:3px solid '+corPad+'"><div class="metric-label">Conv. PAD</div><div class="metric-value" style="color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</div><div style="font-size:10px;color:var(--t3)">'+(pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs')+'</div></div>';
+    })();
 
   // Painel por atendente
   const nomes=getNomes();
@@ -2178,10 +2322,11 @@ function renderDashAdm(){
       </div>`;
   });
   atendHtml+='</div>';
-  document.getElementById('adm-dash-atendentes').innerHTML=atendHtml;
+  // Atendentes panel hidden in globe mode
+  // document.getElementById('adm-dash-atendentes').innerHTML=atendHtml;
 
-  // Gráfico financeiro por mês
-  dc('adm-fin');
+  // Charts hidden in globe dashboard mode
+  if(false){ dc('adm-fin');
   const byM={bruto:{},meta:{},lucro:{}};
   rows.forEach(r=>{if(!byM.bruto[r.mes])byM.bruto[r.mes]=0;byM.bruto[r.mes]+=r.bruto||0;});
   admFil.forEach(a=>{if(!byM.meta[a.mes])byM.meta[a.mes]=0;byM.meta[a.mes]+=a.investido||0;});
@@ -2214,7 +2359,14 @@ function renderDashAdm(){
   const diaKeys=Object.keys(byDia).sort((a,b)=>{const[da,ma,aa]=a.split('|');const[db,mb,ab]=b.split('|');return new Date(aa,MESES.indexOf(ma),da)-new Date(ab,MESES.indexOf(mb),db);});
   const diaLabels=diaKeys.map(k=>{const[d,m]=k.split('|');return d+'/'+m.substring(0,3);});
   const diaLucros=diaKeys.map(k=>{const[dd,mm,aa]=k.split('|');return calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
-  if(diaKeys.length>0){charts['adm-evol']=new Chart(document.getElementById('adm-ch-evolucao'),{type:'line',data:{labels:diaLabels,datasets:[{label:'Lucro líquido',data:diaLucros.map(v=>R(v,2)),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#0F6E56'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});}
+  if(diaKeys.length>0){charts['adm-evol']=new Chart(document.getElementById('adm-ch-evolucao'),{type:'line',data:{labels:diaLabels,datasets:[{label:'Lucro líquido',data:diaLucros.map(v=>R(v,2)),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#0F6E56'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});} } // end if(false)
+
+  // Init or update globe
+  if(!dashGloboLoaded){
+    iniciarDashGlobo();
+  } else if(dashGloboInstance){
+    setTimeout(atualizarPontosDashGlobo, 100);
+  }
 }
 
 // ===== RANKING PÚBLICO =====
@@ -2680,21 +2832,6 @@ function salvarNegPad(gi){
 }
 
 // ===== RASTREAMENTO =====
-function renderStatusBadge(r){
-  const st=getStatusCorreios(r);
-  if(st.tipo==='devolucao') return '<span style="color:var(--red);font-weight:700;font-size:12px">🔴 DEVOLUÇÃO</span>';
-  if(st.tipo==='retirada'){
-    const pr=getPrazoRetirada(r);
-    const dr=pr?pr.diasRestantes:null;
-    const cp=dr!==null?(dr<=2?'color:var(--red)':dr<=4?'color:var(--amber)':'color:var(--t2)'):'color:var(--t2)';
-    return '<div style="color:var(--amber);font-weight:700;font-size:12px">🟠 Aguardando retirada</div>'+(pr?'<div style="'+cp+';font-size:11px;font-weight:700">⏰ '+(dr>0?dr+'d restantes':'PRAZO VENCIDO!')+'</div>':'');
-  }
-  if(st.tipo==='entregue') return '<span style="color:var(--neon);font-weight:700;font-size:12px">🟢 Entregue</span>';
-  if(st.tipo==='rota') return '<span style="color:var(--blue);font-weight:700;font-size:12px">🔵 Em rota</span>';
-  if(st.tipo==='invalido') return '<span style="color:var(--red);font-size:11px;font-weight:600">⚠️ Código inválido</span>';
-  return '<span style="color:var(--t3);font-size:11px">⏳ Aguardando postagem</span>';
-}
-
 function renderRastreamento(){
   // Mostrar filtros só para ADM
   const filtrosAdm=document.getElementById('rast-filters-adm');
@@ -2710,21 +2847,10 @@ function renderRastreamento(){
   if(mesFiltro) rows=rows.filter(r=>r.mes===mesFiltro);
   // Status filter
   const statusFil = adminLogado?(document.getElementById('rast-status')?.value||''):'';
-  if(statusFil === 'postagem'){
-    // Sem código OU com código mas sem status ainda
-    rows = rows.filter(r => !r.rastreamento || (!r.trackStatus && !r.trackInvalido));
-  } else if(statusFil === 'rota'){
-    // Tem código, tem status, está em rota (não entregue, não devolvido, não aguardando retirada, não inválido)
-    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'rota');
-  } else if(statusFil === 'retirada'){
-    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'retirada');
-  } else if(statusFil === 'entregue'){
-    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'entregue');
-  } else if(statusFil === 'devolucao'){
-    rows = rows.filter(r => r.rastreamento && r.trackStatus && getStatusCorreios(r).tipo === 'devolucao');
-  } else if(statusFil === 'invalido'){
-    rows = rows.filter(r => r.trackInvalido === true);
-  }
+  if(statusFil === 'pendente') rows = rows.filter(r => getStatusCorreios(r).tipo === 'postagem');
+  else if(statusFil === 'transito') rows = rows.filter(r => getStatusCorreios(r).tipo === 'rota');
+  else if(statusFil === 'retirada') rows = rows.filter(r => getStatusCorreios(r).tipo === 'retirada');
+  else if(statusFil === 'entregue') rows = rows.filter(r => getStatusCorreios(r).tipo === 'entregue');
   else if(statusFil === 'devolucao') rows = rows.filter(r => getStatusCorreios(r).tipo === 'devolucao');
   else if(statusFil === 'invalido') rows = rows.filter(r => getStatusCorreios(r).tipo === 'invalido');
 
@@ -2820,7 +2946,7 @@ function renderRastreamento(){
                  (diasTransito !== null ? '<div style="color:var(--amber);margin-top:2px"><i class="ti ti-truck-delivery" style="font-size:10px"></i> ' + diasTransito + 'd em rota</div>' : '');
         })()}
       </td>
-      <td style="min-width:140px">${renderStatusBadge(r)}</td>
+      ${entregaCell}
     </tr>`;
   });
 
@@ -2842,16 +2968,7 @@ function cancelarRastreio(gi){
 
 function salvarRastreio(gi){
   const codigo=document.getElementById('rinp-'+gi).value.trim();
-  const codigoAnterior=dados[gi].rastreamento;
   dados[gi].rastreamento=codigo;
-  // Se o código mudou, limpa os dados de rastreamento antigos
-  if(codigo !== codigoAnterior){
-    dados[gi].trackStatus='';
-    dados[gi].trackData='';
-    dados[gi].trackHistorico=[];
-    dados[gi].trackInvalido=false;
-    dados[gi].previsaoEntrega='';
-  }
   if(window.fbSave && dados[gi].fbId) window.fbSave('dados', dados[gi].fbId, dados[gi]);
   renderRastreamento();
   atualizarBotaoRastreio();
@@ -3324,287 +3441,6 @@ try{
     fazerLogin();
   }
 }catch(e){}
-
-
-// ===== GLOBO 3D =====
-const geoCache = {};
-
-async function geocodificarCidade(local){
-  if(!local) return null;
-  if(geoCache[local]) return geoCache[local];
-  const match = local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
-  if(!match) return null;
-  const cidade = match[1].trim();
-  const uf = match[2];
-  try{
-    const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(cidade + ', ' + uf + ', Brasil') + '&limit=1&countrycodes=br';
-    const res = await fetch(url);
-    const data = await res.json();
-    if(data && data[0]){
-      const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      geoCache[local] = coords;
-      return coords;
-    }
-  } catch(e){}
-  return null;
-}
-
-let globoInstance = null;
-let globoCountriesGeo = null;
-let globoStatesGeo = null;
-let globoPontos = [];
-
-function abrirGlobo(){
-  document.getElementById('modal-globo').classList.add('open');
-  const admFilter = document.getElementById('globo-adm-filter');
-  if(admFilter) admFilter.style.display = adminLogado ? 'block' : 'none';
-  const atendSel = document.getElementById('globo-atend-filter');
-  if(atendSel && adminLogado){
-    atendSel.innerHTML = '<option value="">Todos os atendentes</option>';
-    getNomes().forEach(n => { const o=document.createElement('option');o.value=n;o.textContent=n;atendSel.appendChild(o); });
-  }
-  setTimeout(iniciarGlobo, 300);
-}
-
-function fecharGlobo(){
-  document.getElementById('modal-globo').classList.remove('open');
-  if(globoInstance){ try{ globoInstance._destructor && globoInstance._destructor(); }catch(e){} globoInstance=null; }
-  const el = document.getElementById('globo-container');
-  if(el) el.innerHTML = '';
-  globoCountriesGeo = null; globoStatesGeo = null; globoPontos = [];
-}
-
-async function iniciarGlobo(){
-  if(!window.Globe){
-    const s = document.createElement('script');
-    s.src = 'https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js';
-    s.onload = () => construirGlobo();
-    s.onerror = () => { document.getElementById('globo-loading-text').textContent = 'Erro ao carregar globo.'; };
-    document.head.appendChild(s);
-  } else {
-    construirGlobo();
-  }
-}
-
-async function construirGlobo(){
-  const container = document.getElementById('globo-container');
-  if(!container) return;
-  container.innerHTML = '';
-
-  const loadingEl = document.getElementById('globo-loading');
-  const loadingText = document.getElementById('globo-loading-text');
-  if(loadingEl) loadingEl.style.display='flex';
-  if(loadingText) loadingText.textContent = 'Carregando demarcações geográficas...';
-
-  // Load GeoJSONs
-  try{
-    const [cRes, sRes] = await Promise.all([
-      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r=>r.json()).catch(()=>null),
-      fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson').then(r=>r.json()).catch(()=>null)
-    ]);
-
-    // Convert topojson to geojson if needed
-    if(cRes && cRes.type === 'Topology' && window.topojson){
-      globoCountriesGeo = window.topojson.feature(cRes, cRes.objects.countries);
-    } else if(cRes && cRes.features){
-      globoCountriesGeo = cRes;
-    }
-
-    globoStatesGeo = sRes;
-  } catch(e){ console.error('GeoJSON error:', e); }
-
-  // Try loading countries as plain geojson
-  if(!globoCountriesGeo){
-    try{
-      const r = await fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson');
-      globoCountriesGeo = await r.json();
-    } catch(e){ console.error('Countries fallback error:', e); }
-  }
-
-  if(loadingText) loadingText.textContent = 'Construindo globo...';
-
-  // Build globe
-  globoInstance = Globe()(container)
-    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-    .width(container.offsetWidth)
-    .height(container.offsetHeight)
-    .backgroundColor('rgba(0,0,0,0)')
-    .pointOfView({ lat: -15, lng: -50, altitude: 2.0 }, 1000);
-
-  // Country borders
-  if(globoCountriesGeo && globoCountriesGeo.features){
-    globoInstance
-      .polygonsData(globoCountriesGeo.features)
-      .polygonCapColor(() => 'rgba(0,0,0,0)')
-      .polygonSideColor(() => 'rgba(0,0,0,0)')
-      .polygonStrokeColor(() => 'rgba(120,200,255,0.35)')
-      .polygonAltitude(0.001)
-      .onPolygonHover((polygon, prevPolygon) => {
-        const tooltip = document.getElementById('globo-tooltip');
-        if(polygon && polygon.properties){
-          const nome = polygon.properties.ADMIN || polygon.properties.name || polygon.properties.NAME || '';
-          if(nome && tooltip){
-            tooltip.style.display = 'block';
-            tooltip.innerHTML = '<span style="font-weight:600">🌍 '+nome+'</span>';
-          }
-        } else if(tooltip){
-          tooltip.style.display = 'none';
-        }
-      });
-  }
-
-  // Monitor zoom level and show/hide state borders
-  let lastAlt = 2.0;
-  setInterval(() => {
-    if(!globoInstance) return;
-    const pov = globoInstance.pointOfView();
-    const alt = pov.altitude;
-    if(Math.abs(alt - lastAlt) > 0.05){
-      lastAlt = alt;
-      atualizarDemarcacoesPorZoom(alt);
-    }
-  }, 200);
-
-  if(loadingEl) loadingEl.style.display = 'none';
-
-  // Load markers
-  await renderGlobo();
-
-  // Tooltip follow mouse
-  const canvasEl = container.querySelector('canvas');
-  if(canvasEl){
-    canvasEl.addEventListener('mousemove', e => {
-      const tooltip = document.getElementById('globo-tooltip');
-      if(tooltip && tooltip.style.display !== 'none'){
-        const rect = canvasEl.getBoundingClientRect();
-        tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
-        tooltip.style.top = (e.clientY - rect.top - 40) + 'px';
-      }
-    });
-  }
-}
-
-function atualizarDemarcacoesPorZoom(alt){
-  if(!globoInstance) return;
-
-  // alt < 0.5 = muito perto (cidades)
-  // alt 0.5-1.2 = estados
-  // alt > 1.2 = só países
-
-  if(alt < 1.2 && globoStatesGeo && globoStatesGeo.features){
-    // Show state borders (green neon)
-    globoInstance
-      .polygonsData([...(globoCountriesGeo?.features||[]), ...globoStatesGeo.features])
-      .polygonCapColor(f => 'rgba(0,0,0,0)')
-      .polygonSideColor(() => 'rgba(0,0,0,0)')
-      .polygonStrokeColor(f => {
-        const isBrazilState = f.properties && (f.properties.sigla || f.properties.UF_05 || f.properties.name_pt);
-        return isBrazilState ? 'rgba(0,255,128,0.5)' : 'rgba(120,200,255,0.3)';
-      })
-      .polygonAltitude(0.001)
-      .onPolygonHover((polygon) => {
-        const tooltip = document.getElementById('globo-tooltip');
-        if(polygon && polygon.properties && tooltip){
-          const nome = polygon.properties.name || polygon.properties.ADMIN || polygon.properties.name_pt || polygon.properties.UF_05 || '';
-          if(nome){ tooltip.style.display='block'; tooltip.innerHTML='<span style="font-weight:600">📍 '+nome+'</span>'; }
-        } else if(tooltip){ tooltip.style.display='none'; }
-      });
-  } else {
-    // Show only country borders
-    if(globoCountriesGeo && globoCountriesGeo.features){
-      globoInstance
-        .polygonsData(globoCountriesGeo.features)
-        .polygonStrokeColor(() => 'rgba(120,200,255,0.35)')
-        .onPolygonHover((polygon) => {
-          const tooltip = document.getElementById('globo-tooltip');
-          if(polygon && polygon.properties && tooltip){
-            const nome = polygon.properties.ADMIN || polygon.properties.name || polygon.properties.NAME || '';
-            if(nome){ tooltip.style.display='block'; tooltip.innerHTML='<span style="font-weight:600">🌍 '+nome+'</span>'; }
-          } else if(tooltip){ tooltip.style.display='none'; }
-        });
-    }
-  }
-}
-
-async function renderGlobo(){
-  if(!globoInstance) return;
-
-  const atendFil = document.getElementById('globo-atend-filter')?.value || '';
-  const statusFil = document.getElementById('globo-status-filter')?.value || '';
-  const userAtend = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
-  const cores = { postagem:'#888888', rota:'#0EA5E9', retirada:'#F59E0B', entregue:'#00FF80', devolucao:'#EF4444', invalido:'#EF4444' };
-  const labels = { postagem:'Aguardando postagem', rota:'Em rota', retirada:'Aguardando retirada', entregue:'Entregue', devolucao:'Devolução', invalido:'Inválido' };
-
-  let rows = [...dados];
-  if(userAtend) rows = rows.filter(r => r.atendente === userAtend);
-  if(atendFil) rows = rows.filter(r => r.atendente === atendFil);
-  rows = rows.filter(r => r.rastreamento && (r.trackData || (r.trackHistorico && r.trackHistorico.length > 0)));
-  if(statusFil) rows = rows.filter(r => getStatusCorreios(r).tipo === statusFil);
-
-  globoPontos = [];
-  for(const r of rows){
-    let local = '';
-    if(r.trackHistorico && r.trackHistorico.length > 0){
-      for(const e of r.trackHistorico){
-        if(e.local && e.local.includes('/')){ local = e.local.trim(); break; }
-      }
-    }
-    if(!local && r.trackData){
-      const mDash = r.trackData.match(/—\s*([^\n]+\/[A-Z]{2})/);
-      if(mDash) local = mDash[1].trim();
-      if(!local){
-        const mCity = r.trackData.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+\/[A-Z]{2})/);
-        if(mCity) local = mCity[1].trim();
-      }
-    }
-    if(!local) continue;
-
-    const coords = await geocodificarCidade(local);
-    if(!coords) continue;
-
-    const st = getStatusCorreios(r);
-    globoPontos.push({
-      lat: coords.lat + (Math.random()-0.5)*0.04,
-      lng: coords.lng + (Math.random()-0.5)*0.04,
-      cor: cores[st.tipo] || '#888',
-      nome: r.nomeCliente || '—',
-      status: labels[st.tipo] || st.label,
-      local, cod: r.rastreamento,
-      atend: r.atendente.split(' ')[0],
-      tipo: st.tipo
-    });
-    await new Promise(res => setTimeout(res, 250));
-  }
-
-  document.getElementById('globo-count').textContent = globoPontos.length + ' envio' + (globoPontos.length!==1?'s':'') + ' no globo';
-
-  globoInstance
-    .pointsData(globoPontos)
-    .pointLat('lat')
-    .pointLng('lng')
-    .pointColor('cor')
-    .pointRadius(0.35)
-    .pointAltitude(0.015)
-    .pointLabel(d =>
-      '<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:165px;box-shadow:0 0 12px '+d.cor+'44">'
-      + '<div style="font-weight:700;color:'+d.cor+';margin-bottom:4px;font-size:13px">'+d.nome+'</div>'
-      + '<div style="color:#ddd;margin-bottom:3px">'+d.status+'</div>'
-      + '<div style="color:#aaa;font-size:11px">📍 '+d.local+'</div>'
-      + '<div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div>'
-      + '<div style="color:#aaa;font-size:11px">👤 '+d.atend+'</div>'
-      + '</div>'
-    )
-    .ringsData(globoPontos)
-    .ringLat('lat')
-    .ringLng('lng')
-    .ringColor(d => d.cor)
-    .ringMaxRadius(2.5)
-    .ringPropagationSpeed(2)
-    .ringRepeatPeriod(1400)
-    .ringAltitude(0.005);
-}
-
 
 initAllSelects();
 buildOfertasGrid();
