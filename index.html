@@ -969,12 +969,28 @@ tr:hover td{background:var(--neon-glow)}
     <div class="divider"></div>
 
     <p style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin:1rem 0 8px">Adicionar nova conta</p>
-    <button class="btn" style="width:100%;justify-content:center" onclick="buscarContasDisponiveisMeta()"><i class="ti ti-search"></i> Buscar contas disponíveis no token</button>
-    <div id="meta-contas-disponiveis-lista" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="abrirNovoTokenMeta()"><i class="ti ti-plus"></i> Adicionar conta de anúncios</button>
 
     <div class="modal-footer">
       <button class="btn" onclick="closeMetaContasModal()">Fechar</button>
     </div>
+  </div>
+</div>
+
+<!-- Modal inserir token de uma nova conta -->
+<div class="modal-overlay" id="modal-meta-token" onclick="if(event.target===this)closeMetaTokenModal()">
+  <div class="modal" style="width:460px">
+    <p class="modal-title">Adicionar conta de anúncios</p>
+    <div class="form-group full">
+      <label>Token de acesso dessa conta</label>
+      <input type="password" id="meta-token-input" placeholder="Cole aqui o token gerado para esta conta">
+      <p style="font-size:11px;color:var(--t3);margin-top:6px">Token do System User com acesso à conta de anúncios desejada. Cada conta pode ter o seu próprio.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeMetaTokenModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="buscarContasComToken()"><i class="ti ti-search"></i> Buscar contas deste token</button>
+    </div>
+    <div id="meta-token-resultado" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
   </div>
 </div>
 
@@ -1662,22 +1678,25 @@ function renderAdmin(){
   document.getElementById('adm-envios-tbody').innerHTML=tb2;
 }
 
-// ===== META ADS — Integração automática via Netlify Function =====
+// ===== META ADS — Integração via Netlify Function (multi-conta, token por conta) =====
 const META_FUNC_URL = '/.netlify/functions/meta-ads';
 let contaMetaAtual = null; // id da conta ativa agora, ex: "act_423161440010443"
-let contasMetaSalvas = []; // [{id, nome, fbId}] — contas nomeadas pelo ADM, persistidas no Firestore
-let _contaMetaParaNomear = null; // {id, nomeSugerido} — estado temporário do modal de nomear
+let contasMetaSalvas = []; // [{id, nome, token, ativa, fbId}] — cada conta com seu próprio token
+let _contaMetaParaNomear = null; // {id, novoRegistro} — estado temporário do modal de nomear
+let _tokenNovaContaTemp = null; // token digitado no modal "adicionar conta", antes de nomear/salvar
 
 function getContaMetaSalva(){
-  // Conta marcada como "ativa" entre as salvas; se nenhuma marcada, usa a primeira.
   if(contaMetaAtual) return contaMetaAtual;
   const ativa = contasMetaSalvas.find(c => c.ativa) || contasMetaSalvas[0];
   return ativa ? ativa.id : null;
 }
-
 function getNomeContaMeta(id){
   const c = contasMetaSalvas.find(c => c.id===id);
   return c ? c.nome : id;
+}
+function getTokenContaMeta(id){
+  const c = contasMetaSalvas.find(c => c.id===id);
+  return c ? c.token : null;
 }
 
 function atualizarCardContaMeta(){
@@ -1689,7 +1708,7 @@ function atualizarCardContaMeta(){
     nomeEl.textContent = getNomeContaMeta(conta);
     idEl.textContent = conta;
   } else {
-    nomeEl.textContent = 'Selecione uma conta...';
+    nomeEl.textContent = 'Nenhuma conta adicionada';
     idEl.textContent = '';
   }
 }
@@ -1737,7 +1756,7 @@ function renomearContaMetaSalva(id){
 }
 
 function removerContaMetaSalva(id){
-  if(!confirm('Remover esta conta salva?')) return;
+  if(!confirm('Remover esta conta salva? (o token armazenado também será excluído)')) return;
   const c = contasMetaSalvas.find(c=>c.id===id);
   if(c && window.fbDelete && c.fbId) window.fbDelete('metaContas', c.fbId);
   contasMetaSalvas = contasMetaSalvas.filter(c=>c.id!==id);
@@ -1749,30 +1768,43 @@ function removerContaMetaSalva(id){
 
 function abrirGerenciarContasMeta(){
   renderContasSalvasLista();
-  document.getElementById('meta-contas-disponiveis-lista').innerHTML = '';
   document.getElementById('modal-meta-contas').classList.add('open');
 }
 function closeMetaContasModal(){ document.getElementById('modal-meta-contas').classList.remove('open'); }
 
-async function buscarContasDisponiveisMeta(){
-  const lista = document.getElementById('meta-contas-disponiveis-lista');
-  lista.innerHTML = '<div class="empty" style="padding:1rem"><i class="ti ti-loader-2"></i> Buscando contas no token...</div>';
+function abrirNovoTokenMeta(){
+  document.getElementById('meta-token-input').value = '';
+  document.getElementById('meta-token-resultado').innerHTML = '';
+  document.getElementById('modal-meta-token').classList.add('open');
+  setTimeout(()=>document.getElementById('meta-token-input').focus(),50);
+}
+function closeMetaTokenModal(){ document.getElementById('modal-meta-token').classList.remove('open'); }
+
+async function buscarContasComToken(){
+  const token = document.getElementById('meta-token-input').value.trim();
+  const resultado = document.getElementById('meta-token-resultado');
+  if(!token){ toast('Cole o token primeiro!'); return; }
+  resultado.innerHTML = '<div class="empty" style="padding:1rem"><i class="ti ti-loader-2"></i> Buscando contas neste token...</div>';
   try{
-    const res = await fetch(`${META_FUNC_URL}?action=contas`);
+    const res = await fetch(META_FUNC_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'contas', token })
+    });
     const data = await res.json();
-    if(data.erro){ lista.innerHTML = `<div class="empty" style="padding:1rem;color:var(--red)">Erro: ${data.erro}</div>`; return; }
-    if(!data.contas || data.contas.length===0){ lista.innerHTML = '<div class="empty" style="padding:1rem">Nenhuma conta encontrada para este token.</div>'; return; }
+    if(data.erro){ resultado.innerHTML = `<div class="empty" style="padding:1rem;color:var(--red)">Erro: ${data.erro}</div>`; return; }
+    if(!data.contas || data.contas.length===0){ resultado.innerHTML = '<div class="empty" style="padding:1rem">Nenhuma conta encontrada para este token.</div>'; return; }
     const jaSalvas = new Set(contasMetaSalvas.map(c=>c.id));
     const novas = data.contas.filter(c => !jaSalvas.has(c.id));
-    if(novas.length===0){ lista.innerHTML = '<div class="empty" style="padding:1rem">Todas as contas do token já estão salvas.</div>'; return; }
-    lista.innerHTML = novas.map(c => `
+    if(novas.length===0){ resultado.innerHTML = '<div class="empty" style="padding:1rem">Todas as contas deste token já estão salvas.</div>'; return; }
+    _tokenNovaContaTemp = token;
+    resultado.innerHTML = '<p style="font-size:11px;color:var(--t2);margin-bottom:4px">Selecione a conta:</p>' + novas.map(c => `
       <div class="oferta-item" style="padding:10px 12px" onclick="iniciarNomearContaMeta('${c.id}','${(c.nome||c.id).replace(/'/g,"\\'")}')">
         <div class="oferta-nome">${c.nome||c.id}</div>
         <div class="oferta-valor">${c.id} ${c.moeda?'· '+c.moeda:''}</div>
       </div>
     `).join('');
   }catch(e){
-    lista.innerHTML = `<div class="empty" style="padding:1rem;color:var(--red)">Erro ao buscar contas: ${e.message}</div>`;
+    resultado.innerHTML = `<div class="empty" style="padding:1rem;color:var(--red)">Erro ao buscar contas: ${e.message}</div>`;
   }
 }
 
@@ -1780,6 +1812,7 @@ function iniciarNomearContaMeta(id, nomeSugerido){
   _contaMetaParaNomear = { id, novoRegistro:true };
   document.getElementById('meta-nome-input').value = nomeSugerido || '';
   document.getElementById('meta-nome-id-preview').textContent = id;
+  closeMetaTokenModal();
   document.getElementById('modal-meta-nome').classList.add('open');
   setTimeout(()=>document.getElementById('meta-nome-input').focus(),50);
 }
@@ -1792,10 +1825,12 @@ function confirmarNomeContaMeta(){
   const { id, novoRegistro } = _contaMetaParaNomear;
 
   if(novoRegistro){
-    const rec = { id, nome, ativa: contasMetaSalvas.length===0, fbId: 'metaconta_'+id };
+    if(!_tokenNovaContaTemp){ toast('Token perdido, tente adicionar a conta novamente.'); closeMetaNomeModal(); return; }
+    const rec = { id, nome, token:_tokenNovaContaTemp, ativa: contasMetaSalvas.length===0, fbId: 'metaconta_'+id };
     contasMetaSalvas.push(rec);
     if(window.fbSave) window.fbSave('metaContas', rec.fbId, rec);
     if(rec.ativa) contaMetaAtual = id;
+    _tokenNovaContaTemp = null;
     toast('Conta adicionada: '+nome);
   } else {
     const c = contasMetaSalvas.find(c=>c.id===id);
@@ -1808,7 +1843,6 @@ function confirmarNomeContaMeta(){
   closeMetaNomeModal();
   atualizarCardContaMeta();
   renderContasSalvasLista();
-  buscarContasDisponiveisMeta(); // atualiza a lista de "disponíveis" removendo a recém-adicionada
 }
 
 // Roda automaticamente sempre que a página Administração é aberta (entrada ou F5).
@@ -1838,14 +1872,21 @@ async function sincronizarMetaAds(silencioso){
     }
     return;
   }
+  const token = getTokenContaMeta(conta);
+  if(!token){
+    if(!silencioso) toast('Esta conta não tem um token salvo. Remova e adicione novamente.');
+    return;
+  }
   const btn = document.getElementById('btn-sync-meta');
   const status = document.getElementById('meta-sync-status');
   if(btn && !silencioso){ btn.disabled=true; btn.style.opacity='.6'; }
   if(status) status.textContent = silencioso ? 'Sincronizando automaticamente...' : 'Buscando dados na Meta...';
 
   try{
-    const url = `${META_FUNC_URL}?action=insights&account=${encodeURIComponent(conta)}&inicio=${dataInicioPermitida()}&fim=${isoHojeMatrix()}`;
-    const res = await fetch(url);
+    const res = await fetch(META_FUNC_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'insights', token, account:conta, inicio:dataInicioPermitida(), fim:isoHojeMatrix() })
+    });
     const data = await res.json();
     if(data.erro){
       if(status) status.textContent = '';
@@ -1854,11 +1895,11 @@ async function sincronizarMetaAds(silencioso){
       return;
     }
     const dias = data.dias || [];
-    // Remove TODOS os lançamentos antigos vindos da Meta (de qualquer sincronização anterior,
-    // inclusive duplicados de testes passados com fbId fora do padrão atual) — tanto localmente
-    // quanto no Firestore, para evitar que o listener em tempo real os traga de volta.
-    const antigos = adminLancs.filter(a => a.origemMeta);
-    adminLancs = adminLancs.filter(a => !a.origemMeta);
+    // Remove os lançamentos antigos vindos da Meta especificamente para ESTA conta
+    // (tanto localmente quanto no Firestore), para não afetar dados de outras contas
+    // sincronizadas anteriormente nem duplicar os desta.
+    const antigos = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta);
+    adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta));
     if(window.fbDelete){
       for(const old of antigos){
         if(old.fbId) await window.fbDelete('adminLancs', old.fbId);
