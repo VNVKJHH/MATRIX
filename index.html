@@ -883,19 +883,17 @@ tr:hover td{background:var(--neon-glow)}
   <div id="dash-globo-container"></div>
 
   <!-- Header flutuante -->
-  <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)">
-    <div>
-      <div style="font-size:20px;font-weight:800;color:var(--neon);letter-spacing:.5px">MATRIX</div>
-      <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
-    </div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:12px;padding:6px 12px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px;backdrop-filter:blur(8px)"><option value="">Todos os atendentes</option></select>
-    </div>
+  <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)">
+    <div style="font-size:20px;font-weight:800;color:var(--neon);letter-spacing:.5px">MATRIX</div>
+    <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
   </div>
 
-  <!-- Card de resumo estilo gateway (Vendas hoje + Nível + Demais períodos) -->
-  <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;z-index:10;width:300px;background:rgba(10,10,10,.9);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.25rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.45)">
-    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Vendas hoje</div>
+  <!-- Coluna lateral esquerda: Vendas hoje + filtro de atendente + Nível + métricas do dia -->
+  <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;bottom:1.5rem;z-index:10;width:300px;overflow-y:auto;background:rgba(10,10,10,.9);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.25rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.45)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Vendas hoje</div>
+      <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:11px;padding:4px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#ddd;border-radius:6px;max-width:120px"><option value="">Todos</option></select>
+    </div>
     <div id="gw-vendas-hoje-valor" style="font-size:28px;font-weight:800;color:#fff;margin-bottom:10px">R$ 0,00</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
@@ -920,40 +918,9 @@ tr:hover td{background:var(--neon-glow)}
       </div>
     </div>
 
-    <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Demais períodos</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
-        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Ontem</div>
-        <div id="gw-ontem-valor" style="font-size:13px;font-weight:700;color:#fff;margin-top:2px">R$ 0</div>
-        <div id="gw-ontem-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
-      </div>
-      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
-        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Semana</div>
-        <div id="gw-semana-valor" style="font-size:13px;font-weight:700;color:#fff;margin-top:2px">R$ 0</div>
-        <div id="gw-semana-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
-      </div>
-      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
-        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Mês</div>
-        <div id="gw-mes-valor" style="font-size:13px;font-weight:700;color:var(--neon);margin-top:2px">R$ 0</div>
-        <div id="gw-mes-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Legenda status -->
-  <div style="position:absolute;top:70px;right:1.5rem;z-index:10;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;backdrop-filter:blur(8px)">
-    <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Status</div>
-    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#888;display:inline-block"></span>Aguardando postagem</div>
-    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#0EA5E9;display:inline-block"></span>Em rota</div>
-    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;display:inline-block"></span>Aguardando retirada</div>
-    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#00FF80;display:inline-block"></span>Entregue</div>
-    <div style="font-size:11px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#EF4444;display:inline-block"></span>Devolução</div>
-  </div>
-
-  <!-- Métricas flutuantes na parte inferior -->
-  <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);padding:1.5rem 1.5rem 1rem">
-    <div id="adm-dash-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:.75rem"></div>
-    <div id="adm-dash-metrics2" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none"></div>
+    <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Hoje, em detalhes</div>
+    <div id="adm-dash-metrics" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px"></div>
+    <div id="adm-dash-metrics2" style="display:flex;flex-direction:column;gap:6px"></div>
   </div>
 
   <!-- Loading overlay -->
@@ -2689,17 +2656,19 @@ function renderDashAdm(){
   const atend=document.getElementById('adm-dash-atend').value;
   renderCardGatewayDashAdm(atend);
 
-  // Sem filtros de período no globo — sempre mostra o mês corrente.
-  const hoje=new Date();
-  const filMes=MESES[hoje.getMonth()], filAno=hoje.getFullYear();
+  // Sem filtros de período no globo — sempre mostra os números de HOJE.
+  const agora=new Date();
+  const filDia=agora.getDate(), filMes=MESES[agora.getMonth()], filAno=agora.getFullYear();
 
   let rows=dados.filter(d=>{
     if(atend&&d.atendente!==atend)return false;
+    if(d.dia!==filDia)return false;
     if(d.mes!==filMes)return false;
     if(String(d.ano)!==String(filAno))return false;
     return true;
   });
   let admFil=adminLancs.filter(a=>{
+    if(a.dia!==filDia)return false;
     if(a.mes!==filMes)return false;
     if(String(a.ano)!==String(filAno))return false;
     return true;
@@ -2708,31 +2677,26 @@ function renderDashAdm(){
   rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
   let tMetaAds=0,tLeads=0;
   admFil.forEach(a=>{tMetaAds+=a.investido||0;tLeads+=a.leads||0;});
-  const padC=calcPadCustos({mes:filMes,ano:filAno,atendente:atend||null});
+  const padC=calcPadCustos({dia:filDia,mes:filMes,ano:filAno,atendente:atend||null});
   tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;tBruto+=padC.bruto;tVendas+=padC.qtd;
-  const diasSet2=new Set();
-  rows.filter(r=>!r.isPad).forEach(r=>diasSet2.add(r.dia+'|'+r.mes+'|'+r.ano));
-  admFil.forEach(a=>diasSet2.add(a.dia+'|'+a.mes+'|'+a.ano));
-  pads.filter(p=>p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)).forEach(p=>diasSet2.add(p.dia+'|'+p.mes+'|'+p.ano));
-  let tLucro=0;
-  diasSet2.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
+  const tLucro = calcLucroDia(filDia, filMes, filAno, atend);
   const roas=tMetaAds>0?R(tBruto/tMetaAds,2):0;
   const cpl=tLeads>0?R(tMetaAds/tLeads,2):0;
   const margem=tBruto>0?R(tLucro/tBruto*100,1):0;
   const conv=tLeads>0?R(tVendas/tLeads*100,1):0;
-  const cardStyle='background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.8rem 1rem;backdrop-filter:blur(12px);';
+  const cardStyle='background:rgba(255,255,255,.04);border-radius:9px;padding:.7rem .8rem;';
   document.getElementById('adm-dash-metrics').innerHTML=
-    '<div style="'+cardStyle+'border-left:3px solid var(--blue)"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">'+fmt(tBruto)+'</div></div>'
-    +'<div style="'+cardStyle+'border-left:3px solid '+(tLucro>=0?'var(--green)':'var(--red)')+'"><div class="metric-label">Lucro líquido</div><div class="metric-value '+(tLucro>=0?'mv-green':'mv-red')+'">'+fmt(tLucro)+'</div><div style="font-size:10px;color:var(--t3)">Margem: '+margem+'%</div></div>'
-    +'<div style="'+cardStyle+'border-left:3px solid var(--amber)"><div class="metric-label">Meta Ads</div><div class="metric-value mv-amber">'+fmt(tMetaAds)+'</div><div style="font-size:10px;color:var(--t3)">ROAS: '+(roas>0?roas+'x':'—')+'</div></div>'
-    +'<div style="'+cardStyle+'border-left:3px solid var(--purple)"><div class="metric-label">Leads</div><div class="metric-value mv-purple">'+tLeads+'</div><div style="font-size:10px;color:var(--t3)">CPL: '+(cpl>0?fmt(cpl):'—')+'</div></div>';
-  const card2Style='background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.6rem .9rem;backdrop-filter:blur(10px);flex-shrink:0;min-width:110px;';
+    '<div style="'+cardStyle+'border-left:3px solid var(--blue)"><div class="metric-label" style="font-size:9px">Receita</div><div class="metric-value mv-blue" style="font-size:15px">'+fmt(tBruto)+'</div></div>'
+    +'<div style="'+cardStyle+'border-left:3px solid '+(tLucro>=0?'var(--green)':'var(--red)')+'"><div class="metric-label" style="font-size:9px">Lucro</div><div class="metric-value '+(tLucro>=0?'mv-green':'mv-red')+'" style="font-size:15px">'+fmt(tLucro)+'</div><div style="font-size:9px;color:var(--t3)">Margem '+margem+'%</div></div>'
+    +'<div style="'+cardStyle+'border-left:3px solid var(--amber)"><div class="metric-label" style="font-size:9px">Meta Ads</div><div class="metric-value mv-amber" style="font-size:15px">'+fmt(tMetaAds)+'</div><div style="font-size:9px;color:var(--t3)">ROAS '+(roas>0?roas+'x':'—')+'</div></div>'
+    +'<div style="'+cardStyle+'border-left:3px solid var(--purple)"><div class="metric-label" style="font-size:9px">Leads</div><div class="metric-value mv-purple" style="font-size:15px">'+tLeads+'</div><div style="font-size:9px;color:var(--t3)">CPL '+(cpl>0?fmt(cpl):'—')+'</div></div>';
+  const rowStyle='display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.03);border-radius:7px;padding:.45rem .7rem;';
   document.getElementById('adm-dash-metrics2').innerHTML=
-    '<div style="'+card2Style+'"><div class="metric-label">Vendas</div><div class="metric-value">'+tVendas+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">Frascos</div><div class="metric-value">'+tFrascos+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">Custo de envios</div><div class="metric-value mv-red">'+fmt(tEnvio)+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">Conversão</div><div class="metric-value">'+(conv>0?conv+'%':'—')+'</div></div>'
-    +(()=>{const pp=pads.filter(p=>p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+card2Style+'border-left:3px solid '+corPad+'"><div class="metric-label">Conv. PAD</div><div class="metric-value" style="color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</div><div style="font-size:10px;color:var(--t3)">'+(pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs')+'</div></div>';})();
+    '<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Vendas hoje</span><span style="font-size:13px;font-weight:700">'+tVendas+'</span></div>'
+    +'<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Frascos enviados</span><span style="font-size:13px;font-weight:700">'+tFrascos+'</span></div>'
+    +'<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Custo de envios</span><span style="font-size:13px;font-weight:700;color:var(--red-t)">'+fmt(tEnvio)+'</span></div>'
+    +'<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Conversão</span><span style="font-size:13px;font-weight:700">'+(conv>0?conv+'%':'—')+'</span></div>'
+    +(()=>{const pp=pads.filter(p=>p.dia===filDia&&p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>p.dia===filDia&&p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+rowStyle+'border-left:3px solid '+corPad+'"><span class="metric-label" style="font-size:10px">Conv. PAD</span><span style="font-size:13px;font-weight:700;color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</span></div>';})();
   if(!dashGloboLoaded){iniciarDashGlobo();}else if(dashGloboInstance){setTimeout(atualizarPontosDashGlobo,100);}
 }
 
@@ -2756,8 +2720,6 @@ function renderCardGatewayDashAdm(atendFiltro){
 
   const vHoje = somaPeriodo(hoje, hoje);
   const vOntem = somaPeriodo(ontem, ontem);
-  const vSemana = somaPeriodo(inicioSem, hoje);
-  const vMes = somaPeriodo(inicioM, hoje);
 
   document.getElementById('gw-vendas-hoje-valor').textContent = fmt(vHoje.bruto);
   document.getElementById('gw-qtd-vendas').textContent = vHoje.vendas+' venda'+(vHoje.vendas!==1?'s':'');
@@ -2775,13 +2737,6 @@ function renderCardGatewayDashAdm(atendFiltro){
     variacaoEl.style.background = 'rgba(255,255,255,.08)';
     variacaoEl.style.color = '#ddd';
   }
-
-  document.getElementById('gw-ontem-valor').textContent = fmt(vOntem.bruto).replace('R$ ','R$');
-  document.getElementById('gw-ontem-vendas').textContent = vOntem.vendas+' ped.';
-  document.getElementById('gw-semana-valor').textContent = fmt(vSemana.bruto).replace('R$ ','R$');
-  document.getElementById('gw-semana-vendas').textContent = vSemana.vendas+' ped.';
-  document.getElementById('gw-mes-valor').textContent = fmt(vMes.bruto).replace('R$ ','R$');
-  document.getElementById('gw-mes-vendas').textContent = vMes.vendas+' ped.';
 
   const nivelBloco = document.getElementById('gw-nivel-bloco');
   if(atendFiltro){
