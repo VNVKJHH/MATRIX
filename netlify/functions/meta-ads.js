@@ -90,23 +90,34 @@ async function buscarInsights(token, params, headers) {
     'spend', 'impressions', 'reach', 'clicks', 'cpc', 'ctr', 'actions', 'date_start', 'date_stop'
   ].join(',');
 
-  const url = `${GRAPH_BASE}/${account}/insights`
+  let url = `${GRAPH_BASE}/${account}/insights`
     + `?fields=${fields}`
     + `&time_range=${encodeURIComponent(JSON.stringify({ since: inicio, until: fim }))}`
     + `&time_increment=1`
     + `&level=account`
+    + `&limit=500`
     + `&access_token=${encodeURIComponent(token)}`;
 
-  const res = await fetch(url);
-  const data = await res.json();
+  const todosRegistros = [];
+  let paginas = 0;
+  const MAX_PAGINAS = 50; // proteção contra loop infinito
 
-  if (data.error) {
-    return resposta(400, { erro: data.error.message, codigo: data.error.code }, headers);
+  while (url && paginas < MAX_PAGINAS) {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) {
+      return resposta(400, { erro: data.error.message, codigo: data.error.code }, headers);
+    }
+
+    todosRegistros.push(...(data.data || []));
+    url = (data.paging && data.paging.next) ? data.paging.next : null;
+    paginas++;
   }
 
-  const dias = (data.data || []).map(formatarDia);
+  const dias = todosRegistros.map(formatarDia);
 
-  return resposta(200, { conta: account, periodo: { inicio, fim }, dias }, headers);
+  return resposta(200, { conta: account, periodo: { inicio, fim }, paginas, total_registros: dias.length, dias }, headers);
 }
 
 // Converte um registro diário da Graph API no formato usado pelo MATRIX
