@@ -627,12 +627,22 @@ tr:hover td{background:var(--neon-glow)}
 <div class="page" id="page-comparativo">
   <p class="page-title">Comparativo de períodos</p>
   <div class="filters">
-    <div><label>Período A — Mês</label><select id="cmp-mes-a" onchange="renderComparativo()"></select></div>
-    <div><label>Ano</label><select id="cmp-ano-a" onchange="renderComparativo()"></select></div>
+    <div>
+      <label>Período A</label>
+      <div id="cmp-periodo-a-card" onclick="abrirCalendarioPeriodo('comparativoPeriodoA')" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:150px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-calendar" style="font-size:14px;color:var(--t3)"></i>
+        <span id="cmp-periodo-a-label" style="font-size:13px;font-weight:600">Este mês</span>
+      </div>
+    </div>
     <div><label>Atendente A</label><select id="cmp-atend-a" onchange="renderComparativo()"><option value="">Todos</option></select></div>
-    <div style="display:flex;align-items:flex-end;padding-bottom:2px;font-size:18px;font-weight:700;color:var(--t3)">VS</div>
-    <div><label>Período B — Mês</label><select id="cmp-mes-b" onchange="renderComparativo()"></select></div>
-    <div><label>Ano</label><select id="cmp-ano-b" onchange="renderComparativo()"></select></div>
+    <div style="display:flex;align-items:flex-end;padding-bottom:8px;font-size:18px;font-weight:700;color:var(--t3)">VS</div>
+    <div>
+      <label>Período B</label>
+      <div id="cmp-periodo-b-card" onclick="abrirCalendarioPeriodo('comparativoPeriodoB')" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:150px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-calendar" style="font-size:14px;color:var(--t3)"></i>
+        <span id="cmp-periodo-b-label" style="font-size:13px;font-weight:600">Mês passado</span>
+      </div>
+    </div>
     <div><label>Atendente B</label><select id="cmp-atend-b" onchange="renderComparativo()"><option value="">Todos</option></select></div>
   </div>
   <div class="comp-grid" id="comp-cards"></div>
@@ -643,8 +653,13 @@ tr:hover td{background:var(--neon-glow)}
 <div class="page" id="page-ranking">
   <p class="page-title">Ranking de atendentes</p>
   <div class="filters">
-    <div><label>Mês</label><select id="rank-mes" onchange="renderRanking()"><option value="">Todos os meses</option></select></div>
-    <div><label>Ano</label><select id="rank-ano" onchange="renderRanking()"><option value="">Todos os anos</option></select></div>
+    <div>
+      <label>Período</label>
+      <div id="rank-periodo-card" onclick="abrirCalendarioPeriodo('rankingPeriodo')" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:170px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-calendar" style="font-size:14px;color:var(--t3)"></i>
+        <span id="rank-periodo-label" style="font-size:13px;font-weight:600">Este mês</span>
+      </div>
+    </div>
     <div><label>Ordenar por</label>
       <select id="rank-ordem" onchange="renderRanking()">
         <option value="bruto">Receita bruta</option>
@@ -676,7 +691,13 @@ tr:hover td{background:var(--neon-glow)}
   </div>
   <div class="filters" id="rast-filters-adm" style="display:none">
     <div><label>Atendente</label><select id="rast-atend" onchange="renderRastreamento()"><option value="">Todos</option></select></div>
-    <div><label>Mês</label><select id="rast-mes" onchange="renderRastreamento()"><option value="">Todos</option></select></div>
+    <div>
+      <label>Período</label>
+      <div id="rast-periodo-card" onclick="abrirCalendarioPeriodo('rastreamentoPeriodo')" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:150px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-calendar" style="font-size:14px;color:var(--t3)"></i>
+        <span id="rast-periodo-label" style="font-size:13px;font-weight:600">Máximo</span>
+      </div>
+    </div>
     <div><label>Buscar</label><input type="text" id="rast-busca" placeholder="Nome, telefone..." oninput="renderRastreamento()" style="width:180px"></div>
   </div>
   <div class="table-card">
@@ -771,7 +792,13 @@ tr:hover td{background:var(--neon-glow)}
   <div class="filters">
     <div><label>Buscar</label><input class="search-inp" type="text" id="search-inp" placeholder="Digite para buscar..." oninput="renderDados()"></div>
     <div><label>Atendente</label><select id="dados-atend" onchange="renderDados()"><option value="">Todos</option></select></div>
-    <div><label>Mês</label><select id="dados-mes" onchange="renderDados()"><option value="">Todos</option></select></div>
+    <div>
+      <label>Período</label>
+      <div id="dados-periodo-card" onclick="abrirCalendarioPeriodo('dadosPeriodo')" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:150px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-calendar" style="font-size:14px;color:var(--t3)"></i>
+        <span id="dados-periodo-label" style="font-size:13px;font-weight:600">Máximo</span>
+      </div>
+    </div>
     <div style="margin-top:18px;display:flex;gap:6px">
       <button class="btn btn-primary" onclick="openModal()"><i class="ti ti-plus"></i> Novo</button>
       <button class="btn" onclick="exportarCSV()"><i class="ti ti-download"></i> CSV</button>
@@ -1333,31 +1360,24 @@ function initAllSelects(){
     if(v)el.value=v;
     else if(id==='f-atend'&&nomes.length>0)el.value=nomes[0];
   });
-  ['db-mes','dados-mes','rank-mes','rast-mes'].forEach(id=>{
+  ['db-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     MESES.forEach(m=>addOpt(el,m,m));if(v)el.value=v;
   });
-  ['f-mes','m-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-dash-mes','pad-mes'].forEach(id=>{
+  ['f-mes','m-mes','mm-mes','meta-mes-fil','adm-dash-mes','pad-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     MESES.forEach(m=>addOpt(el,m,m));
     if(v)el.value=v;
-    else if(['meta-mes-fil','mm-mes','cmp-mes-a'].includes(id))el.value='Maio';
-    else if(id==='cmp-mes-b')el.value='Janeiro';
+    else if(['meta-mes-fil','mm-mes'].includes(id))el.value='Maio';
   });
-  ['rank-ano'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
-    const v=el.value;el.innerHTML='<option value="">Todos</option>';
-    anos.forEach(a=>addOpt(el,a,a));if(v)el.value=v;
-  });
-  ['db-ano','cmp-ano-a','cmp-ano-b','meta-ano-fil','adm-dash-ano'].forEach(id=>{
+  ['db-ano','meta-ano-fil','adm-dash-ano'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     if(id==='db-ano')addOpt(el,'','Todos');
     anos.forEach(a=>addOpt(el,a,a));
     if(v)el.value=v;else{el.value=anos[anos.length-1]||'2026';}
-    if(id==='cmp-ano-b')el.value=anos[0]||'2025';
   });
   const mOf=document.getElementById('m-oferta');
   if(mOf){mOf.innerHTML='';OFERTAS.forEach(o=>addOpt(mOf,o.id,o.nome+' — '+fmt(o.valor)));}
@@ -1430,7 +1450,22 @@ function showPage(p){
     if(mainEl) mainEl.style.padding = '2rem';
   }
 
-  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:()=>{const lbl=document.getElementById('pan-periodo-label');if(lbl)lbl.textContent=getPeriodoSalvo('panoramaPeriodo').label;renderPanorama();},comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{const lbl=document.getElementById('adm-periodo-label');if(lbl)lbl.textContent=getPeriodoMetaAtual().label;renderAdmin();initContaMetaSelect();autoSyncMetaAds();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
+  const atualizarLabelPeriodo=(chave,elId,padrao)=>{const lbl=document.getElementById(elId);if(lbl)lbl.textContent=getPeriodoSalvo(chave,padrao).label;};
+  const fns={
+    dashboard:renderDashboard,
+    'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},
+    panorama:()=>{atualizarLabelPeriodo('panoramaPeriodo','pan-periodo-label');renderPanorama();},
+    comparativo:()=>{atualizarLabelPeriodo('comparativoPeriodoA','cmp-periodo-a-label');atualizarLabelPeriodo('comparativoPeriodoB','cmp-periodo-b-label','Mês passado');renderComparativo();},
+    ranking:()=>{atualizarLabelPeriodo('rankingPeriodo','rank-periodo-label');renderRanking();},
+    'ranking-publico':renderRankingPublico,
+    metas:renderMetas,
+    dados:()=>{atualizarLabelPeriodo('dadosPeriodo','dados-periodo-label','Máximo');renderDados();},
+    atendentes:renderAtendentes,
+    admin:()=>{atualizarLabelPeriodo('metaPeriodo','adm-periodo-label');renderAdmin();initContaMetaSelect();autoSyncMetaAds();},
+    lancamentos:renderRegistrosDia,
+    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');renderRastreamento();atualizarBotaoRastreio();},
+    pad:()=>{setPadTab('aberto');}
+  };
   window.allRenders=fns;
   if(fns[p])fns[p]();
 }
@@ -1537,14 +1572,16 @@ function renderPanorama(){
 }
 
 function renderComparativo(){
-  const mA=document.getElementById('cmp-mes-a').value,aA=document.getElementById('cmp-ano-a').value,atA=document.getElementById('cmp-atend-a').value;
-  const mB=document.getElementById('cmp-mes-b').value,aB=document.getElementById('cmp-ano-b').value,atB=document.getElementById('cmp-atend-b').value;
-  function resumo(rows,mesF,anoF){
+  const periodoA = getPeriodoSalvo('comparativoPeriodoA');
+  const periodoB = getPeriodoSalvo('comparativoPeriodoB','Mês passado');
+  const atA=document.getElementById('cmp-atend-a').value;
+  const atB=document.getElementById('cmp-atend-b').value;
+  function resumo(rows, periodo){
     let bruto=0,vendas=0,lucro=0;
     rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
     const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
     diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
-    const admR=adminLancs.filter(a=>(!mesF||a.mes===mesF)&&(!anoF||String(a.ano)===String(anoF)));
+    const admR=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
     let inv=0,leads=0;admR.forEach(a=>{inv+=a.investido||0;leads+=a.leads||0;});
     const ticket=vendas>0?R(bruto/vendas,2):0;
     const conv=leads>0?R(vendas/leads*100,1):0;
@@ -1552,9 +1589,10 @@ function renderComparativo(){
     const margem=bruto>0?R(lucro/bruto*100,1):0;
     return{bruto,inv,leads,vendas,lucro,ticket,conv,roas,margem};
   }
-  const rA=resumo(filtrar(atA,mA,aA),mA,aA),rB=resumo(filtrar(atB,mB,aB),mB,aB);
-  function lA(){return`${mA||'Todos'} ${aA}${atA?' · '+atA.split(' ')[0]:''}`;}
-  function lB(){return`${mB||'Todos'} ${aB}${atB?' · '+atB.split(' ')[0]:''}`;}
+  const rA=resumo(filtrarPorPeriodo(dados,periodoA,atA), periodoA);
+  const rB=resumo(filtrarPorPeriodo(dados,periodoB,atB), periodoB);
+  function lA(){return`${periodoA.label}${atA?' · '+atA.split(' ')[0]:''}`;}
+  function lB(){return`${periodoB.label}${atB?' · '+atB.split(' ')[0]:''}`;}
   const metrics=[
     {label:'Receita bruta',a:fmt(rA.bruto),b:fmt(rB.bruto),wa:rA.bruto>=rB.bruto,wb:rB.bruto>rA.bruto},
     {label:'Investimento',a:fmt(rA.inv),b:fmt(rB.inv),wa:rA.inv<=rB.inv,wb:rB.inv<rA.inv},
@@ -1575,14 +1613,13 @@ function renderComparativo(){
 }
 
 function renderRanking(){
-  const mes=document.getElementById('rank-mes').value;
-  const ano=document.getElementById('rank-ano').value;
+  const periodo = getPeriodoSalvo('rankingPeriodo');
   const ordem=document.getElementById('rank-ordem').value;
-  const admRows=adminLancs.filter(a=>(!mes||a.mes===mes)&&(!ano||String(a.ano)===String(ano)));
+  const admRows=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
   let tLeads=0;admRows.forEach(a=>tLeads+=a.leads||0);
   const nomes=getNomes();
   const resumos=nomes.map(nome=>{
-    const rows=filtrar(nome,mes,ano);
+    const rows=filtrarPorPeriodo(dados, periodo, nome);
     let bruto=0,vendas=0,lucro=0,frascos=0;
     rows.forEach(r=>{const c=calcRow(r);bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;frascos+=c.frascos;});
     const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
@@ -1645,9 +1682,9 @@ function deleteMeta(idx){if(confirm('Remover?')){metas.splice(idx,1);renderMetas
 
 function renderDados(){
   const atend=document.getElementById('dados-atend').value;
-  const mes=document.getElementById('dados-mes').value;
+  const periodo=getPeriodoSalvo('dadosPeriodo','Máximo');
   const search=(document.getElementById('search-inp').value||'').toLowerCase();
-  let rows=filtrar(atend,mes,'');
+  let rows=filtrarPorPeriodo(dados, periodo, atend);
   if(search)rows=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(search));
   document.getElementById('dados-count').textContent=`${rows.length} registro${rows.length!==1?'s':''}`;
   let tb='';
@@ -2138,7 +2175,7 @@ const META_PERIODO_ATALHOS = [
   { label:'Semana passada', calc:()=>{const s=addDias(inicioSemana(hojeDate()),-7);return[s,addDias(s,6)];} },
   { label:'Este mês', calc:()=>[inicioMes(hojeDate()),hojeDate()] },
   { label:'Mês passado', calc:()=>{const m=new Date(hojeDate().getFullYear(),hojeDate().getMonth()-1,1);return[inicioMes(m),fimMes(m)];} },
-  { label:'Máximo', calc:()=>[new Date(dataInicioPermitida()+'T00:00:00'),hojeDate()] },
+  { label:'Máximo', calc:()=>{const d=new Date();d.setFullYear(d.getFullYear()-10);return[d,hojeDate()];} },
 ];
 
 let _calMesBase = null;   // Date — mês exibido na primeira grade (a segunda mostra o mês seguinte)
@@ -2152,15 +2189,16 @@ let _calContextoAtual = null; // {chave, onAplicar, onAtalho} — qual página e
 // onAplicar: função chamada depois de aplicar/fechar o calendário (normalmente o render da página)
 // labelElId: id do elemento que mostra o texto do período (ex: cartão clicável)
 const CAL_CONTEXTOS = {};
-function registrarContextoPeriodo(chave, onAplicar, labelElId){
-  CAL_CONTEXTOS[chave] = { chave, onAplicar, labelElId };
+function registrarContextoPeriodo(chave, onAplicar, labelElId, atalhoPadrao){
+  CAL_CONTEXTOS[chave] = { chave, onAplicar, labelElId, atalhoPadrao };
 }
 
-function getPeriodoSalvo(chave){
+function getPeriodoSalvo(chave, atalhoPadrao){
   const salvo = sessionStorage.getItem(chave);
   if(salvo){ try{ return JSON.parse(salvo); }catch(e){} }
-  const [ini,fim] = META_PERIODO_ATALHOS.find(a=>a.label==='Este mês').calc();
-  return { inicio: isoDate(ini), fim: isoDate(fim), label:'Este mês' };
+  const labelPadrao = atalhoPadrao || 'Este mês';
+  const [ini,fim] = META_PERIODO_ATALHOS.find(a=>a.label===labelPadrao).calc();
+  return { inicio: isoDate(ini), fim: isoDate(fim), label:labelPadrao };
 }
 
 function setPeriodoSalvo(chave, inicio, fim, label){
@@ -2190,7 +2228,7 @@ function abrirCalendarioPeriodo(chave){
   _calContextoAtual = ctx;
 
   const cont = document.getElementById('meta-periodo-atalhos');
-  const atual = getPeriodoSalvo(chave);
+  const atual = getPeriodoSalvo(chave, ctx.atalhoPadrao);
   cont.innerHTML = META_PERIODO_ATALHOS.map(a => `
     <div onclick="aplicarAtalhoPeriodoGenerico('${a.label}')" style="padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;${atual.label===a.label?'background:var(--neon-glow);color:var(--neon);font-weight:600':''}" onmouseover="if(this.dataset.sel!=='1')this.style.background='var(--neon-glow)'" onmouseout="if(this.dataset.sel!=='1')this.style.background='transparent'" data-sel="${atual.label===a.label?'1':'0'}">${a.label}</div>
   `).join('');
@@ -2320,6 +2358,11 @@ document.addEventListener('mouseup', ()=>{ if(_calArrastando) finalizarArrasteCa
 // Registra o contexto da página Meta Ads (Administração) — mantém comportamento já existente
 registrarContextoPeriodo('metaPeriodo', renderAdmin, 'adm-periodo-label');
 registrarContextoPeriodo('panoramaPeriodo', renderPanorama, 'pan-periodo-label');
+registrarContextoPeriodo('comparativoPeriodoA', renderComparativo, 'cmp-periodo-a-label');
+registrarContextoPeriodo('comparativoPeriodoB', renderComparativo, 'cmp-periodo-b-label', 'Mês passado');
+registrarContextoPeriodo('rankingPeriodo', renderRanking, 'rank-periodo-label');
+registrarContextoPeriodo('rastreamentoPeriodo', renderRastreamento, 'rast-periodo-label', 'Máximo');
+registrarContextoPeriodo('dadosPeriodo', renderDados, 'dados-periodo-label', 'Máximo');
 
 function deleteAdmLanc(idx){
   if(confirm('Remover?')){
@@ -2836,11 +2879,11 @@ function renderRastreamento(){
   const filtrosAdm=document.getElementById('rast-filters-adm');
   if(filtrosAdm)filtrosAdm.style.display=adminLogado?'flex':'none';
   const atendFiltro=adminLogado?(document.getElementById('rast-atend')?.value||''):(usuarioLogado?.nome||'');
-  const mesFiltro=adminLogado?(document.getElementById('rast-mes')?.value||''):'';
+  const periodoFiltro=adminLogado?getPeriodoSalvo('rastreamentoPeriodo','Máximo'):null;
   const busca=(document.getElementById('rast-busca')?.value||'').toLowerCase();
   let rows=[...dados];
   if(atendFiltro)rows=rows.filter(r=>r.atendente===atendFiltro);
-  if(mesFiltro)rows=rows.filter(r=>r.mes===mesFiltro);
+  if(periodoFiltro)rows=rows.filter(r=>dataNoPeriodo(r.dia,r.mes,r.ano,periodoFiltro));
   if(busca)rows=rows.filter(r=>{const s=((r.nomeCliente||'')+(r.telefone||'')+(r.rastreamento||'')+(r.atendente||'')).toLowerCase();return s.includes(busca);});
   rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const countEl=document.getElementById('rast-count');
