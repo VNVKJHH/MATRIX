@@ -603,8 +603,13 @@ tr:hover td{background:var(--neon-glow)}
 <div class="page" id="page-panorama">
   <p class="page-title">Panorama mensal</p>
   <div class="filters">
-    <div><label>Mês</label><select id="pan-mes" onchange="renderPanorama()"></select></div>
-    <div><label>Ano</label><select id="pan-ano" onchange="renderPanorama()"></select></div>
+    <div>
+      <label>Período</label>
+      <div id="pan-periodo-card" onclick="abrirCalendarioPeriodo('panoramaPeriodo')" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:170px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-calendar" style="font-size:14px;color:var(--t3)"></i>
+        <span id="pan-periodo-label" style="font-size:13px;font-weight:600">Este mês</span>
+      </div>
+    </div>
     <div><label>Atendente</label><select id="pan-atend" onchange="renderPanorama()"><option value="">Todos</option></select></div>
     <div style="margin-top:18px"><button class="btn" onclick="window.print()"><i class="ti ti-printer"></i> Imprimir</button></div>
   </div>
@@ -1011,7 +1016,7 @@ tr:hover td{background:var(--neon-glow)}
           </div>
           <button class="btn btn-sm" onclick="mudarMesCalendarioMeta(1)"><i class="ti ti-chevron-right"></i></button>
         </div>
-        <div style="display:flex;gap:14px" id="meta-cal-grids" onmouseup="finalizarArrasteCalMeta()">
+        <div style="display:flex;gap:14px" id="meta-cal-grids" onmouseup="finalizarArrasteCalGenerico()">
           <div id="meta-cal-grid1" style="width:182px"></div>
           <div id="meta-cal-grid2" style="width:182px"></div>
         </div>
@@ -1020,7 +1025,7 @@ tr:hover td{background:var(--neon-glow)}
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeMetaPeriodoModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarPeriodoCalendarioMeta()"><i class="ti ti-check"></i> Aplicar</button>
+      <button class="btn btn-primary" onclick="confirmarPeriodoCalendarioGenerico()"><i class="ti ti-check"></i> Aplicar</button>
     </div>
   </div>
 </div>
@@ -1333,12 +1338,12 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     MESES.forEach(m=>addOpt(el,m,m));if(v)el.value=v;
   });
-  ['f-mes','m-mes','pan-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-dash-mes','pad-mes'].forEach(id=>{
+  ['f-mes','m-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-dash-mes','pad-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     MESES.forEach(m=>addOpt(el,m,m));
     if(v)el.value=v;
-    else if(['pan-mes','meta-mes-fil','mm-mes','cmp-mes-a'].includes(id))el.value='Maio';
+    else if(['meta-mes-fil','mm-mes','cmp-mes-a'].includes(id))el.value='Maio';
     else if(id==='cmp-mes-b')el.value='Janeiro';
   });
   ['rank-ano'].forEach(id=>{
@@ -1346,7 +1351,7 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     anos.forEach(a=>addOpt(el,a,a));if(v)el.value=v;
   });
-  ['db-ano','pan-ano','cmp-ano-a','cmp-ano-b','meta-ano-fil','adm-dash-ano'].forEach(id=>{
+  ['db-ano','cmp-ano-a','cmp-ano-b','meta-ano-fil','adm-dash-ano'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     if(id==='db-ano')addOpt(el,'','Todos');
@@ -1425,7 +1430,7 @@ function showPage(p){
     if(mainEl) mainEl.style.padding = '2rem';
   }
 
-  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{const lbl=document.getElementById('adm-periodo-label');if(lbl)lbl.textContent=getPeriodoMetaAtual().label;renderAdmin();initContaMetaSelect();autoSyncMetaAds();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
+  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:()=>{const lbl=document.getElementById('pan-periodo-label');if(lbl)lbl.textContent=getPeriodoSalvo('panoramaPeriodo').label;renderPanorama();},comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{const lbl=document.getElementById('adm-periodo-label');if(lbl)lbl.textContent=getPeriodoMetaAtual().label;renderAdmin();initContaMetaSelect();autoSyncMetaAds();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
   window.allRenders=fns;
   if(fns[p])fns[p]();
 }
@@ -1491,22 +1496,22 @@ function renderDashboard(){
 }
 
 function renderPanorama(){
-  const mes=document.getElementById('pan-mes').value;
-  const ano=document.getElementById('pan-ano').value;
+  const periodo = getPeriodoSalvo('panoramaPeriodo');
   const atend=document.getElementById('pan-atend').value;
-  const rows=filtrar(atend,mes,ano);
+  const rows=filtrarPorPeriodo(dados, periodo, atend);
   let tBruto=0,tVendas=0,tLucro=0,tImpPJ=0,tPct=0,tFrascos=0,tEnvio=0;
-  const admRows=adminLancs.filter(a=>a.mes===mes&&String(a.ano)===String(ano));
+  const admRows=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
   let tInv=0,tLeads=0;admRows.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
   const byD={};
   rows.filter(r=>!r.isPad).forEach(r=>{
     const c=calcRow(r);
-    if(!byD[r.dia])byD[r.dia]={bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
-    byD[r.dia].bruto+=(r.bruto||0);byD[r.dia].vendas+=(r.qtd_vendas||0);byD[r.dia].impPJ+=c.impPJ;byD[r.dia].pct+=c.pctAtend;byD[r.dia].frascos+=c.frascos;byD[r.dia].envio+=c.custoEnvTotal;
+    const chaveDia = r.dia+'|'+r.mes+'|'+r.ano;
+    if(!byD[chaveDia])byD[chaveDia]={dia:r.dia,mes:r.mes,ano:r.ano,bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
+    byD[chaveDia].bruto+=(r.bruto||0);byD[chaveDia].vendas+=(r.qtd_vendas||0);byD[chaveDia].impPJ+=c.impPJ;byD[chaveDia].pct+=c.pctAtend;byD[chaveDia].frascos+=c.frascos;byD[chaveDia].envio+=c.custoEnvTotal;
     tBruto+=(r.bruto||0);tVendas+=(r.qtd_vendas||0);tImpPJ+=c.impPJ;tPct+=c.pctAtend;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;
   });
-  admRows.forEach(a=>{if(byD[a.dia]){byD[a.dia].investido+=(a.investido||0);byD[a.dia].leads+=(a.leads||0);}});
-  Object.keys(byD).forEach(d=>{byD[d].lucro=calcLucroDia(parseInt(d),mes,parseInt(ano),atend);tLucro+=byD[d].lucro;});
+  admRows.forEach(a=>{const chaveDia=a.dia+'|'+a.mes+'|'+a.ano;if(byD[chaveDia]){byD[chaveDia].investido+=(a.investido||0);byD[chaveDia].leads+=(a.leads||0);}});
+  Object.keys(byD).forEach(k=>{const dd=byD[k];dd.lucro=calcLucroDia(dd.dia,dd.mes,dd.ano,atend);tLucro+=dd.lucro;});
   document.getElementById('pan-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
     <div class="metric-card"><div class="metric-label">Investimento</div><div class="metric-value mv-amber">${fmt(tInv)}</div></div>
@@ -1517,12 +1522,15 @@ function renderPanorama(){
     <div class="metric-card"><div class="metric-label">Imp. PJ</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
     <div class="metric-card"><div class="metric-label">Leads</div><div class="metric-value">${tLeads}</div></div>
   `;
-  const dias=Object.keys(byD).map(Number).sort((a,b)=>a-b);
+  const chaves = Object.keys(byD).sort((a,b)=>{
+    const da=byD[a], db=byD[b];
+    return diaToISO(da.dia,da.mes,da.ano).localeCompare(diaToISO(db.dia,db.mes,db.ano));
+  });
   let tb='';
-  dias.forEach(d=>{
-    const dd=byD[d];
+  chaves.forEach(k=>{
+    const dd=byD[k];
     const margem=dd.bruto>0?R(dd.lucro/dd.bruto*100,1):0;
-    tb+=`<tr><td style="font-weight:700">${d}</td><td>${fmt(dd.bruto)}</td><td>${dd.vendas}</td><td>${dd.frascos}</td><td>${fmt(dd.envio)}</td><td>${fmt(dd.impPJ)}</td><td>${fmt(dd.pct)}</td><td>${dd.investido?fmt(dd.investido):'—'}</td><td>${dd.leads||'—'}</td><td style="color:${dd.lucro>=0?'var(--green)':'var(--red)'};font-weight:600">${fmt(dd.lucro)}</td><td>${margem!==0?margem+'%':'—'}</td></tr>`;
+    tb+=`<tr><td style="font-weight:700">${dd.dia}/${dd.mes.substring(0,3)}</td><td>${fmt(dd.bruto)}</td><td>${dd.vendas}</td><td>${dd.frascos}</td><td>${fmt(dd.envio)}</td><td>${fmt(dd.impPJ)}</td><td>${fmt(dd.pct)}</td><td>${dd.investido?fmt(dd.investido):'—'}</td><td>${dd.leads||'—'}</td><td style="color:${dd.lucro>=0?'var(--green)':'var(--red)'};font-weight:600">${fmt(dd.lucro)}</td><td>${margem!==0?margem+'%':'—'}</td></tr>`;
   });
   if(!tb)tb='<tr><td colspan="11" class="empty"><i class="ti ti-inbox"></i>Nenhum dado</td></tr>';
   document.getElementById('pan-tbody').innerHTML=tb;
@@ -1679,11 +1687,18 @@ function diaToISO(dia, mes, ano){
   if(mi<0) return null;
   return String(ano).padStart(4,'0')+'-'+String(mi+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
 }
-function dataNoPeriodo(dia, mes, ano){
+function dataNoPeriodo(dia, mes, ano, periodo){
   const iso = diaToISO(dia, mes, ano);
   if(!iso) return false;
-  const { inicio, fim } = getPeriodoMetaAtual();
+  const { inicio, fim } = periodo || getPeriodoMetaAtual();
   return iso >= inicio && iso <= fim;
+}
+// Filtra uma lista de registros (que tenham dia/mes/ano) por um período {inicio,fim} ISO.
+function filtrarPorPeriodo(lista, periodo, atendente){
+  return lista.filter(r => {
+    if(atendente && r.atendente!==atendente) return false;
+    return dataNoPeriodo(r.dia, r.mes, r.ano, periodo);
+  });
 }
 
 function renderAdmin(){
@@ -2126,81 +2141,105 @@ const META_PERIODO_ATALHOS = [
   { label:'Máximo', calc:()=>[new Date(dataInicioPermitida()+'T00:00:00'),hojeDate()] },
 ];
 
-let _periodoMetaAtual = null; // {inicio, fim, label} em ISO yyyy-mm-dd
-let _calMetaMesBase = null;   // Date — mês exibido na primeira grade (a segunda mostra o mês seguinte)
-let _calMetaSelInicio = null; // ISO yyyy-mm-dd — início da seleção em andamento/concluída
-let _calMetaSelFim = null;    // ISO yyyy-mm-dd
-let _calMetaArrastando = false;
+let _calMesBase = null;   // Date — mês exibido na primeira grade (a segunda mostra o mês seguinte)
+let _calSelInicio = null; // ISO yyyy-mm-dd — início da seleção em andamento/concluída
+let _calSelFim = null;    // ISO yyyy-mm-dd
+let _calArrastando = false;
+let _calContextoAtual = null; // {chave, onAplicar, onAtalho} — qual página está usando o calendário agora
 
-function getPeriodoMetaAtual(){
-  if(_periodoMetaAtual) return _periodoMetaAtual;
-  const salvo = sessionStorage.getItem('metaPeriodo');
-  if(salvo){ try{ _periodoMetaAtual = JSON.parse(salvo); return _periodoMetaAtual; }catch(e){} }
+// ===== Registro de contextos: cada página com filtro de período registra-se aqui =====
+// chave: nome usado no sessionStorage (ex: 'metaPeriodo', 'panoramaPeriodo')
+// onAplicar: função chamada depois de aplicar/fechar o calendário (normalmente o render da página)
+// labelElId: id do elemento que mostra o texto do período (ex: cartão clicável)
+const CAL_CONTEXTOS = {};
+function registrarContextoPeriodo(chave, onAplicar, labelElId){
+  CAL_CONTEXTOS[chave] = { chave, onAplicar, labelElId };
+}
+
+function getPeriodoSalvo(chave){
+  const salvo = sessionStorage.getItem(chave);
+  if(salvo){ try{ return JSON.parse(salvo); }catch(e){} }
   const [ini,fim] = META_PERIODO_ATALHOS.find(a=>a.label==='Este mês').calc();
-  _periodoMetaAtual = { inicio: isoDate(ini), fim: isoDate(fim), label:'Este mês' };
-  return _periodoMetaAtual;
+  return { inicio: isoDate(ini), fim: isoDate(fim), label:'Este mês' };
 }
 
-function setPeriodoMetaAtual(inicio, fim, label){
-  _periodoMetaAtual = { inicio, fim, label: label || `${formatarDataBR(inicio)} - ${formatarDataBR(fim)}` };
-  sessionStorage.setItem('metaPeriodo', JSON.stringify(_periodoMetaAtual));
-  const lbl = document.getElementById('adm-periodo-label');
-  if(lbl) lbl.textContent = _periodoMetaAtual.label;
+function setPeriodoSalvo(chave, inicio, fim, label){
+  const periodo = { inicio, fim, label: label || `${formatarDataBR(inicio)} - ${formatarDataBR(fim)}` };
+  sessionStorage.setItem(chave, JSON.stringify(periodo));
+  const ctx = CAL_CONTEXTOS[chave];
+  if(ctx && ctx.labelElId){
+    const lbl = document.getElementById(ctx.labelElId);
+    if(lbl) lbl.textContent = periodo.label;
+  }
+  return periodo;
 }
+
+// Compatibilidade com o código já existente da página Meta Ads (Administração)
+function getPeriodoMetaAtual(){ return getPeriodoSalvo('metaPeriodo'); }
+function setPeriodoMetaAtual(inicio, fim, label){ return setPeriodoSalvo('metaPeriodo', inicio, fim, label); }
 
 function formatarDataBR(iso){
   const [a,m,d] = iso.split('-');
   return `${d}/${m}/${a}`;
 }
 
-function abrirPeriodoMeta(){
+// Abre o calendário para qualquer contexto registrado.
+function abrirCalendarioPeriodo(chave){
+  const ctx = CAL_CONTEXTOS[chave];
+  if(!ctx){ console.error('Contexto de período não registrado:', chave); return; }
+  _calContextoAtual = ctx;
+
   const cont = document.getElementById('meta-periodo-atalhos');
-  const atual = getPeriodoMetaAtual();
+  const atual = getPeriodoSalvo(chave);
   cont.innerHTML = META_PERIODO_ATALHOS.map(a => `
-    <div onclick="aplicarAtalhoPeriodoMeta('${a.label}')" style="padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;${atual.label===a.label?'background:var(--neon-glow);color:var(--neon);font-weight:600':''}" onmouseover="if(this.dataset.sel!=='1')this.style.background='var(--neon-glow)'" onmouseout="if(this.dataset.sel!=='1')this.style.background='transparent'" data-sel="${atual.label===a.label?'1':'0'}">${a.label}</div>
+    <div onclick="aplicarAtalhoPeriodoGenerico('${a.label}')" style="padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;${atual.label===a.label?'background:var(--neon-glow);color:var(--neon);font-weight:600':''}" onmouseover="if(this.dataset.sel!=='1')this.style.background='var(--neon-glow)'" onmouseout="if(this.dataset.sel!=='1')this.style.background='transparent'" data-sel="${atual.label===a.label?'1':'0'}">${a.label}</div>
   `).join('');
 
-  // Inicializa a seleção do calendário com o período atual
-  _calMetaSelInicio = atual.inicio;
-  _calMetaSelFim = atual.fim;
-  _calMetaArrastando = false;
-  // Mês base = mês do início da seleção (a 2ª grade mostra o mês seguinte)
-  _calMetaMesBase = new Date(atual.inicio+'T00:00:00');
-  _calMetaMesBase = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth(), 1);
+  _calSelInicio = atual.inicio;
+  _calSelFim = atual.fim;
+  _calArrastando = false;
+  _calMesBase = new Date(atual.inicio+'T00:00:00');
+  _calMesBase = new Date(_calMesBase.getFullYear(), _calMesBase.getMonth(), 1);
 
-  renderCalendarioMeta();
+  renderCalendarioGenerico();
   document.getElementById('modal-meta-periodo').classList.add('open');
 }
+// Atalho de compatibilidade (mesma assinatura antiga usada pela página Meta Ads)
+function abrirPeriodoMeta(){ abrirCalendarioPeriodo('metaPeriodo'); }
+
 function closeMetaPeriodoModal(){ document.getElementById('modal-meta-periodo').classList.remove('open'); }
 
-function aplicarAtalhoPeriodoMeta(label){
+function aplicarAtalhoPeriodoGenerico(label){
+  if(!_calContextoAtual) return;
   const atalho = META_PERIODO_ATALHOS.find(a=>a.label===label);
   if(!atalho) return;
   const [ini,fim] = atalho.calc();
-  setPeriodoMetaAtual(isoDate(ini), isoDate(fim), label);
+  setPeriodoSalvo(_calContextoAtual.chave, isoDate(ini), isoDate(fim), label);
   closeMetaPeriodoModal();
-  renderAdmin();
+  if(_calContextoAtual.onAplicar) _calContextoAtual.onAplicar();
 }
+// Compatibilidade
+function aplicarAtalhoPeriodoMeta(label){ _calContextoAtual = CAL_CONTEXTOS['metaPeriodo']; aplicarAtalhoPeriodoGenerico(label); }
 
 function mudarMesCalendarioMeta(delta){
-  _calMetaMesBase = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth()+delta, 1);
-  renderCalendarioMeta();
+  _calMesBase = new Date(_calMesBase.getFullYear(), _calMesBase.getMonth()+delta, 1);
+  renderCalendarioGenerico();
 }
 
 function nomeDiaSemana(i){ return ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][i]; }
 const NOMES_MESES_CAL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-function renderCalendarioMeta(){
-  const mes1 = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth(), 1);
-  const mes2 = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth()+1, 1);
+function renderCalendarioGenerico(){
+  const mes1 = new Date(_calMesBase.getFullYear(), _calMesBase.getMonth(), 1);
+  const mes2 = new Date(_calMesBase.getFullYear(), _calMesBase.getMonth()+1, 1);
   document.getElementById('meta-cal-mes1-label').textContent = `${NOMES_MESES_CAL[mes1.getMonth()].substring(0,3)} ${mes1.getFullYear()}`;
   document.getElementById('meta-cal-mes2-label').textContent = `${NOMES_MESES_CAL[mes2.getMonth()].substring(0,3)} ${mes2.getFullYear()}`;
-  document.getElementById('meta-cal-grid1').innerHTML = montarGradeMesMeta(mes1);
-  document.getElementById('meta-cal-grid2').innerHTML = montarGradeMesMeta(mes2);
-  atualizarPreviewPeriodoMeta();
+  document.getElementById('meta-cal-grid1').innerHTML = montarGradeMesGenerico(mes1);
+  document.getElementById('meta-cal-grid2').innerHTML = montarGradeMesGenerico(mes2);
+  atualizarPreviewPeriodoGenerico();
 }
 
-function montarGradeMesMeta(mesData){
+function montarGradeMesGenerico(mesData){
   const ano = mesData.getFullYear(), mes = mesData.getMonth();
   const primeiroDiaSemana = (new Date(ano, mes, 1).getDay()+6)%7; // 0=segunda
   const totalDias = new Date(ano, mes+1, 0).getDate();
@@ -2210,35 +2249,35 @@ function montarGradeMesMeta(mesData){
   for(let i=0;i<primeiroDiaSemana;i++) html += '<div></div>';
   for(let d=1; d<=totalDias; d++){
     const iso = String(ano).padStart(4,'0')+'-'+String(mes+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    html += `<div class="cal-meta-dia" data-iso="${iso}" onmousedown="iniciarArrasteCalMeta('${iso}')" onmouseenter="moverArrasteCalMeta('${iso}')" style="text-align:center;font-size:12px;padding:5px 0;border-radius:4px;cursor:pointer;user-select:none">${d}</div>`;
+    html += `<div class="cal-meta-dia" data-iso="${iso}" onmousedown="iniciarArrasteCalGenerico('${iso}')" onmouseenter="moverArrasteCalGenerico('${iso}')" style="text-align:center;font-size:12px;padding:5px 0;border-radius:4px;cursor:pointer;user-select:none">${d}</div>`;
   }
   html += '</div>';
   return html;
 }
 
-function iniciarArrasteCalMeta(iso){
-  _calMetaArrastando = true;
-  _calMetaSelInicio = iso;
-  _calMetaSelFim = iso;
-  pintarSelecaoCalMeta();
+function iniciarArrasteCalGenerico(iso){
+  _calArrastando = true;
+  _calSelInicio = iso;
+  _calSelFim = iso;
+  pintarSelecaoCalGenerico();
 }
-function moverArrasteCalMeta(iso){
-  if(!_calMetaArrastando) return;
-  _calMetaSelFim = iso;
-  pintarSelecaoCalMeta();
+function moverArrasteCalGenerico(iso){
+  if(!_calArrastando) return;
+  _calSelFim = iso;
+  pintarSelecaoCalGenerico();
 }
-function finalizarArrasteCalMeta(){
-  if(!_calMetaArrastando) return;
-  _calMetaArrastando = false;
-  if(_calMetaSelInicio > _calMetaSelFim){
-    const tmp = _calMetaSelInicio; _calMetaSelInicio = _calMetaSelFim; _calMetaSelFim = tmp;
+function finalizarArrasteCalGenerico(){
+  if(!_calArrastando) return;
+  _calArrastando = false;
+  if(_calSelInicio > _calSelFim){
+    const tmp = _calSelInicio; _calSelInicio = _calSelFim; _calSelFim = tmp;
   }
-  pintarSelecaoCalMeta();
-  atualizarPreviewPeriodoMeta();
+  pintarSelecaoCalGenerico();
+  atualizarPreviewPeriodoGenerico();
 }
 
-function pintarSelecaoCalMeta(){
-  let ini = _calMetaSelInicio, fim = _calMetaSelFim;
+function pintarSelecaoCalGenerico(){
+  let ini = _calSelInicio, fim = _calSelFim;
   if(ini > fim){ const tmp=ini; ini=fim; fim=tmp; }
   document.querySelectorAll('.cal-meta-dia').forEach(el=>{
     const iso = el.dataset.iso;
@@ -2249,32 +2288,38 @@ function pintarSelecaoCalMeta(){
     el.style.fontWeight = borda ? '800' : (dentro?'600':'400');
     el.style.boxShadow = borda ? 'inset 0 0 0 1.5px var(--neon)' : 'none';
   });
-  atualizarPreviewPeriodoMeta();
-  // Desmarca atalhos da lista (a seleção agora é manual)
+  atualizarPreviewPeriodoGenerico();
   document.querySelectorAll('#meta-periodo-atalhos > div').forEach(el=>{ el.dataset.sel='0'; el.style.background='transparent'; el.style.color='var(--t1)'; el.style.fontWeight='400'; });
 }
 
-function atualizarPreviewPeriodoMeta(){
+function atualizarPreviewPeriodoGenerico(){
   const prev = document.getElementById('meta-periodo-preview');
   if(!prev) return;
-  let ini = _calMetaSelInicio, fim = _calMetaSelFim;
+  let ini = _calSelInicio, fim = _calSelFim;
   if(!ini || !fim) { prev.textContent=''; return; }
   if(ini > fim){ const tmp=ini; ini=fim; fim=tmp; }
   prev.textContent = ini===fim ? formatarDataBR(ini) : `${formatarDataBR(ini)} — ${formatarDataBR(fim)}`;
 }
 
-function confirmarPeriodoCalendarioMeta(){
-  if(!_calMetaSelInicio || !_calMetaSelFim){ toast('Selecione um período no calendário!'); return; }
-  let ini = _calMetaSelInicio, fim = _calMetaSelFim;
+function confirmarPeriodoCalendarioGenerico(){
+  if(!_calContextoAtual){ closeMetaPeriodoModal(); return; }
+  if(!_calSelInicio || !_calSelFim){ toast('Selecione um período no calendário!'); return; }
+  let ini = _calSelInicio, fim = _calSelFim;
   if(ini > fim){ const tmp=ini; ini=fim; fim=tmp; }
-  setPeriodoMetaAtual(ini, fim);
+  setPeriodoSalvo(_calContextoAtual.chave, ini, fim);
   closeMetaPeriodoModal();
-  renderAdmin();
+  if(_calContextoAtual.onAplicar) _calContextoAtual.onAplicar();
 }
+// Compatibilidade
+function confirmarPeriodoCalendarioMeta(){ confirmarPeriodoCalendarioGenerico(); }
 
 // Em alguns navegadores, soltar o clique fora da grade não dispara onmouseup do container;
 // este listener global garante que o arraste sempre finalize.
-document.addEventListener('mouseup', ()=>{ if(_calMetaArrastando) finalizarArrasteCalMeta(); });
+document.addEventListener('mouseup', ()=>{ if(_calArrastando) finalizarArrasteCalGenerico(); });
+
+// Registra o contexto da página Meta Ads (Administração) — mantém comportamento já existente
+registrarContextoPeriodo('metaPeriodo', renderAdmin, 'adm-periodo-label');
+registrarContextoPeriodo('panoramaPeriodo', renderPanorama, 'pan-periodo-label');
 
 function deleteAdmLanc(idx){
   if(confirm('Remover?')){
