@@ -941,7 +941,10 @@ tr:hover td{background:var(--neon-glow)}
     </div>
 
     <div id="adm-dash-despesas-wrap" style="display:none">
-      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Despesas de hoje</div>
+      <div onclick="toggleDespesasDashAdm()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:8px">
+        <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Despesas de hoje</div>
+        <i class="ti ti-chevron-up" id="adm-dash-despesas-chevron" style="font-size:13px;color:var(--t3);transition:transform .2s"></i>
+      </div>
       <div id="adm-dash-despesas" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px"></div>
     </div>
   </div>
@@ -2614,8 +2617,7 @@ async function construirDashGlobo(){
     .atmosphereAltitude(0.15)
     .pointOfView({lat:-15,lng:-50,altitude:1.8},1500);
 
-  dashGloboInstance.controls().autoRotate=true;
-  dashGloboInstance.controls().autoRotateSpeed=0.3;
+  dashGloboInstance.controls().autoRotate=false;
 
   if(loadingEl)loadingEl.style.display='none';
 
@@ -2627,7 +2629,36 @@ async function construirDashGlobo(){
     }
   });
 
+  carregarFronteirasDashGlobo();
   await atualizarPontosDashGlobo();
+}
+
+// Carrega e desenha as fronteiras de países (mundo) e estados (Brasil) no globo,
+// como camadas de polígonos sutis — apenas demarcação visual, sem interação/clique.
+async function carregarFronteirasDashGlobo(){
+  if(!dashGloboInstance)return;
+  try{
+    const [paisesRes, estadosRes] = await Promise.all([
+      fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson'),
+      fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson')
+    ]);
+    const paisesGeo = await paisesRes.json();
+    const estadosGeo = await estadosRes.json();
+
+    const poligonos = [
+      ...paisesGeo.features.map(f=>({...f, _tipo:'pais'})),
+      ...estadosGeo.features.map(f=>({...f, _tipo:'estado'}))
+    ];
+
+    dashGloboInstance
+      .polygonsData(poligonos)
+      .polygonCapColor(()=>'rgba(0,0,0,0)')
+      .polygonSideColor(()=>'rgba(0,0,0,0)')
+      .polygonStrokeColor(d=>d._tipo==='estado'?'rgba(0,255,128,0.45)':'rgba(255,255,255,0.18)')
+      .polygonAltitude(d=>d._tipo==='estado'?0.006:0.003);
+  }catch(e){
+    console.error('Erro ao carregar fronteiras do globo:', e);
+  }
 }
 
 const geoCacheDash={};
@@ -2675,6 +2706,20 @@ async function atualizarPontosDashGlobo(){
     .ringsData(pontos).ringLat('lat').ringLng('lng').ringColor(d=>d.cor).ringMaxRadius(2).ringPropagationSpeed(1.5).ringRepeatPeriod(1600).ringAltitude(0.005);
 }
 
+function toggleDespesasDashAdm(){
+  const minimizado = sessionStorage.getItem('dashDespesasMin')==='1';
+  sessionStorage.setItem('dashDespesasMin', minimizado?'0':'1');
+  aplicarEstadoDespesasDashAdm();
+}
+function aplicarEstadoDespesasDashAdm(){
+  const conteudo = document.getElementById('adm-dash-despesas');
+  const chevron = document.getElementById('adm-dash-despesas-chevron');
+  if(!conteudo||!chevron) return;
+  const minimizado = sessionStorage.getItem('dashDespesasMin')==='1';
+  conteudo.style.display = minimizado?'none':'block';
+  chevron.style.transform = minimizado?'rotate(180deg)':'rotate(0deg)';
+}
+
 function renderDashAdm(){
   const atend=document.getElementById('adm-dash-atend').value;
 
@@ -2719,6 +2764,7 @@ function renderDashAdm(){
       + linhaDesp('Imposto PJ', tImpPJ)
       + linhaDesp('% Atendentes', tPctAtend)
       + '<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;margin-top:4px;border-top:1px solid rgba(239,68,68,.25)"><span style="font-weight:700;color:#fff">Total</span><span style="font-weight:800;color:#FCA5A5">'+fmt(totalDespesas)+'</span></div>';
+    aplicarEstadoDespesasDashAdm();
   } else {
     despesasWrap.style.display = 'none';
   }
@@ -2751,7 +2797,8 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
 
   document.getElementById('gw-vendas-hoje-valor').textContent = fmt(vHoje.bruto);
   const lucroEl = document.getElementById('gw-lucro-hoje');
-  if(adminLogado && lucroHoje!=null){
+  const temMovimentoHoje = vHoje.vendas>0 || vHoje.bruto>0 || (lucroHoje!=null && lucroHoje!==0);
+  if(adminLogado && lucroHoje!=null && temMovimentoHoje){
     lucroEl.style.display = 'inline';
     lucroEl.style.color = lucroHoje>=0 ? 'var(--neon)' : '#FCA5A5';
     lucroEl.textContent = (lucroHoje>=0?'+':'')+fmt(lucroHoje)+' lucro';
