@@ -1698,7 +1698,7 @@ async function sincronizarMetaAds(){
   if(status) status.textContent = 'Buscando dados na Meta...';
 
   try{
-    const url = `${META_FUNC_URL}?action=insights&account=${encodeURIComponent(conta)}&inicio=2020-01-01&fim=${isoHojeMatrix()}`;
+    const url = `${META_FUNC_URL}?action=insights&account=${encodeURIComponent(conta)}&inicio=${dataInicioPermitida()}&fim=${isoHojeMatrix()}`;
     const res = await fetch(url);
     const data = await res.json();
     if(data.erro){
@@ -1749,6 +1749,12 @@ async function sincronizarMetaAds(){
 
 function isoHojeMatrix(){
   return new Date().toISOString().split('T')[0];
+}
+function dataInicioPermitida(){
+  // A Graph API rejeita períodos com mais de 37 meses. Usamos 36 como margem de segurança.
+  const d = new Date();
+  d.setMonth(d.getMonth() - 36);
+  return d.toISOString().split('T')[0];
 }
 
 function deleteAdmLanc(idx){if(confirm('Remover?')){adminLancs.splice(idx,1);renderAdmin();toast('Removido.');}}
