@@ -1,17 +1,18 @@
 // /.netlify/functions/meta-ads
 // Integração com a Meta Marketing API (Facebook/Instagram Ads) para o MATRIX.
 //
-// Variáveis de ambiente necessárias (configuradas no Netlify):
-//   META_ACCESS_TOKEN   -> token de acesso (System User ou de longa duração)
-//   META_AD_ACCOUNT_ID  -> conta de anúncios padrão, formato "act_XXXXXXXXXX" (opcional, pode vir por query)
+// O token de acesso é enviado pelo cliente via POST (no corpo da requisição),
+// nunca em variável de ambiente fixa — isso permite que o MATRIX gerencie
+// múltiplas contas de anúncios (de pessoas/clientes diferentes), cada uma com
+// seu próprio token, em vez de um único token global.
 //
-// Ações suportadas (?action=...):
-//   contas   -> lista as contas de anúncios disponíveis para o token
+// Ações suportadas (body.action):
+//   contas   -> lista as contas de anúncios disponíveis para o token enviado
 //   insights -> retorna investimento/leads/cliques/CTR/CPC/impressões/alcance por dia
 //
-// Exemplos de uso a partir do MATRIX:
-//   /.netlify/functions/meta-ads?action=contas
-//   /.netlify/functions/meta-ads?action=insights&account=act_123&inicio=2026-06-01&fim=2026-06-26
+// Exemplos de uso a partir do MATRIX (sempre POST, nunca GET, para não expor o token na URL):
+//   POST { action: "contas", token: "EAAxxx..." }
+//   POST { action: "insights", token: "EAAxxx...", account: "act_123", inicio: "2026-06-01", fim: "2026-06-26" }
 
 const GRAPH_VERSION = 'v25.0';
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
@@ -26,19 +27,30 @@ exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
   };
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
-
-  const token = process.env.META_ACCESS_TOKEN;
-  if (!token) {
-    return resposta(500, { erro: 'META_ACCESS_TOKEN não configurado no Netlify.' }, headers);
+  if (event.httpMethod !== 'POST') {
+    return resposta(405, { erro: 'Use POST, enviando o token no corpo da requisição.' }, headers);
   }
 
-  const params = event.queryStringParameters || {};
+  let params;
+  try {
+    params = JSON.parse(event.body || '{}');
+  } catch (e) {
+    return resposta(400, { erro: 'Corpo da requisição inválido (esperado JSON).' }, headers);
+  }
+
+  // Aceita o token enviado pelo cliente; cai para a variável de ambiente apenas
+  // como compatibilidade com configurações antigas (uma única conta "padrão").
+  const token = params.token || process.env.META_ACCESS_TOKEN;
+  if (!token) {
+    return resposta(400, { erro: 'Token de acesso não informado.' }, headers);
+  }
+
   const action = params.action || 'insights';
 
   try {
@@ -77,9 +89,9 @@ async function listarContas(token, headers) {
 
 // ---------- Buscar insights diários ----------
 async function buscarInsights(token, params, headers) {
-  const account = params.account || process.env.META_AD_ACCOUNT_ID;
+  const account = params.account;
   if (!account) {
-    return resposta(400, { erro: 'Informe a conta (?account=act_XXXX) ou configure META_AD_ACCOUNT_ID.' }, headers);
+    return resposta(400, { erro: 'Informe a conta de anúncios (account).' }, headers);
   }
 
   // Período: por padrão, os últimos 7 dias. Pode ser sobrescrito via query.
