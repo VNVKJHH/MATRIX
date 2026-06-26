@@ -889,46 +889,34 @@ tr:hover td{background:var(--neon-glow)}
       <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <select id="adm-dash-modo" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px;backdrop-filter:blur(8px)">
-        <option value="hoje">Hoje</option>
-        <option value="dia">Dia específico</option>
-        <option value="mes" selected>Mês</option>
-        <option value="total">Tudo</option>
-      </select>
-      <div id="adm-dash-dia-wrap" style="display:none">
-        <input type="number" id="adm-dash-dia" min="1" max="31" placeholder="Dia" oninput="renderDashAdm()" style="width:70px;font-size:12px;padding:5px 8px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px">
-      </div>
-      <select id="adm-dash-mes" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px"></select>
-      <select id="adm-dash-ano" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px"></select>
-      <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px"><option value="">Todos</option></select>
+      <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:12px;padding:6px 12px;background:rgba(0,0,0,.6);border:1px solid rgba(0,255,128,.3);color:#fff;border-radius:6px;backdrop-filter:blur(8px)"><option value="">Todos os atendentes</option></select>
     </div>
   </div>
 
   <!-- Card de resumo estilo gateway (Vendas hoje + Nível + Demais períodos) -->
-  <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;z-index:10;width:280px;background:rgba(10,10,10,.88);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.1rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.4)">
+  <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;z-index:10;width:300px;background:rgba(10,10,10,.9);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.25rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.45)">
     <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Vendas hoje</div>
-    <div id="gw-vendas-hoje-valor" style="font-size:26px;font-weight:800;color:#fff;margin-bottom:8px">R$ 0,00</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <div id="gw-vendas-hoje-valor" style="font-size:28px;font-weight:800;color:#fff;margin-bottom:10px">R$ 0,00</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
       <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
-      <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-ticket">tkt R$ 0,00</span>
     </div>
 
-    <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#7a4a14,#c47f1f);border-radius:10px;padding:12px;margin-bottom:14px">
+    <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="font-size:9px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:1px;font-weight:700">Seu nível</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Seu nível</div>
           <div id="gw-nivel-nome" style="font-size:17px;font-weight:800;color:#fff">Starter</div>
-          <div id="gw-nivel-receita" style="font-size:11px;color:rgba(255,255,255,.85)">R$ 0</div>
+          <div id="gw-nivel-receita" style="font-size:11px;color:rgba(255,255,255,.9)">R$ 0</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:9px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:1px;font-weight:700">Próximo</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Próximo</div>
           <div id="gw-nivel-proximo-nome" style="font-size:13px;font-weight:700;color:#fff">—</div>
-          <div id="gw-nivel-falta" style="font-size:11px;color:rgba(255,255,255,.85)">—</div>
+          <div id="gw-nivel-falta" style="font-size:11px;color:rgba(255,255,255,.9)">—</div>
         </div>
       </div>
-      <div style="height:5px;background:rgba(0,0,0,.25);border-radius:3px;overflow:hidden;margin-top:10px">
-        <div id="gw-nivel-progress" style="height:100%;background:#fff;width:0%;border-radius:3px;transition:width .4s"></div>
+      <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden;margin-top:11px">
+        <div id="gw-nivel-progress" style="height:100%;background:#00FF80;width:0%;border-radius:3px;transition:width .4s;box-shadow:0 0 8px rgba(0,255,128,.6)"></div>
       </div>
     </div>
 
@@ -1441,14 +1429,14 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     MESES.forEach(m=>addOpt(el,m,m));if(v)el.value=v;
   });
-  ['f-mes','m-mes','mm-mes','meta-mes-fil','adm-dash-mes','pad-mes'].forEach(id=>{
+  ['f-mes','m-mes','mm-mes','meta-mes-fil','pad-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     MESES.forEach(m=>addOpt(el,m,m));
     if(v)el.value=v;
     else if(['meta-mes-fil','mm-mes'].includes(id))el.value='Maio';
   });
-  ['db-ano','meta-ano-fil','adm-dash-ano'].forEach(id=>{
+  ['db-ano','meta-ano-fil'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     if(id==='db-ano')addOpt(el,'','Todos');
@@ -2698,48 +2686,39 @@ async function atualizarPontosDashGlobo(){
 }
 
 function renderDashAdm(){
-  const modo=document.getElementById('adm-dash-modo').value;
-  const diaEl=document.getElementById('adm-dash-dia');
-  const mes=document.getElementById('adm-dash-mes').value;
-  const ano=document.getElementById('adm-dash-ano').value;
   const atend=document.getElementById('adm-dash-atend').value;
   renderCardGatewayDashAdm(atend);
-  const diaWrap=document.getElementById('adm-dash-dia-wrap');
-  diaWrap.style.display=(modo==='dia')?'block':'none';
-  let filDia='',filMes='',filAno='';
+
+  // Sem filtros de período no globo — sempre mostra o mês corrente.
   const hoje=new Date();
-  if(modo==='hoje'){filDia=hoje.getDate();filMes=MESES[hoje.getMonth()];filAno=hoje.getFullYear();}
-  else if(modo==='dia'){filDia=parseInt(diaEl.value)||'';filMes=mes;filAno=ano;}
-  else if(modo==='mes'){filMes=mes;filAno=ano;}
+  const filMes=MESES[hoje.getMonth()], filAno=hoje.getFullYear();
+
   let rows=dados.filter(d=>{
     if(atend&&d.atendente!==atend)return false;
-    if(filMes&&d.mes!==filMes)return false;
-    if(filAno&&String(d.ano)!==String(filAno))return false;
-    if(filDia&&d.dia!==parseInt(filDia))return false;
+    if(d.mes!==filMes)return false;
+    if(String(d.ano)!==String(filAno))return false;
     return true;
   });
   let admFil=adminLancs.filter(a=>{
-    if(filMes&&a.mes!==filMes)return false;
-    if(filAno&&String(a.ano)!==String(filAno))return false;
-    if(filDia&&a.dia!==parseInt(filDia))return false;
+    if(a.mes!==filMes)return false;
+    if(String(a.ano)!==String(filAno))return false;
     return true;
   });
   let tBruto=0,tVendas=0,tFrascos=0,tEnvio=0,tImpPJ=0,tPctAtend=0;
   rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
   let tMetaAds=0,tLeads=0;
   admFil.forEach(a=>{tMetaAds+=a.investido||0;tLeads+=a.leads||0;});
-  const padC=calcPadCustos({mes:filMes||null,ano:filAno||null,atendente:atend||null});
+  const padC=calcPadCustos({mes:filMes,ano:filAno,atendente:atend||null});
   tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;tBruto+=padC.bruto;tVendas+=padC.qtd;
   const diasSet2=new Set();
   rows.filter(r=>!r.isPad).forEach(r=>diasSet2.add(r.dia+'|'+r.mes+'|'+r.ano));
   admFil.forEach(a=>diasSet2.add(a.dia+'|'+a.mes+'|'+a.ano));
-  pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)).forEach(p=>diasSet2.add(p.dia+'|'+p.mes+'|'+p.ano));
+  pads.filter(p=>p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)).forEach(p=>diasSet2.add(p.dia+'|'+p.mes+'|'+p.ano));
   let tLucro=0;
   diasSet2.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
   const roas=tMetaAds>0?R(tBruto/tMetaAds,2):0;
   const cpl=tLeads>0?R(tMetaAds/tLeads,2):0;
   const margem=tBruto>0?R(tLucro/tBruto*100,1):0;
-  const ticket=tVendas>0?R(tBruto/tVendas,2):0;
   const conv=tLeads>0?R(tVendas/tLeads*100,1):0;
   const cardStyle='background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.8rem 1rem;backdrop-filter:blur(12px);';
   document.getElementById('adm-dash-metrics').innerHTML=
@@ -2750,10 +2729,10 @@ function renderDashAdm(){
   const card2Style='background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.6rem .9rem;backdrop-filter:blur(10px);flex-shrink:0;min-width:110px;';
   document.getElementById('adm-dash-metrics2').innerHTML=
     '<div style="'+card2Style+'"><div class="metric-label">Vendas</div><div class="metric-value">'+tVendas+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">Ticket médio</div><div class="metric-value">'+(ticket>0?fmt(ticket):'—')+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">Frascos</div><div class="metric-value">'+tFrascos+'</div></div>'
+    +'<div style="'+card2Style+'"><div class="metric-label">Custo de envios</div><div class="metric-value mv-red">'+fmt(tEnvio)+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">Conversão</div><div class="metric-value">'+(conv>0?conv+'%':'—')+'</div></div>'
-    +(()=>{const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+card2Style+'border-left:3px solid '+corPad+'"><div class="metric-label">Conv. PAD</div><div class="metric-value" style="color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</div><div style="font-size:10px;color:var(--t3)">'+(pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs')+'</div></div>';})();
+    +(()=>{const pp=pads.filter(p=>p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+card2Style+'border-left:3px solid '+corPad+'"><div class="metric-label">Conv. PAD</div><div class="metric-value" style="color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</div><div style="font-size:10px;color:var(--t3)">'+(pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs')+'</div></div>';})();
   if(!dashGloboLoaded){iniciarDashGlobo();}else if(dashGloboInstance){setTimeout(atualizarPontosDashGlobo,100);}
 }
 
@@ -2782,7 +2761,7 @@ function renderCardGatewayDashAdm(atendFiltro){
 
   document.getElementById('gw-vendas-hoje-valor').textContent = fmt(vHoje.bruto);
   document.getElementById('gw-qtd-vendas').textContent = vHoje.vendas+' venda'+(vHoje.vendas!==1?'s':'');
-  document.getElementById('gw-ticket').textContent = 'tkt '+(vHoje.vendas>0?fmt(vHoje.bruto/vHoje.vendas):'R$ 0,00');
+  // Ticket médio removido do card (já disponível no Panorama)
 
   const variacaoEl = document.getElementById('gw-variacao');
   if(vOntem.bruto>0){
