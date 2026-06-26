@@ -1708,10 +1708,15 @@ async function sincronizarMetaAds(){
       return;
     }
     const dias = data.dias || [];
-    // Remove lançamentos antigos vindos da Meta para essa mesma conta (evita duplicar)
-    adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta));
+    // Remove TODOS os lançamentos antigos vindos da Meta (de qualquer sincronização anterior,
+    // inclusive duplicados de testes passados com fbId fora do padrão atual) — tanto localmente
+    // quanto no Firestore, para evitar que o listener em tempo real os traga de volta.
+    const antigos = adminLancs.filter(a => a.origemMeta);
+    adminLancs = adminLancs.filter(a => !a.origemMeta);
     if(window.fbDelete){
-      // remove do firebase os antigos dessa conta (busca por fbId já conhecido fica a cargo do listener)
+      for(const old of antigos){
+        if(old.fbId) await window.fbDelete('adminLancs', old.fbId);
+      }
     }
     let novos = 0;
     dias.forEach(d=>{
