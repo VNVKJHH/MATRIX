@@ -7,12 +7,15 @@
 // seu próprio token, em vez de um único token global.
 //
 // Ações suportadas (body.action):
-//   contas   -> lista as contas de anúncios disponíveis para o token enviado
-//   insights -> retorna investimento/leads/cliques/CTR/CPC/impressões/alcance por dia
+//   contas             -> lista as contas de anúncios disponíveis para o token enviado
+//   insights            -> retorna investimento/leads/cliques/CTR/CPC/impressões/alcance por dia (nível conta, geral)
+//   insights_por_adset  -> mesma coisa, mas quebrado por conjunto de anúncios (nome incluído),
+//                          usado para atribuir investimento a atendentes pelo nome do adset
 //
 // Exemplos de uso a partir do MATRIX (sempre POST, nunca GET, para não expor o token na URL):
 //   POST { action: "contas", token: "EAAxxx..." }
 //   POST { action: "insights", token: "EAAxxx...", account: "act_123", inicio: "2026-06-01", fim: "2026-06-26" }
+//   POST { action: "insights_por_adset", token: "EAAxxx...", account: "act_123", inicio: "...", fim: "..." }
 
 const GRAPH_VERSION = 'v25.0';
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
@@ -59,6 +62,9 @@ exports.handler = async (event) => {
     }
     if (action === 'insights') {
       return await buscarInsights(token, params, headers);
+    }
+    if (action === 'insights_por_adset') {
+      return await buscarInsightsPorAdset(token, params, headers);
     }
     return resposta(400, { erro: `Ação desconhecida: ${action}` }, headers);
   } catch (err) {
@@ -130,6 +136,56 @@ async function buscarInsights(token, params, headers) {
   const dias = todosRegistros.map(formatarDia);
 
   return resposta(200, { conta: account, periodo: { inicio, fim }, paginas, total_registros: dias.length, dias }, headers);
+}
+
+// ---------- Buscar insights diários, quebrado por conjunto de anúncios (adset) ----------
+// Usado para atribuir investimento/leads a atendentes, comparando o nome do adset
+// com os nomes dos atendentes cadastrados no MATRIX. Não afeta a busca "insights" (geral).
+async function buscarInsightsPorAdset(token, params, headers) {
+  const account = params.account;
+  if (!account) {
+    return resposta(400, { erro: 'Informe a conta de anúncios (account).' }, headers);
+  }
+
+  const fim = params.fim || isoHoje();
+  const inicio = params.inicio || isoDiasAtras(7);
+
+  const fields = [
+    'adset_name', 'adset_id', 'spend', 'impressions', 'reach', 'clicks', 'cpc', 'ctr', 'actions', 'date_start', 'date_stop'
+  ].join(',');
+
+  let url = `${GRAPH_BASE}/${account}/insights`
+    + `?fields=${fields}`
+    + `&time_range=${encodeURIComponent(JSON.stringify({ since: inicio, until: fim }))}`
+    + `&time_increment=1`
+    + `&level=adset`
+    + `&limit=500`
+    + `&access_token=${encodeURIComponent(token)}`;
+
+  const todosRegistros = [];
+  let paginas = 0;
+  const MAX_PAGINAS = 50;
+
+  while (url && paginas < MAX_PAGINAS) {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) {
+      return resposta(400, { erro: data.error.message, codigo: data.error.code }, headers);
+    }
+
+    todosRegistros.push(...(data.data || []));
+    url = (data.paging && data.paging.next) ? data.paging.next : null;
+    paginas++;
+  }
+
+  const linhas = todosRegistros.map(r => ({
+    ...formatarDia(r),
+    adset_id: r.adset_id,
+    adset_nome: r.adset_name || '',
+  }));
+
+  return resposta(200, { conta: account, periodo: { inicio, fim }, paginas, total_registros: linhas.length, linhas }, headers);
 }
 
 // Converte um registro diário da Graph API no formato usado pelo MATRIX
