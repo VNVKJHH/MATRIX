@@ -918,9 +918,33 @@ tr:hover td{background:var(--neon-glow)}
       </div>
     </div>
 
+    <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Demais períodos</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px">
+      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
+        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Ontem</div>
+        <div id="gw-ontem-valor" style="font-size:13px;font-weight:700;color:#fff;margin-top:2px">R$ 0</div>
+        <div id="gw-ontem-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
+        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Semana</div>
+        <div id="gw-semana-valor" style="font-size:13px;font-weight:700;color:#fff;margin-top:2px">R$ 0</div>
+        <div id="gw-semana-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
+        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Mês</div>
+        <div id="gw-mes-valor" style="font-size:13px;font-weight:700;color:var(--neon);margin-top:2px">R$ 0</div>
+        <div id="gw-mes-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
+      </div>
+    </div>
+
     <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Hoje, em detalhes</div>
     <div id="adm-dash-metrics" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px"></div>
-    <div id="adm-dash-metrics2" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div id="adm-dash-metrics2" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
+
+    <div id="adm-dash-despesas-wrap" style="display:none">
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Despesas de hoje <span style="color:#666">(visível só p/ ADM)</span></div>
+      <div id="adm-dash-despesas" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px"></div>
+    </div>
   </div>
 
   <!-- Loading overlay -->
@@ -2683,20 +2707,34 @@ function renderDashAdm(){
   const roas=tMetaAds>0?R(tBruto/tMetaAds,2):0;
   const cpl=tLeads>0?R(tMetaAds/tLeads,2):0;
   const margem=tBruto>0?R(tLucro/tBruto*100,1):0;
-  const conv=tLeads>0?R(tVendas/tLeads*100,1):0;
   const cardStyle='background:rgba(255,255,255,.04);border-radius:9px;padding:.7rem .8rem;';
   document.getElementById('adm-dash-metrics').innerHTML=
-    '<div style="'+cardStyle+'border-left:3px solid var(--blue)"><div class="metric-label" style="font-size:9px">Receita</div><div class="metric-value mv-blue" style="font-size:15px">'+fmt(tBruto)+'</div></div>'
-    +'<div style="'+cardStyle+'border-left:3px solid '+(tLucro>=0?'var(--green)':'var(--red)')+'"><div class="metric-label" style="font-size:9px">Lucro</div><div class="metric-value '+(tLucro>=0?'mv-green':'mv-red')+'" style="font-size:15px">'+fmt(tLucro)+'</div><div style="font-size:9px;color:var(--t3)">Margem '+margem+'%</div></div>'
+    '<div style="'+cardStyle+'border-left:3px solid '+(tLucro>=0?'var(--green)':'var(--red)')+'"><div class="metric-label" style="font-size:9px">Lucro</div><div class="metric-value '+(tLucro>=0?'mv-green':'mv-red')+'" style="font-size:15px">'+fmt(tLucro)+'</div><div style="font-size:9px;color:var(--t3)">Margem '+margem+'%</div></div>'
     +'<div style="'+cardStyle+'border-left:3px solid var(--amber)"><div class="metric-label" style="font-size:9px">Meta Ads</div><div class="metric-value mv-amber" style="font-size:15px">'+fmt(tMetaAds)+'</div><div style="font-size:9px;color:var(--t3)">ROAS '+(roas>0?roas+'x':'—')+'</div></div>'
     +'<div style="'+cardStyle+'border-left:3px solid var(--purple)"><div class="metric-label" style="font-size:9px">Leads</div><div class="metric-value mv-purple" style="font-size:15px">'+tLeads+'</div><div style="font-size:9px;color:var(--t3)">CPL '+(cpl>0?fmt(cpl):'—')+'</div></div>';
   const rowStyle='display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.03);border-radius:7px;padding:.45rem .7rem;';
   document.getElementById('adm-dash-metrics2').innerHTML=
     '<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Vendas hoje</span><span style="font-size:13px;font-weight:700">'+tVendas+'</span></div>'
-    +'<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Frascos enviados</span><span style="font-size:13px;font-weight:700">'+tFrascos+'</span></div>'
-    +'<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Custo de envios</span><span style="font-size:13px;font-weight:700;color:var(--red-t)">'+fmt(tEnvio)+'</span></div>'
-    +'<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Conversão</span><span style="font-size:13px;font-weight:700">'+(conv>0?conv+'%':'—')+'</span></div>'
     +(()=>{const pp=pads.filter(p=>p.dia===filDia&&p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>p.dia===filDia&&p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+rowStyle+'border-left:3px solid '+corPad+'"><span class="metric-label" style="font-size:10px">Conv. PAD</span><span style="font-size:13px;font-weight:700;color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</span></div>';})();
+
+  // Card de Despesas — detalhado, visível apenas para o ADM logado.
+  const despesasWrap = document.getElementById('adm-dash-despesas-wrap');
+  if(adminLogado){
+    despesasWrap.style.display = 'block';
+    const custoFrascos = tFrascos*CUSTO_FRASCO;
+    const totalDespesas = custoFrascos + tEnvio + tMetaAds + tImpPJ + tPctAtend;
+    const linhaDesp=(label,valor)=>'<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0"><span style="color:var(--t3)">'+label+'</span><span style="font-weight:600;color:#FCA5A5">'+fmt(valor)+'</span></div>';
+    document.getElementById('adm-dash-despesas').innerHTML =
+      linhaDesp('Custo de frascos', custoFrascos)
+      + linhaDesp('Custo de envios', tEnvio)
+      + linhaDesp('Meta Ads', tMetaAds)
+      + linhaDesp('Imposto PJ', tImpPJ)
+      + linhaDesp('% Atendentes', tPctAtend)
+      + '<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;margin-top:4px;border-top:1px solid rgba(239,68,68,.25)"><span style="font-weight:700;color:#fff">Total</span><span style="font-weight:800;color:#FCA5A5">'+fmt(totalDespesas)+'</span></div>';
+  } else {
+    despesasWrap.style.display = 'none';
+  }
+
   if(!dashGloboLoaded){iniciarDashGlobo();}else if(dashGloboInstance){setTimeout(atualizarPontosDashGlobo,100);}
 }
 
@@ -2720,6 +2758,8 @@ function renderCardGatewayDashAdm(atendFiltro){
 
   const vHoje = somaPeriodo(hoje, hoje);
   const vOntem = somaPeriodo(ontem, ontem);
+  const vSemana = somaPeriodo(inicioSem, hoje);
+  const vMes = somaPeriodo(inicioM, hoje);
 
   document.getElementById('gw-vendas-hoje-valor').textContent = fmt(vHoje.bruto);
   document.getElementById('gw-qtd-vendas').textContent = vHoje.vendas+' venda'+(vHoje.vendas!==1?'s':'');
@@ -2737,6 +2777,13 @@ function renderCardGatewayDashAdm(atendFiltro){
     variacaoEl.style.background = 'rgba(255,255,255,.08)';
     variacaoEl.style.color = '#ddd';
   }
+
+  document.getElementById('gw-ontem-valor').textContent = fmt(vOntem.bruto).replace('R$ ','R$');
+  document.getElementById('gw-ontem-vendas').textContent = vOntem.vendas+' ped.';
+  document.getElementById('gw-semana-valor').textContent = fmt(vSemana.bruto).replace('R$ ','R$');
+  document.getElementById('gw-semana-vendas').textContent = vSemana.vendas+' ped.';
+  document.getElementById('gw-mes-valor').textContent = fmt(vMes.bruto).replace('R$ ','R$');
+  document.getElementById('gw-mes-vendas').textContent = vMes.vendas+' ped.';
 
   const nivelBloco = document.getElementById('gw-nivel-bloco');
   if(atendFiltro){
