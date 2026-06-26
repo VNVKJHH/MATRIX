@@ -17,8 +17,10 @@ const GRAPH_VERSION = 'v25.0';
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
 // action_type da Graph API que representamos como "Leads" no MATRIX.
-// Baseado no funil de mensagens/WhatsApp usado nas campanhas atuais.
-const LEAD_ACTION_TYPE = 'onsite_conversion.messaging_conversation_started_7d';
+// Campanhas de Engajamento (OUTCOME_ENGAGEMENT) com objetivo de mensagem reportam
+// o resultado como "Conversas por mensagem" no Gerenciador de Anúncios, que corresponde
+// ao action_type onsite_conversion.messaging_first_reply.
+const LEAD_ACTION_TYPE = 'onsite_conversion.messaging_first_reply';
 
 exports.handler = async (event) => {
   const headers = {
