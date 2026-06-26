@@ -794,13 +794,23 @@ tr:hover td{background:var(--neon-glow)}
   <div class="filters">
     <div><label>Mês</label><select id="adm-mes" onchange="renderAdmin()"></select></div>
     <div><label>Ano</label><select id="adm-ano" onchange="renderAdmin()"></select></div>
-    <div style="margin-top:18px"><button class="btn btn-primary" onclick="openAdminLancModal()"><i class="ti ti-plus"></i> Lançar Meta Ads</button></div>
+    <div>
+      <label>Conta de anúncios</label>
+      <select id="meta-conta-select" onchange="onTrocarContaMeta()" style="min-width:200px">
+        <option value="">Selecione uma conta...</option>
+      </select>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:6px">
+      <button class="btn btn-primary" id="btn-sync-meta" onclick="sincronizarMetaAds()"><i class="ti ti-refresh"></i> Atualizar dados do Meta Ads</button>
+      <button class="btn" onclick="abrirSelecaoContaMeta()" title="Listar contas disponíveis no token"><i class="ti ti-list-search"></i> Buscar contas</button>
+    </div>
   </div>
+  <p id="meta-sync-status" style="font-size:12px;color:var(--t2);margin:-0.75rem 0 1rem"></p>
   <div class="metrics" id="adm-metrics"></div>
   <div class="table-card">
-    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Meta Ads — Investimentos e leads por dia</p></div>
+    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Meta Ads — Investimentos e leads por dia <span style="font-size:10px;color:var(--t3);font-weight:400">(sincronizado automaticamente)</span></p></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Mês</th><th>Ano</th><th>Atendente</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Dia</th><th>Mês</th><th>Ano</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Impressões</th><th>Alcance</th><th>Ações</th></tr></thead>
       <tbody id="adm-inv-tbody"></tbody>
     </table></div>
   </div>
@@ -937,21 +947,14 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal admin lançamento -->
-<div class="modal-overlay" id="modal-adm-lanc" onclick="if(event.target===this)closeAdminLancModal()">
-  <div class="modal" style="width:420px">
-    <p class="modal-title" id="adm-lanc-title">Lançar Meta Ads</p>
-    <div class="form-grid">
-      <div class="form-group"><label>Dia</label><input type="number" id="al-dia" min="1" max="31" placeholder="18"></div>
-      <div class="form-group"><label>Mês</label><select id="al-mes"></select></div>
-      <div class="form-group"><label>Ano</label><input type="number" id="al-ano" value="2026"></div>
-      <div class="form-group full"><label>Atendente</label><select id="al-atend"></select></div>
-      <div class="form-group"><label>Investimento (R$)</label><input type="number" id="al-inv" step="0.01" placeholder="0.00"></div>
-      <div class="form-group"><label>Leads (quantidade)</label><input type="number" id="al-leads" placeholder="0"></div>
-    </div>
+<!-- Modal seleção de conta Meta Ads -->
+<div class="modal-overlay" id="modal-meta-contas" onclick="if(event.target===this)closeMetaContasModal()">
+  <div class="modal" style="width:480px">
+    <p class="modal-title">Selecionar conta de anúncios</p>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:12px">Contas de anúncios disponíveis para o token configurado:</p>
+    <div id="meta-contas-lista" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto"></div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeAdminLancModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarAdminLanc()"><i class="ti ti-device-floppy"></i> Salvar</button>
+      <button class="btn" onclick="closeMetaContasModal()">Fechar</button>
     </div>
   </div>
 </div>
@@ -1132,7 +1135,7 @@ let adminLancs=[
 ];
 
 let metas=[];
-let editIdx=-1,editAtendIdx=-1,editAdmIdx=-1;
+let editIdx=-1,editAtendIdx=-1;
 let charts={};
 let ofertaSelecionada=null;
 let valorEditado=null;
@@ -1215,10 +1218,10 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     nomes.forEach(n=>addOpt(el,n,n));if(v)el.value=v;
   });
-  ['f-atend','m-atend','mm-atend','al-atend','pad-atend'].forEach(id=>{
+  ['f-atend','m-atend','mm-atend','pad-atend'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;
-    if(id==='mm-atend')el.innerHTML='<option value="">Todos</option>';else if(id==='al-atend')el.innerHTML='<option value="">Geral (todos)</option>';else el.innerHTML='';
+    if(id==='mm-atend')el.innerHTML='<option value="">Todos</option>';else el.innerHTML='';
     nomes.forEach(n=>addOpt(el,n,n));
     if(v)el.value=v;
     else if(id==='f-atend'&&nomes.length>0)el.value=nomes[0];
@@ -1228,12 +1231,12 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     MESES.forEach(m=>addOpt(el,m,m));if(v)el.value=v;
   });
-  ['f-mes','m-mes','pan-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-mes','al-mes','adm-dash-mes','pad-mes'].forEach(id=>{
+  ['f-mes','m-mes','pan-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-mes','adm-dash-mes','pad-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     MESES.forEach(m=>addOpt(el,m,m));
     if(v)el.value=v;
-    else if(['pan-mes','meta-mes-fil','mm-mes','adm-mes','al-mes','cmp-mes-a'].includes(id))el.value='Maio';
+    else if(['pan-mes','meta-mes-fil','mm-mes','adm-mes','cmp-mes-a'].includes(id))el.value='Maio';
     else if(id==='cmp-mes-b')el.value='Janeiro';
   });
   ['rank-ano'].forEach(id=>{
@@ -1320,9 +1323,21 @@ function showPage(p){
     if(mainEl) mainEl.style.padding = '2rem';
   }
 
-  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:renderAdmin,lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
+  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{renderAdmin();initContaMetaSelect();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
   window.allRenders=fns;
   if(fns[p])fns[p]();
+}
+
+function initContaMetaSelect(){
+  const sel = document.getElementById('meta-conta-select');
+  if(!sel) return;
+  const salva = getContaMetaSalva();
+  if(salva && ![...sel.options].some(o=>o.value===salva)){
+    const opt = document.createElement('option');
+    opt.value = salva; opt.textContent = salva;
+    sel.appendChild(opt);
+  }
+  if(salva){ sel.value = salva; contaMetaAtual = salva; }
 }
 
 function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
@@ -1596,9 +1611,14 @@ function renderAdmin(){
   admFil.sort((a,b)=>a.dia-b.dia).forEach((a,i)=>{
     const idx2=adminLancs.indexOf(a);
     const cpl=a.leads>0?fmt(a.investido/a.leads):'—';
-    tb1+=`<tr><td style="font-weight:700">${a.dia}</td><td>${a.mes}</td><td>${a.ano}</td><td>${a.atendente||'Geral'}</td><td>${fmt(a.investido)}</td><td>${a.leads}</td><td>${cpl}</td><td style="display:flex;gap:4px"><button class="btn btn-sm" onclick="editAdmLanc(${idx2})"><i class="ti ti-edit"></i></button><button class="btn btn-danger btn-sm" onclick="deleteAdmLanc(${idx2})"><i class="ti ti-trash"></i></button></td></tr>`;
+    const cliques=a.cliques!=null?a.cliques:'—';
+    const ctr=a.ctr!=null?R(a.ctr,2)+'%':'—';
+    const cpc=a.cpc!=null?fmt(a.cpc):'—';
+    const impressoes=a.impressoes!=null?a.impressoes.toLocaleString('pt-BR'):'—';
+    const alcance=a.alcance!=null?a.alcance.toLocaleString('pt-BR'):'—';
+    tb1+=`<tr><td style="font-weight:700">${a.dia}</td><td>${a.mes}</td><td>${a.ano}</td><td>${fmt(a.investido)}</td><td>${a.leads}</td><td>${cpl}</td><td>${cliques}</td><td>${ctr}</td><td>${cpc}</td><td>${impressoes}</td><td>${alcance}</td><td style="display:flex;gap:4px"><button class="btn btn-danger btn-sm" onclick="deleteAdmLanc(${idx2})"><i class="ti ti-trash"></i></button></td></tr>`;
   });
-  if(!tb1)tb1='<tr><td colspan="8" class="empty"><i class="ti ti-inbox"></i>Nenhum lançamento</td></tr>';
+  if(!tb1)tb1='<tr><td colspan="12" class="empty"><i class="ti ti-inbox"></i>Nenhum dado sincronizado. Clique em "Atualizar dados do Meta Ads".</td></tr>';
   document.getElementById('adm-inv-tbody').innerHTML=tb1;
   const rowsEnvio=filtrar('',mes,ano).filter(r=>!r.isPad);
   let tb2='';
@@ -1615,31 +1635,117 @@ function renderAdmin(){
   document.getElementById('adm-envios-tbody').innerHTML=tb2;
 }
 
-function openAdminLancModal(){
-  editAdmIdx=-1;initAllSelects();
-  document.getElementById('adm-lanc-title').textContent='Lançar Meta Ads';
-  ['al-dia','al-inv','al-leads'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('al-ano').value='2026';
-  const alMes=document.getElementById('al-mes');if(alMes&&!alMes.value)alMes.value=MESES[new Date().getMonth()];
-  const alAtend=document.getElementById('al-atend');if(alAtend&&alAtend.options.length>0)alAtend.selectedIndex=0;
-  document.getElementById('modal-adm-lanc').classList.add('open');
+// ===== META ADS — Integração automática via Netlify Function =====
+const META_FUNC_URL = '/.netlify/functions/meta-ads';
+let metaContaAtual = localStorage.getItem ? null : null; // placeholder, real state below
+let contaMetaAtual = null; // ex: "act_423161440010443"
+
+function getContaMetaSalva(){
+  const meta = adminLancs.find(a => a.origemMeta && a.contaMeta);
+  return meta ? meta.contaMeta : null;
 }
-function closeAdminLancModal(){document.getElementById('modal-adm-lanc').classList.remove('open');}
-function editAdmLanc(idx){
-  editAdmIdx=idx;const a=adminLancs[idx];
-  document.getElementById('adm-lanc-title').textContent='Editar lançamento';
-  document.getElementById('al-dia').value=a.dia;document.getElementById('al-mes').value=a.mes;document.getElementById('al-ano').value=a.ano;document.getElementById('al-inv').value=a.investido||0;document.getElementById('al-leads').value=a.leads||0;document.getElementById('al-atend').value=a.atendente||'';
-  document.getElementById('modal-adm-lanc').classList.add('open');
+
+async function abrirSelecaoContaMeta(){
+  const lista = document.getElementById('meta-contas-lista');
+  lista.innerHTML = '<div class="empty" style="padding:1rem"><i class="ti ti-loader-2"></i> Buscando contas...</div>';
+  document.getElementById('modal-meta-contas').classList.add('open');
+  try{
+    const res = await fetch(`${META_FUNC_URL}?action=contas`);
+    const data = await res.json();
+    if(data.erro){ lista.innerHTML = `<div class="empty" style="padding:1rem;color:var(--red)">Erro: ${data.erro}</div>`; return; }
+    if(!data.contas || data.contas.length===0){ lista.innerHTML = '<div class="empty" style="padding:1rem">Nenhuma conta encontrada para este token.</div>'; return; }
+    lista.innerHTML = data.contas.map(c => `
+      <div class="oferta-item" style="padding:10px 12px" onclick="selecionarContaMeta('${c.id}','${(c.nome||c.id).replace(/'/g,"\\'")}')">
+        <div class="oferta-nome">${c.nome||c.id}</div>
+        <div class="oferta-valor">${c.id} ${c.moeda?'· '+c.moeda:''}</div>
+      </div>
+    `).join('');
+  }catch(e){
+    lista.innerHTML = `<div class="empty" style="padding:1rem;color:var(--red)">Erro ao buscar contas: ${e.message}</div>`;
+  }
 }
-function salvarAdminLanc(){
-  const rec={dia:parseInt(document.getElementById('al-dia').value)||0,mes:document.getElementById('al-mes').value,ano:parseInt(document.getElementById('al-ano').value)||2026,atendente:document.getElementById('al-atend').value,investido:parseFloat(document.getElementById('al-inv').value)||0,leads:parseInt(document.getElementById('al-leads').value)||0};
-  if(!rec.dia){toast('Informe o dia!');return;}
-  if(!rec.mes){toast('Informe o mês!');return;}
-  rec.fbId=rec.fbId||Date.now().toString();
-  if(editAdmIdx>=0){adminLancs[editAdmIdx]=rec;}else{adminLancs.push(rec);}
-  if(window.fbSave)window.fbSave('adminLancs',rec.fbId,rec);
-  closeAdminLancModal();initAllSelects();renderAdmin();toast('Salvo!');
+function closeMetaContasModal(){ document.getElementById('modal-meta-contas').classList.remove('open'); }
+
+function selecionarContaMeta(id, nome){
+  contaMetaAtual = id;
+  const sel = document.getElementById('meta-conta-select');
+  if(sel){
+    let opt = [...sel.options].find(o=>o.value===id);
+    if(!opt){ opt = document.createElement('option'); opt.value=id; sel.appendChild(opt); }
+    opt.textContent = `${nome} (${id})`;
+    sel.value = id;
+  }
+  closeMetaContasModal();
+  toast('Conta selecionada: '+nome);
 }
+
+function onTrocarContaMeta(){
+  const sel = document.getElementById('meta-conta-select');
+  contaMetaAtual = sel ? sel.value : null;
+}
+
+async function sincronizarMetaAds(){
+  const sel = document.getElementById('meta-conta-select');
+  const conta = (sel && sel.value) || contaMetaAtual || getContaMetaSalva();
+  if(!conta){
+    toast('Selecione uma conta de anúncios primeiro!');
+    abrirSelecaoContaMeta();
+    return;
+  }
+  const btn = document.getElementById('btn-sync-meta');
+  const status = document.getElementById('meta-sync-status');
+  if(btn){ btn.disabled=true; btn.style.opacity='.6'; }
+  if(status) status.textContent = 'Buscando dados na Meta...';
+
+  try{
+    const url = `${META_FUNC_URL}?action=insights&account=${encodeURIComponent(conta)}&inicio=2020-01-01&fim=${isoHojeMatrix()}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.erro){
+      if(status) status.textContent = '';
+      toast('Erro: '+data.erro);
+      if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+      return;
+    }
+    const dias = data.dias || [];
+    // Remove lançamentos antigos vindos da Meta para essa mesma conta (evita duplicar)
+    adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta));
+    if(window.fbDelete){
+      // remove do firebase os antigos dessa conta (busca por fbId já conhecido fica a cargo do listener)
+    }
+    let novos = 0;
+    dias.forEach(d=>{
+      if(!d.investido && !d.leads && !d.impressoes) return; // ignora dias totalmente vazios
+      const rec = {
+        dia: d.dia, mes: d.mes, ano: d.ano,
+        atendente: '', // Geral — vindo da Meta, não é por atendente
+        investido: d.investido, leads: d.leads,
+        cliques: d.cliques, cpc: d.cpc, ctr: d.ctr,
+        impressoes: d.impressoes, alcance: d.alcance,
+        origemMeta: true, contaMeta: conta,
+        fbId: 'meta_'+conta+'_'+d.data_iso
+      };
+      adminLancs.push(rec);
+      if(window.fbSave) window.fbSave('adminLancs', rec.fbId, rec);
+      novos++;
+    });
+    if(status) status.textContent = `Última sincronização: ${new Date().toLocaleString('pt-BR')} — ${novos} dia(s) atualizados.`;
+    initAllSelects();
+    renderAdmin();
+    toast(`✅ ${novos} dia(s) sincronizados do Meta Ads!`);
+  }catch(e){
+    console.error('Erro ao sincronizar Meta Ads:', e);
+    if(status) status.textContent = '';
+    toast('Erro ao sincronizar: '+e.message);
+  }finally{
+    if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+  }
+}
+
+function isoHojeMatrix(){
+  return new Date().toISOString().split('T')[0];
+}
+
 function deleteAdmLanc(idx){if(confirm('Remover?')){adminLancs.splice(idx,1);renderAdmin();toast('Removido.');}}
 
 function salvarLancamento(){
