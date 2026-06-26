@@ -1757,7 +1757,19 @@ function dataInicioPermitida(){
   return d.toISOString().split('T')[0];
 }
 
-function deleteAdmLanc(idx){if(confirm('Remover?')){adminLancs.splice(idx,1);renderAdmin();toast('Removido.');}}
+function deleteAdmLanc(idx){
+  if(confirm('Remover?')){
+    const item = adminLancs[idx];
+    if(item && item.fbId && window.fbDelete){
+      window.fbDelete('adminLancs', item.fbId);
+    } else if(item && !item.fbId){
+      console.warn('Registro sem fbId — pode reaparecer se vier do Firestore com outro ID.', item);
+    }
+    adminLancs.splice(idx,1);
+    renderAdmin();
+    toast('Removido.');
+  }
+}
 
 function salvarLancamento(){
   const dia=parseInt(document.getElementById('f-dia').value);
