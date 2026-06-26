@@ -6,6 +6,11 @@ exports.handler = async (event) => {
   }
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
+  const apiKey = process.env.SEU_RASTREIO_API_KEY;
+  if (!apiKey) {
+    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'SEU_RASTREIO_API_KEY não configurado no Netlify.' }) };
+  }
+
   try {
     const body = JSON.parse(event.body);
     const codigo = body.codigo;
@@ -17,7 +22,7 @@ exports.handler = async (event) => {
         path: '/api/public/rastreio/' + codigo,
         method: 'GET',
         headers: {
-          'Authorization': 'Bearer sr_live_fjlvMM3nQ7Rn7WIRA00qMpIdKKz9Xr1YQbIFi2SpDHY',
+          'Authorization': 'Bearer ' + apiKey,
           'Accept': 'application/json',
           'User-Agent': 'MATRIX/1.0'
         }
