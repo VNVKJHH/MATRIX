@@ -982,22 +982,33 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal período estilo Facebook -->
+<!-- Modal período estilo Facebook (calendário visual com arraste) -->
 <div class="modal-overlay" id="modal-meta-periodo" onclick="if(event.target===this)closeMetaPeriodoModal()">
-  <div class="modal" style="width:300px">
+  <div class="modal" style="width:700px;max-width:95vw">
     <p class="modal-title">Período</p>
-    <div id="meta-periodo-atalhos" style="display:flex;flex-direction:column;gap:2px;max-height:360px;overflow-y:auto">
-      <!-- preenchido via JS -->
-    </div>
-    <div class="divider"></div>
-    <p style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Período personalizado</p>
-    <div class="form-grid">
-      <div class="form-group"><label>De</label><input type="date" id="meta-periodo-de"></div>
-      <div class="form-group"><label>Até</label><input type="date" id="meta-periodo-ate"></div>
+    <div style="display:flex;gap:1rem;align-items:flex-start">
+      <div id="meta-periodo-atalhos" style="display:flex;flex-direction:column;gap:2px;width:160px;flex-shrink:0;max-height:380px;overflow-y:auto;border-right:1px solid var(--border2);padding-right:10px">
+        <!-- preenchido via JS -->
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <button class="btn btn-sm" onclick="mudarMesCalendarioMeta(-1)"><i class="ti ti-chevron-left"></i></button>
+          <div style="display:flex;gap:14px">
+            <div id="meta-cal-mes1-label" style="font-size:13px;font-weight:700;text-align:center;width:100px"></div>
+            <div id="meta-cal-mes2-label" style="font-size:13px;font-weight:700;text-align:center;width:100px"></div>
+          </div>
+          <button class="btn btn-sm" onclick="mudarMesCalendarioMeta(1)"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <div style="display:flex;gap:14px" id="meta-cal-grids" onmouseup="finalizarArrasteCalMeta()">
+          <div id="meta-cal-grid1" style="width:182px"></div>
+          <div id="meta-cal-grid2" style="width:182px"></div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--t2);text-align:center" id="meta-periodo-preview"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeMetaPeriodoModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="aplicarPeriodoPersonalizadoMeta()"><i class="ti ti-check"></i> Aplicar</button>
+      <button class="btn btn-primary" onclick="confirmarPeriodoCalendarioMeta()"><i class="ti ti-check"></i> Aplicar</button>
     </div>
   </div>
 </div>
@@ -2015,14 +2026,13 @@ function dataInicioPermitida(){
   return d.toISOString().split('T')[0];
 }
 
-// ===== PERÍODO ESTILO FACEBOOK (Administração) =====
+// ===== PERÍODO ESTILO FACEBOOK (Administração) — calendário visual com arraste =====
 function isoDate(d){ return d.toISOString().split('T')[0]; }
 function hojeDate(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
 function addDias(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function inicioMes(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
 function fimMes(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
 function inicioSemana(d){ const x=new Date(d); const dia=(x.getDay()+6)%7; return addDias(x,-dia); } // semana começa segunda
-function fimSemana(d){ return addDias(inicioSemana(d),6); }
 
 const META_PERIODO_ATALHOS = [
   { label:'Hoje', calc:()=>{const h=hojeDate();return[h,h];} },
@@ -2038,13 +2048,16 @@ const META_PERIODO_ATALHOS = [
   { label:'Máximo', calc:()=>[new Date(dataInicioPermitida()+'T00:00:00'),hojeDate()] },
 ];
 
-let _periodoMetaAtual = null; // {inicio, fim} em ISO yyyy-mm-dd
+let _periodoMetaAtual = null; // {inicio, fim, label} em ISO yyyy-mm-dd
+let _calMetaMesBase = null;   // Date — mês exibido na primeira grade (a segunda mostra o mês seguinte)
+let _calMetaSelInicio = null; // ISO yyyy-mm-dd — início da seleção em andamento/concluída
+let _calMetaSelFim = null;    // ISO yyyy-mm-dd
+let _calMetaArrastando = false;
 
 function getPeriodoMetaAtual(){
   if(_periodoMetaAtual) return _periodoMetaAtual;
   const salvo = sessionStorage.getItem('metaPeriodo');
   if(salvo){ try{ _periodoMetaAtual = JSON.parse(salvo); return _periodoMetaAtual; }catch(e){} }
-  // padrão: este mês
   const [ini,fim] = META_PERIODO_ATALHOS.find(a=>a.label==='Este mês').calc();
   _periodoMetaAtual = { inicio: isoDate(ini), fim: isoDate(fim), label:'Este mês' };
   return _periodoMetaAtual;
@@ -2066,10 +2079,18 @@ function abrirPeriodoMeta(){
   const cont = document.getElementById('meta-periodo-atalhos');
   const atual = getPeriodoMetaAtual();
   cont.innerHTML = META_PERIODO_ATALHOS.map(a => `
-    <div onclick="aplicarAtalhoPeriodoMeta('${a.label}')" style="padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;${atual.label===a.label?'background:var(--neon-glow);color:var(--neon);font-weight:600':''}" onmouseover="this.style.background='var(--neon-glow)'" onmouseout="this.style.background='${atual.label===a.label?'var(--neon-glow)':'transparent'}'">${a.label}</div>
+    <div onclick="aplicarAtalhoPeriodoMeta('${a.label}')" style="padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;${atual.label===a.label?'background:var(--neon-glow);color:var(--neon);font-weight:600':''}" onmouseover="if(this.dataset.sel!=='1')this.style.background='var(--neon-glow)'" onmouseout="if(this.dataset.sel!=='1')this.style.background='transparent'" data-sel="${atual.label===a.label?'1':'0'}">${a.label}</div>
   `).join('');
-  document.getElementById('meta-periodo-de').value = atual.inicio;
-  document.getElementById('meta-periodo-ate').value = atual.fim;
+
+  // Inicializa a seleção do calendário com o período atual
+  _calMetaSelInicio = atual.inicio;
+  _calMetaSelFim = atual.fim;
+  _calMetaArrastando = false;
+  // Mês base = mês do início da seleção (a 2ª grade mostra o mês seguinte)
+  _calMetaMesBase = new Date(atual.inicio+'T00:00:00');
+  _calMetaMesBase = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth(), 1);
+
+  renderCalendarioMeta();
   document.getElementById('modal-meta-periodo').classList.add('open');
 }
 function closeMetaPeriodoModal(){ document.getElementById('modal-meta-periodo').classList.remove('open'); }
@@ -2083,15 +2104,99 @@ function aplicarAtalhoPeriodoMeta(label){
   renderAdmin();
 }
 
-function aplicarPeriodoPersonalizadoMeta(){
-  const de = document.getElementById('meta-periodo-de').value;
-  const ate = document.getElementById('meta-periodo-ate').value;
-  if(!de || !ate){ toast('Selecione as duas datas!'); return; }
-  if(de > ate){ toast('A data inicial deve ser antes da data final!'); return; }
-  setPeriodoMetaAtual(de, ate);
+function mudarMesCalendarioMeta(delta){
+  _calMetaMesBase = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth()+delta, 1);
+  renderCalendarioMeta();
+}
+
+function nomeDiaSemana(i){ return ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][i]; }
+const NOMES_MESES_CAL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function renderCalendarioMeta(){
+  const mes1 = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth(), 1);
+  const mes2 = new Date(_calMetaMesBase.getFullYear(), _calMetaMesBase.getMonth()+1, 1);
+  document.getElementById('meta-cal-mes1-label').textContent = `${NOMES_MESES_CAL[mes1.getMonth()].substring(0,3)} ${mes1.getFullYear()}`;
+  document.getElementById('meta-cal-mes2-label').textContent = `${NOMES_MESES_CAL[mes2.getMonth()].substring(0,3)} ${mes2.getFullYear()}`;
+  document.getElementById('meta-cal-grid1').innerHTML = montarGradeMesMeta(mes1);
+  document.getElementById('meta-cal-grid2').innerHTML = montarGradeMesMeta(mes2);
+  atualizarPreviewPeriodoMeta();
+}
+
+function montarGradeMesMeta(mesData){
+  const ano = mesData.getFullYear(), mes = mesData.getMonth();
+  const primeiroDiaSemana = (new Date(ano, mes, 1).getDay()+6)%7; // 0=segunda
+  const totalDias = new Date(ano, mes+1, 0).getDate();
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:var(--t3);text-align:center;margin-bottom:4px">';
+  for(let i=0;i<7;i++) html += `<div>${nomeDiaSemana(i)}</div>`;
+  html += '</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px" id="grid-dias-'+ano+'-'+mes+'">';
+  for(let i=0;i<primeiroDiaSemana;i++) html += '<div></div>';
+  for(let d=1; d<=totalDias; d++){
+    const iso = String(ano).padStart(4,'0')+'-'+String(mes+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    html += `<div class="cal-meta-dia" data-iso="${iso}" onmousedown="iniciarArrasteCalMeta('${iso}')" onmouseenter="moverArrasteCalMeta('${iso}')" style="text-align:center;font-size:12px;padding:5px 0;border-radius:4px;cursor:pointer;user-select:none">${d}</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function iniciarArrasteCalMeta(iso){
+  _calMetaArrastando = true;
+  _calMetaSelInicio = iso;
+  _calMetaSelFim = iso;
+  pintarSelecaoCalMeta();
+}
+function moverArrasteCalMeta(iso){
+  if(!_calMetaArrastando) return;
+  _calMetaSelFim = iso;
+  pintarSelecaoCalMeta();
+}
+function finalizarArrasteCalMeta(){
+  if(!_calMetaArrastando) return;
+  _calMetaArrastando = false;
+  if(_calMetaSelInicio > _calMetaSelFim){
+    const tmp = _calMetaSelInicio; _calMetaSelInicio = _calMetaSelFim; _calMetaSelFim = tmp;
+  }
+  pintarSelecaoCalMeta();
+  atualizarPreviewPeriodoMeta();
+}
+
+function pintarSelecaoCalMeta(){
+  let ini = _calMetaSelInicio, fim = _calMetaSelFim;
+  if(ini > fim){ const tmp=ini; ini=fim; fim=tmp; }
+  document.querySelectorAll('.cal-meta-dia').forEach(el=>{
+    const iso = el.dataset.iso;
+    const dentro = iso>=ini && iso<=fim;
+    const borda = (iso===ini || iso===fim);
+    el.style.background = dentro ? 'var(--neon-glow)' : 'transparent';
+    el.style.color = dentro ? 'var(--neon)' : 'var(--t1)';
+    el.style.fontWeight = borda ? '800' : (dentro?'600':'400');
+    el.style.boxShadow = borda ? 'inset 0 0 0 1.5px var(--neon)' : 'none';
+  });
+  atualizarPreviewPeriodoMeta();
+  // Desmarca atalhos da lista (a seleção agora é manual)
+  document.querySelectorAll('#meta-periodo-atalhos > div').forEach(el=>{ el.dataset.sel='0'; el.style.background='transparent'; el.style.color='var(--t1)'; el.style.fontWeight='400'; });
+}
+
+function atualizarPreviewPeriodoMeta(){
+  const prev = document.getElementById('meta-periodo-preview');
+  if(!prev) return;
+  let ini = _calMetaSelInicio, fim = _calMetaSelFim;
+  if(!ini || !fim) { prev.textContent=''; return; }
+  if(ini > fim){ const tmp=ini; ini=fim; fim=tmp; }
+  prev.textContent = ini===fim ? formatarDataBR(ini) : `${formatarDataBR(ini)} — ${formatarDataBR(fim)}`;
+}
+
+function confirmarPeriodoCalendarioMeta(){
+  if(!_calMetaSelInicio || !_calMetaSelFim){ toast('Selecione um período no calendário!'); return; }
+  let ini = _calMetaSelInicio, fim = _calMetaSelFim;
+  if(ini > fim){ const tmp=ini; ini=fim; fim=tmp; }
+  setPeriodoMetaAtual(ini, fim);
   closeMetaPeriodoModal();
   renderAdmin();
 }
+
+// Em alguns navegadores, soltar o clique fora da grade não dispara onmouseup do container;
+// este listener global garante que o arraste sempre finalize.
+document.addEventListener('mouseup', ()=>{ if(_calMetaArrastando) finalizarArrasteCalMeta(); });
 
 function deleteAdmLanc(idx){
   if(confirm('Remover?')){
