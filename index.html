@@ -800,12 +800,17 @@ tr:hover td{background:var(--neon-glow)}
 <div class="page" id="page-admin">
   <p class="page-title">Administração</p>
   <div class="filters">
-    <div><label>Mês</label><select id="adm-mes" onchange="renderAdmin()"></select></div>
-    <div><label>Ano</label><select id="adm-ano" onchange="renderAdmin()"></select></div>
     <div>
-      <label>Conta de anúncios</label>
-      <div id="meta-conta-card" onclick="abrirGerenciarContasMeta()" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:200px;display:flex;flex-direction:column;line-height:1.3;transition:all .2s" title="Clique para trocar ou gerenciar contas">
-        <span id="meta-conta-card-nome" style="font-size:13px;font-weight:700;color:var(--t1)">Selecione uma conta...</span>
+      <label>Período</label>
+      <div id="adm-periodo-card" onclick="abrirPeriodoMeta()" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:170px;display:flex;align-items:center;gap:8px" title="Clique para escolher o período">
+        <i class="ti ti-calendar" style="font-size:14px;color:var(--t3)"></i>
+        <span id="adm-periodo-label" style="font-size:13px;font-weight:600">Este mês</span>
+      </div>
+    </div>
+    <div>
+      <label>Contas de anúncios</label>
+      <div id="meta-conta-card" onclick="abrirGerenciarContasMeta()" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:220px;display:flex;flex-direction:column;line-height:1.3;transition:all .2s" title="Clique para escolher quais contas visualizar">
+        <span id="meta-conta-card-nome" style="font-size:13px;font-weight:700;color:var(--t1)">Nenhuma conta adicionada</span>
         <span id="meta-conta-card-id" style="font-size:10px;color:var(--t3)"></span>
       </div>
     </div>
@@ -819,7 +824,7 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card">
     <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Meta Ads — Investimentos e leads por dia <span style="font-size:10px;color:var(--t3);font-weight:400">(sincronizado automaticamente)</span></p></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Mês</th><th>Ano</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Impressões</th><th>Alcance</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Dia</th><th>Mês</th><th>Ano</th><th>Conta</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Impressões</th><th>Alcance</th><th>Ações</th></tr></thead>
       <tbody id="adm-inv-tbody"></tbody>
     </table></div>
   </div>
@@ -960,8 +965,8 @@ tr:hover td{background:var(--neon-glow)}
 <div class="modal-overlay" id="modal-meta-contas" onclick="if(event.target===this)closeMetaContasModal()">
   <div class="modal" style="width:520px;max-height:85vh;overflow-y:auto">
     <p class="modal-title">Contas de anúncios</p>
+    <p style="font-size:11px;color:var(--t2);margin-bottom:10px">Marque quais contas você quer visualizar na Administração. A sincronização busca dados de todas as contas marcadas.</p>
 
-    <p style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Suas contas salvas</p>
     <div id="meta-contas-salvas-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem">
       <div class="empty" style="padding:1rem"><i class="ti ti-inbox"></i>Nenhuma conta salva ainda.</div>
     </div>
@@ -973,6 +978,26 @@ tr:hover td{background:var(--neon-glow)}
 
     <div class="modal-footer">
       <button class="btn" onclick="closeMetaContasModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal período estilo Facebook -->
+<div class="modal-overlay" id="modal-meta-periodo" onclick="if(event.target===this)closeMetaPeriodoModal()">
+  <div class="modal" style="width:300px">
+    <p class="modal-title">Período</p>
+    <div id="meta-periodo-atalhos" style="display:flex;flex-direction:column;gap:2px;max-height:360px;overflow-y:auto">
+      <!-- preenchido via JS -->
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Período personalizado</p>
+    <div class="form-grid">
+      <div class="form-group"><label>De</label><input type="date" id="meta-periodo-de"></div>
+      <div class="form-group"><label>Até</label><input type="date" id="meta-periodo-ate"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeMetaPeriodoModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="aplicarPeriodoPersonalizadoMeta()"><i class="ti ti-check"></i> Aplicar</button>
     </div>
   </div>
 </div>
@@ -1221,14 +1246,7 @@ function calcRow(r){
   const ticket=qtd>0?R(bruto/qtd,2):0;
   return{impPJ,pctAtend,subtotal,ticket,frascos:env.frascos,custoFrascos:env.custoFrascos,custoEnv:env.custoEnv,custoEnvTotal:env.total};
 }
-function calcPadCustos(filtro){
-  const padsFil=pads.filter(p=>{
-    if(filtro.dia&&p.dia!==filtro.dia)return false;
-    if(filtro.mes&&p.mes!==filtro.mes)return false;
-    if(filtro.ano&&String(p.ano)!==String(filtro.ano))return false;
-    if(filtro.atendente&&p.atendente!==filtro.atendente)return false;
-    return true;
-  });
+function calcPadCustosPorLista(padsFil){
   let custoFrascos=0,custoEnvio=0,impPJ=0,pctAtend=0,bruto=0,qtd=0,frascos=0;
   padsFil.forEach(p=>{
     const o=OFERTAS.find(x=>x.id===p.ofertaId)||{frascos:0};
@@ -1244,6 +1262,16 @@ function calcPadCustos(filtro){
     }
   });
   return{custoFrascos,custoEnvio,impPJ,pctAtend,totalCustos:custoFrascos+custoEnvio+impPJ+pctAtend,bruto,qtd,frascos};
+}
+function calcPadCustos(filtro){
+  const padsFil=pads.filter(p=>{
+    if(filtro.dia&&p.dia!==filtro.dia)return false;
+    if(filtro.mes&&p.mes!==filtro.mes)return false;
+    if(filtro.ano&&String(p.ano)!==String(filtro.ano))return false;
+    if(filtro.atendente&&p.atendente!==filtro.atendente)return false;
+    return true;
+  });
+  return calcPadCustosPorLista(padsFil);
 }
 function calcLucroDia(dia,mes,ano,atendente){
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&(!atendente||d.atendente===atendente)&&!d.isPad);
@@ -1282,12 +1310,12 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     MESES.forEach(m=>addOpt(el,m,m));if(v)el.value=v;
   });
-  ['f-mes','m-mes','pan-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-mes','adm-dash-mes','pad-mes'].forEach(id=>{
+  ['f-mes','m-mes','pan-mes','cmp-mes-a','cmp-mes-b','mm-mes','meta-mes-fil','adm-dash-mes','pad-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     MESES.forEach(m=>addOpt(el,m,m));
     if(v)el.value=v;
-    else if(['pan-mes','meta-mes-fil','mm-mes','adm-mes','cmp-mes-a'].includes(id))el.value='Maio';
+    else if(['pan-mes','meta-mes-fil','mm-mes','cmp-mes-a'].includes(id))el.value='Maio';
     else if(id==='cmp-mes-b')el.value='Janeiro';
   });
   ['rank-ano'].forEach(id=>{
@@ -1295,7 +1323,7 @@ function initAllSelects(){
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     anos.forEach(a=>addOpt(el,a,a));if(v)el.value=v;
   });
-  ['db-ano','pan-ano','cmp-ano-a','cmp-ano-b','meta-ano-fil','adm-ano','adm-dash-ano'].forEach(id=>{
+  ['db-ano','pan-ano','cmp-ano-a','cmp-ano-b','meta-ano-fil','adm-dash-ano'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='';
     if(id==='db-ano')addOpt(el,'','Todos');
@@ -1374,7 +1402,7 @@ function showPage(p){
     if(mainEl) mainEl.style.padding = '2rem';
   }
 
-  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{renderAdmin();initContaMetaSelect();autoSyncMetaAds();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
+  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{const lbl=document.getElementById('adm-periodo-label');if(lbl)lbl.textContent=getPeriodoMetaAtual().label;renderAdmin();initContaMetaSelect();autoSyncMetaAds();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
   window.allRenders=fns;
   if(fns[p])fns[p]();
 }
@@ -1621,23 +1649,45 @@ function salvarAtendente(){
 }
 function deleteAtend(idx){if(confirm('Remover?')){atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');}}
 
+function diaToISO(dia, mes, ano){
+  const mi = MESES.indexOf(mes);
+  if(mi<0) return null;
+  return String(ano).padStart(4,'0')+'-'+String(mi+1).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
+}
+function dataNoPeriodo(dia, mes, ano){
+  const iso = diaToISO(dia, mes, ano);
+  if(!iso) return false;
+  const { inicio, fim } = getPeriodoMetaAtual();
+  return iso >= inicio && iso <= fim;
+}
+
 function renderAdmin(){
-  const mes=document.getElementById('adm-mes').value;
-  const ano=document.getElementById('adm-ano').value;
-  const admFil=adminLancs.filter(a=>a.mes===mes&&String(a.ano)===String(ano));
+  const { inicio, fim } = getPeriodoMetaAtual();
+  const contasFiltro = getContasSelecionadasMeta();
+
+  const admFil = adminLancs.filter(a => {
+    if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
+    if(a.origemMeta && contasFiltro.length>0 && !contasFiltro.includes(a.contaMeta)) return false;
+    return true;
+  });
   let tInv=0,tLeads=0;
   admFil.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
-  const rows=filtrar('',mes,ano).filter(r=>!r.isPad);
+
+  const rows = dados.filter(r => !r.isPad && dataNoPeriodo(r.dia, r.mes, r.ano));
   let tBruto=0,tFrascos=0,tEnvio=0,tVendas=0;
   rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tVendas+=r.qtd_vendas||0;});
-  const padCAdm=calcPadCustos({mes,ano:parseInt(ano)});
+
+  const padsNoPeriodo = pads.filter(p => dataNoPeriodo(p.dia, p.mes, p.ano));
+  const padCAdm = calcPadCustosPorLista(padsNoPeriodo);
   tFrascos+=padCAdm.frascos;tBruto+=padCAdm.bruto;
+
   const diasSet=new Set();
   rows.forEach(r=>diasSet.add(r.dia+'|'+r.mes+'|'+r.ano));
   admFil.forEach(a=>diasSet.add(a.dia+'|'+a.mes+'|'+a.ano));
-  pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano)).forEach(p=>diasSet.add(p.dia+'|'+p.mes+'|'+p.ano));
+  padsNoPeriodo.forEach(p=>diasSet.add(p.dia+'|'+p.mes+'|'+p.ano));
   let tLucro=0;
   diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
+
   document.getElementById('adm-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Investimento Meta Ads</div><div class="metric-value mv-amber">${fmt(tInv)}</div></div>
     <div class="metric-card"><div class="metric-label">Leads</div><div class="metric-value">${tLeads}</div></div>
@@ -1651,7 +1701,7 @@ function renderAdmin(){
     <div class="metric-card"><div class="metric-label">Lucro líquido</div><div class="metric-value ${tLucro>=0?'mv-green':'mv-red'}">${fmt(tLucro)}</div></div>
   `;
   let tb1='';
-  admFil.sort((a,b)=>a.dia-b.dia).forEach((a,i)=>{
+  admFil.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) || (a.contaMeta||'').localeCompare(b.contaMeta||'') ).forEach((a)=>{
     const idx2=adminLancs.indexOf(a);
     const cpl=a.leads>0?fmt(a.investido/a.leads):'—';
     const cliques=a.cliques!=null?a.cliques:'—';
@@ -1659,18 +1709,18 @@ function renderAdmin(){
     const cpc=a.cpc!=null?fmt(a.cpc):'—';
     const impressoes=a.impressoes!=null?a.impressoes.toLocaleString('pt-BR'):'—';
     const alcance=a.alcance!=null?a.alcance.toLocaleString('pt-BR'):'—';
-    tb1+=`<tr><td style="font-weight:700">${a.dia}</td><td>${a.mes}</td><td>${a.ano}</td><td>${fmt(a.investido)}</td><td>${a.leads}</td><td>${cpl}</td><td>${cliques}</td><td>${ctr}</td><td>${cpc}</td><td>${impressoes}</td><td>${alcance}</td><td style="display:flex;gap:4px"><button class="btn btn-danger btn-sm" onclick="deleteAdmLanc(${idx2})"><i class="ti ti-trash"></i></button></td></tr>`;
+    const nomeConta = a.origemMeta ? (getNomeContaMeta(a.contaMeta)||'—') : '—';
+    tb1+=`<tr><td style="font-weight:700">${a.dia}</td><td>${a.mes}</td><td>${a.ano}</td><td style="font-size:11px">${nomeConta}</td><td>${fmt(a.investido)}</td><td>${a.leads}</td><td>${cpl}</td><td>${cliques}</td><td>${ctr}</td><td>${cpc}</td><td>${impressoes}</td><td>${alcance}</td><td style="display:flex;gap:4px"><button class="btn btn-danger btn-sm" onclick="deleteAdmLanc(${idx2})"><i class="ti ti-trash"></i></button></td></tr>`;
   });
-  if(!tb1)tb1='<tr><td colspan="12" class="empty"><i class="ti ti-inbox"></i>Nenhum dado sincronizado. Clique em "Atualizar dados do Meta Ads".</td></tr>';
+  if(!tb1)tb1='<tr><td colspan="13" class="empty"><i class="ti ti-inbox"></i>Nenhum dado sincronizado para o período/contas selecionadas.</td></tr>';
   document.getElementById('adm-inv-tbody').innerHTML=tb1;
-  const rowsEnvio=filtrar('',mes,ano).filter(r=>!r.isPad);
+
   let tb2='';
-  rowsEnvio.sort((a,b)=>a.dia-b.dia).forEach(r=>{
+  rows.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) ).forEach(r=>{
     const c=calcRow(r);
     tb2+=`<tr><td style="font-weight:700">${r.dia}</td><td>${r.atendente}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${getNomeOferta(r.ofertaId)}</td><td>${r.qtd_vendas||0}</td><td>${c.frascos}</td><td>${fmt(c.custoFrascos)}</td><td>${fmt((r.qtd_vendas||0)*CUSTO_ENVIO)}</td><td style="font-weight:600">${fmt(c.custoEnvTotal)}</td></tr>`;
   });
-  const padRows=pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano));
-  padRows.sort((a,b)=>a.dia-b.dia).forEach(p=>{
+  padsNoPeriodo.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) ).forEach(p=>{
     const o=OFERTAS.find(x=>x.id===p.ofertaId)||{frascos:0};
     tb2+=`<tr style="background:var(--purple-l)"><td style="font-weight:700">${p.dia}</td><td>${p.atendente} <span class="badge b-purple" style="font-size:9px">PAD</span></td><td>${getNomeOferta(p.ofertaId)}</td><td>1</td><td>${o.frascos}</td><td>${fmt(o.frascos*CUSTO_FRASCO)}</td><td>${fmt(CUSTO_ENVIO)}</td><td style="font-weight:600">${fmt(o.frascos*CUSTO_FRASCO+CUSTO_ENVIO)}</td></tr>`;
   });
@@ -1680,15 +1730,23 @@ function renderAdmin(){
 
 // ===== META ADS — Integração via Netlify Function (multi-conta, token por conta) =====
 const META_FUNC_URL = '/.netlify/functions/meta-ads';
-let contaMetaAtual = null; // id da conta ativa agora, ex: "act_423161440010443"
-let contasMetaSalvas = []; // [{id, nome, token, ativa, fbId}] — cada conta com seu próprio token
+let contasMetaSalvas = []; // [{id, nome, token, visivel, fbId}] — cada conta com seu próprio token
 let _contaMetaParaNomear = null; // {id, novoRegistro} — estado temporário do modal de nomear
 let _tokenNovaContaTemp = null; // token digitado no modal "adicionar conta", antes de nomear/salvar
 
+// Contas marcadas para aparecer na Administração (filtro de visualização).
+// Se nenhuma estiver marcada, considera todas (comportamento "ver tudo").
+function getContasSelecionadasMeta(){
+  const marcadas = contasMetaSalvas.filter(c => c.visivel).map(c => c.id);
+  return marcadas; // array vazio = sem filtro (mostra todas)
+}
+// Conta "principal" usada como destino de uma sincronização manual avulsa
+// (ex: botão Atualizar quando só uma conta está marcada). Se houver mais de uma
+// marcada, sincronizarMetaAds() percorre todas.
 function getContaMetaSalva(){
-  if(contaMetaAtual) return contaMetaAtual;
-  const ativa = contasMetaSalvas.find(c => c.ativa) || contasMetaSalvas[0];
-  return ativa ? ativa.id : null;
+  const marcadas = contasMetaSalvas.filter(c => c.visivel);
+  if(marcadas.length>0) return marcadas[0].id;
+  return contasMetaSalvas[0] ? contasMetaSalvas[0].id : null;
 }
 function getNomeContaMeta(id){
   const c = contasMetaSalvas.find(c => c.id===id);
@@ -1700,16 +1758,22 @@ function getTokenContaMeta(id){
 }
 
 function atualizarCardContaMeta(){
-  const conta = getContaMetaSalva();
   const nomeEl = document.getElementById('meta-conta-card-nome');
   const idEl = document.getElementById('meta-conta-card-id');
   if(!nomeEl||!idEl) return;
-  if(conta){
-    nomeEl.textContent = getNomeContaMeta(conta);
-    idEl.textContent = conta;
-  } else {
+  const marcadas = contasMetaSalvas.filter(c => c.visivel);
+  if(contasMetaSalvas.length===0){
     nomeEl.textContent = 'Nenhuma conta adicionada';
     idEl.textContent = '';
+  } else if(marcadas.length===0 || marcadas.length===contasMetaSalvas.length){
+    nomeEl.textContent = `Todas as contas (${contasMetaSalvas.length})`;
+    idEl.textContent = '';
+  } else if(marcadas.length===1){
+    nomeEl.textContent = marcadas[0].nome;
+    idEl.textContent = marcadas[0].id;
+  } else {
+    nomeEl.textContent = `${marcadas.length} contas selecionadas`;
+    idEl.textContent = marcadas.map(c=>c.nome).join(', ');
   }
 }
 
@@ -1720,11 +1784,13 @@ function renderContasSalvasLista(){
     lista.innerHTML = '<div class="empty" style="padding:1rem"><i class="ti ti-inbox"></i>Nenhuma conta salva ainda.</div>';
     return;
   }
-  const contaAtiva = getContaMetaSalva();
   lista.innerHTML = contasMetaSalvas.map(c => `
-    <div class="oferta-item ${c.id===contaAtiva?'selected':''}" style="padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <div style="cursor:pointer;flex:1" onclick="usarContaMetaSalva('${c.id}')">
-        <div class="oferta-nome">${c.nome}${c.id===contaAtiva?' <span class="badge b-green" style="font-size:9px">ATIVA</span>':''}</div>
+    <div class="oferta-item ${c.visivel?'selected':''}" style="padding:10px 12px;display:flex;align-items:center;gap:10px">
+      <div onclick="event.stopPropagation();toggleContaMetaVisivel('${c.id}')" style="cursor:pointer;flex-shrink:0">
+        <div class="oferta-check" style="position:static"><i class="ti ti-check"></i></div>
+      </div>
+      <div style="cursor:pointer;flex:1" onclick="toggleContaMetaVisivel('${c.id}')">
+        <div class="oferta-nome">${c.nome}</div>
         <div class="oferta-valor">${c.id}</div>
       </div>
       <div style="display:flex;gap:4px;flex-shrink:0">
@@ -1735,14 +1801,14 @@ function renderContasSalvasLista(){
   `).join('');
 }
 
-function usarContaMetaSalva(id){
-  contaMetaAtual = id;
-  contasMetaSalvas.forEach(c => c.ativa = (c.id===id));
-  const ativa = contasMetaSalvas.find(c=>c.id===id);
-  if(ativa && window.fbSave && ativa.fbId) window.fbSave('metaContas', ativa.fbId, ativa);
+function toggleContaMetaVisivel(id){
+  const c = contasMetaSalvas.find(c=>c.id===id);
+  if(!c) return;
+  c.visivel = !c.visivel;
+  if(window.fbSave && c.fbId) window.fbSave('metaContas', c.fbId, c);
   atualizarCardContaMeta();
   renderContasSalvasLista();
-  toast('Conta ativa: '+getNomeContaMeta(id));
+  renderAdmin();
 }
 
 function renomearContaMetaSalva(id){
@@ -1760,9 +1826,9 @@ function removerContaMetaSalva(id){
   const c = contasMetaSalvas.find(c=>c.id===id);
   if(c && window.fbDelete && c.fbId) window.fbDelete('metaContas', c.fbId);
   contasMetaSalvas = contasMetaSalvas.filter(c=>c.id!==id);
-  if(contaMetaAtual===id) contaMetaAtual = contasMetaSalvas[0] ? contasMetaSalvas[0].id : null;
   atualizarCardContaMeta();
   renderContasSalvasLista();
+  renderAdmin();
   toast('Conta removida.');
 }
 
@@ -1826,10 +1892,9 @@ function confirmarNomeContaMeta(){
 
   if(novoRegistro){
     if(!_tokenNovaContaTemp){ toast('Token perdido, tente adicionar a conta novamente.'); closeMetaNomeModal(); return; }
-    const rec = { id, nome, token:_tokenNovaContaTemp, ativa: contasMetaSalvas.length===0, fbId: 'metaconta_'+id };
+    const rec = { id, nome, token:_tokenNovaContaTemp, visivel:true, fbId: 'metaconta_'+id };
     contasMetaSalvas.push(rec);
     if(window.fbSave) window.fbSave('metaContas', rec.fbId, rec);
-    if(rec.ativa) contaMetaAtual = id;
     _tokenNovaContaTemp = null;
     toast('Conta adicionada: '+nome);
   } else {
@@ -1864,74 +1929,80 @@ function autoSyncMetaAds(){
 }
 
 async function sincronizarMetaAds(silencioso){
-  const conta = contaMetaAtual || getContaMetaSalva();
-  if(!conta){
+  if(contasMetaSalvas.length===0){
     if(!silencioso){
       toast('Adicione uma conta de anúncios primeiro!');
       abrirGerenciarContasMeta();
     }
     return;
   }
-  const token = getTokenContaMeta(conta);
-  if(!token){
-    if(!silencioso) toast('Esta conta não tem um token salvo. Remova e adicione novamente.');
-    return;
-  }
+  // Sincroniza todas as contas marcadas como visíveis; se nenhuma marcada, sincroniza todas.
+  const marcadas = contasMetaSalvas.filter(c=>c.visivel);
+  const contas = (marcadas.length>0 ? marcadas : contasMetaSalvas).map(c=>c.id);
+
   const btn = document.getElementById('btn-sync-meta');
   const status = document.getElementById('meta-sync-status');
   if(btn && !silencioso){ btn.disabled=true; btn.style.opacity='.6'; }
-  if(status) status.textContent = silencioso ? 'Sincronizando automaticamente...' : 'Buscando dados na Meta...';
 
-  try{
-    const res = await fetch(META_FUNC_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'insights', token, account:conta, inicio:dataInicioPermitida(), fim:isoHojeMatrix() })
-    });
-    const data = await res.json();
-    if(data.erro){
-      if(status) status.textContent = '';
-      if(!silencioso) toast('Erro: '+data.erro);
-      if(btn){ btn.disabled=false; btn.style.opacity='1'; }
-      return;
-    }
-    const dias = data.dias || [];
-    // Remove os lançamentos antigos vindos da Meta especificamente para ESTA conta
-    // (tanto localmente quanto no Firestore), para não afetar dados de outras contas
-    // sincronizadas anteriormente nem duplicar os desta.
-    const antigos = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta);
-    adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta));
-    if(window.fbDelete){
-      for(const old of antigos){
-        if(old.fbId) await window.fbDelete('adminLancs', old.fbId);
+  let totalNovos = 0;
+  let erros = [];
+
+  for(const conta of contas){
+    const token = getTokenContaMeta(conta);
+    if(!token){ erros.push(getNomeContaMeta(conta)+': sem token salvo'); continue; }
+    if(status) status.textContent = (silencioso?'Sincronizando automaticamente':'Buscando dados na Meta')+` — ${getNomeContaMeta(conta)}...`;
+    try{
+      const res = await fetch(META_FUNC_URL, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'insights', token, account:conta, inicio:dataInicioPermitida(), fim:isoHojeMatrix() })
+      });
+      const data = await res.json();
+      if(data.erro){ erros.push(getNomeContaMeta(conta)+': '+data.erro); continue; }
+
+      const dias = data.dias || [];
+      // Remove os lançamentos antigos vindos da Meta especificamente para ESTA conta
+      // (tanto localmente quanto no Firestore), para não afetar dados de outras contas
+      // sincronizadas anteriormente nem duplicar os desta.
+      const antigos = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta);
+      adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta));
+      if(window.fbDelete){
+        for(const old of antigos){
+          if(old.fbId) await window.fbDelete('adminLancs', old.fbId);
+        }
       }
+      dias.forEach(d=>{
+        if(!d.investido && !d.leads && !d.impressoes) return; // ignora dias totalmente vazios
+        const rec = {
+          dia: d.dia, mes: d.mes, ano: d.ano,
+          atendente: '', // Geral — vindo da Meta, não é por atendente
+          investido: d.investido, leads: d.leads,
+          cliques: d.cliques, cpc: d.cpc, ctr: d.ctr,
+          impressoes: d.impressoes, alcance: d.alcance,
+          origemMeta: true, contaMeta: conta,
+          fbId: 'meta_'+conta+'_'+d.data_iso
+        };
+        adminLancs.push(rec);
+        if(window.fbSave) window.fbSave('adminLancs', rec.fbId, rec);
+        totalNovos++;
+      });
+    }catch(e){
+      console.error('Erro ao sincronizar conta '+conta+':', e);
+      erros.push(getNomeContaMeta(conta)+': '+e.message);
     }
-    let novos = 0;
-    dias.forEach(d=>{
-      if(!d.investido && !d.leads && !d.impressoes) return; // ignora dias totalmente vazios
-      const rec = {
-        dia: d.dia, mes: d.mes, ano: d.ano,
-        atendente: '', // Geral — vindo da Meta, não é por atendente
-        investido: d.investido, leads: d.leads,
-        cliques: d.cliques, cpc: d.cpc, ctr: d.ctr,
-        impressoes: d.impressoes, alcance: d.alcance,
-        origemMeta: true, contaMeta: conta,
-        fbId: 'meta_'+conta+'_'+d.data_iso
-      };
-      adminLancs.push(rec);
-      if(window.fbSave) window.fbSave('adminLancs', rec.fbId, rec);
-      novos++;
-    });
-    if(status) status.textContent = `Última sincronização: ${new Date().toLocaleString('pt-BR')} — ${novos} dia(s) atualizados.`;
-    initAllSelects();
-    renderAdmin();
-    if(!silencioso) toast(`✅ ${novos} dia(s) sincronizados do Meta Ads!`);
-  }catch(e){
-    console.error('Erro ao sincronizar Meta Ads:', e);
-    if(status) status.textContent = '';
-    if(!silencioso) toast('Erro ao sincronizar: '+e.message);
-  }finally{
-    if(btn){ btn.disabled=false; btn.style.opacity='1'; }
   }
+
+  if(status){
+    status.textContent = erros.length>0
+      ? `Última sincronização: ${new Date().toLocaleString('pt-BR')} — ${totalNovos} dia(s) atualizados. Erros: ${erros.join(' · ')}`
+      : `Última sincronização: ${new Date().toLocaleString('pt-BR')} — ${totalNovos} dia(s) atualizados em ${contas.length} conta(s).`;
+  }
+  initAllSelects();
+  renderAdmin();
+  if(!silencioso){
+    if(erros.length>0) toast(`⚠️ Sincronizado com ${erros.length} erro(s). Veja o status.`);
+    else toast(`✅ ${totalNovos} dia(s) sincronizados em ${contas.length} conta(s)!`);
+  }
+  if(btn){ btn.disabled=false; btn.style.opacity='1'; }
 }
 
 function isoHojeMatrix(){
@@ -1942,6 +2013,84 @@ function dataInicioPermitida(){
   const d = new Date();
   d.setMonth(d.getMonth() - 36);
   return d.toISOString().split('T')[0];
+}
+
+// ===== PERÍODO ESTILO FACEBOOK (Administração) =====
+function isoDate(d){ return d.toISOString().split('T')[0]; }
+function hojeDate(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+function addDias(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function inicioMes(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function fimMes(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+function inicioSemana(d){ const x=new Date(d); const dia=(x.getDay()+6)%7; return addDias(x,-dia); } // semana começa segunda
+function fimSemana(d){ return addDias(inicioSemana(d),6); }
+
+const META_PERIODO_ATALHOS = [
+  { label:'Hoje', calc:()=>{const h=hojeDate();return[h,h];} },
+  { label:'Ontem', calc:()=>{const o=addDias(hojeDate(),-1);return[o,o];} },
+  { label:'Últimos 7 dias', calc:()=>[addDias(hojeDate(),-6),hojeDate()] },
+  { label:'Últimos 14 dias', calc:()=>[addDias(hojeDate(),-13),hojeDate()] },
+  { label:'Últimos 28 dias', calc:()=>[addDias(hojeDate(),-27),hojeDate()] },
+  { label:'Últimos 30 dias', calc:()=>[addDias(hojeDate(),-29),hojeDate()] },
+  { label:'Esta semana', calc:()=>[inicioSemana(hojeDate()),hojeDate()] },
+  { label:'Semana passada', calc:()=>{const s=addDias(inicioSemana(hojeDate()),-7);return[s,addDias(s,6)];} },
+  { label:'Este mês', calc:()=>[inicioMes(hojeDate()),hojeDate()] },
+  { label:'Mês passado', calc:()=>{const m=new Date(hojeDate().getFullYear(),hojeDate().getMonth()-1,1);return[inicioMes(m),fimMes(m)];} },
+  { label:'Máximo', calc:()=>[new Date(dataInicioPermitida()+'T00:00:00'),hojeDate()] },
+];
+
+let _periodoMetaAtual = null; // {inicio, fim} em ISO yyyy-mm-dd
+
+function getPeriodoMetaAtual(){
+  if(_periodoMetaAtual) return _periodoMetaAtual;
+  const salvo = sessionStorage.getItem('metaPeriodo');
+  if(salvo){ try{ _periodoMetaAtual = JSON.parse(salvo); return _periodoMetaAtual; }catch(e){} }
+  // padrão: este mês
+  const [ini,fim] = META_PERIODO_ATALHOS.find(a=>a.label==='Este mês').calc();
+  _periodoMetaAtual = { inicio: isoDate(ini), fim: isoDate(fim), label:'Este mês' };
+  return _periodoMetaAtual;
+}
+
+function setPeriodoMetaAtual(inicio, fim, label){
+  _periodoMetaAtual = { inicio, fim, label: label || `${formatarDataBR(inicio)} - ${formatarDataBR(fim)}` };
+  sessionStorage.setItem('metaPeriodo', JSON.stringify(_periodoMetaAtual));
+  const lbl = document.getElementById('adm-periodo-label');
+  if(lbl) lbl.textContent = _periodoMetaAtual.label;
+}
+
+function formatarDataBR(iso){
+  const [a,m,d] = iso.split('-');
+  return `${d}/${m}/${a}`;
+}
+
+function abrirPeriodoMeta(){
+  const cont = document.getElementById('meta-periodo-atalhos');
+  const atual = getPeriodoMetaAtual();
+  cont.innerHTML = META_PERIODO_ATALHOS.map(a => `
+    <div onclick="aplicarAtalhoPeriodoMeta('${a.label}')" style="padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;${atual.label===a.label?'background:var(--neon-glow);color:var(--neon);font-weight:600':''}" onmouseover="this.style.background='var(--neon-glow)'" onmouseout="this.style.background='${atual.label===a.label?'var(--neon-glow)':'transparent'}'">${a.label}</div>
+  `).join('');
+  document.getElementById('meta-periodo-de').value = atual.inicio;
+  document.getElementById('meta-periodo-ate').value = atual.fim;
+  document.getElementById('modal-meta-periodo').classList.add('open');
+}
+function closeMetaPeriodoModal(){ document.getElementById('modal-meta-periodo').classList.remove('open'); }
+
+function aplicarAtalhoPeriodoMeta(label){
+  const atalho = META_PERIODO_ATALHOS.find(a=>a.label===label);
+  if(!atalho) return;
+  const [ini,fim] = atalho.calc();
+  setPeriodoMetaAtual(isoDate(ini), isoDate(fim), label);
+  closeMetaPeriodoModal();
+  renderAdmin();
+}
+
+function aplicarPeriodoPersonalizadoMeta(){
+  const de = document.getElementById('meta-periodo-de').value;
+  const ate = document.getElementById('meta-periodo-ate').value;
+  if(!de || !ate){ toast('Selecione as duas datas!'); return; }
+  if(de > ate){ toast('A data inicial deve ser antes da data final!'); return; }
+  setPeriodoMetaAtual(de, ate);
+  closeMetaPeriodoModal();
+  renderAdmin();
 }
 
 function deleteAdmLanc(idx){
