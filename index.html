@@ -1323,7 +1323,7 @@ function showPage(p){
     if(mainEl) mainEl.style.padding = '2rem';
   }
 
-  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{renderAdmin();initContaMetaSelect();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
+  const fns={dashboard:renderDashboard,'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},panorama:renderPanorama,comparativo:renderComparativo,ranking:renderRanking,'ranking-publico':renderRankingPublico,metas:renderMetas,dados:renderDados,atendentes:renderAtendentes,admin:()=>{renderAdmin();initContaMetaSelect();autoSyncMetaAds();},lancamentos:renderRegistrosDia,rastreamento:()=>{renderRastreamento();atualizarBotaoRastreio();},pad:()=>{setPadTab('aberto');}};
   window.allRenders=fns;
   if(fns[p])fns[p]();
 }
@@ -1684,18 +1684,38 @@ function onTrocarContaMeta(){
   contaMetaAtual = sel ? sel.value : null;
 }
 
-async function sincronizarMetaAds(){
+// Roda automaticamente sempre que a página Administração é aberta (entrada ou F5).
+// Tem um intervalo mínimo (cooldown) para não disparar a API do Meta repetidas vezes
+// em poucos segundos, por exemplo se o ADM ficar trocando de aba rapidamente.
+const META_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
+function autoSyncMetaAds(){
+  const ultima = parseInt(sessionStorage.getItem('metaAutoSyncTs') || '0', 10);
+  const agora = Date.now();
+  if(agora - ultima < META_AUTOSYNC_COOLDOWN_MS){
+    return; // sincronizado recentemente, não repete
+  }
+  const conta = getContaMetaSalva();
+  if(!conta){
+    return; // sem conta configurada ainda, não tenta sincronizar sozinho
+  }
+  sessionStorage.setItem('metaAutoSyncTs', String(agora));
+  sincronizarMetaAds(true);
+}
+
+async function sincronizarMetaAds(silencioso){
   const sel = document.getElementById('meta-conta-select');
   const conta = (sel && sel.value) || contaMetaAtual || getContaMetaSalva();
   if(!conta){
-    toast('Selecione uma conta de anúncios primeiro!');
-    abrirSelecaoContaMeta();
+    if(!silencioso){
+      toast('Selecione uma conta de anúncios primeiro!');
+      abrirSelecaoContaMeta();
+    }
     return;
   }
   const btn = document.getElementById('btn-sync-meta');
   const status = document.getElementById('meta-sync-status');
-  if(btn){ btn.disabled=true; btn.style.opacity='.6'; }
-  if(status) status.textContent = 'Buscando dados na Meta...';
+  if(btn && !silencioso){ btn.disabled=true; btn.style.opacity='.6'; }
+  if(status) status.textContent = silencioso ? 'Sincronizando automaticamente...' : 'Buscando dados na Meta...';
 
   try{
     const url = `${META_FUNC_URL}?action=insights&account=${encodeURIComponent(conta)}&inicio=${dataInicioPermitida()}&fim=${isoHojeMatrix()}`;
@@ -1703,7 +1723,7 @@ async function sincronizarMetaAds(){
     const data = await res.json();
     if(data.erro){
       if(status) status.textContent = '';
-      toast('Erro: '+data.erro);
+      if(!silencioso) toast('Erro: '+data.erro);
       if(btn){ btn.disabled=false; btn.style.opacity='1'; }
       return;
     }
@@ -1737,11 +1757,11 @@ async function sincronizarMetaAds(){
     if(status) status.textContent = `Última sincronização: ${new Date().toLocaleString('pt-BR')} — ${novos} dia(s) atualizados.`;
     initAllSelects();
     renderAdmin();
-    toast(`✅ ${novos} dia(s) sincronizados do Meta Ads!`);
+    if(!silencioso) toast(`✅ ${novos} dia(s) sincronizados do Meta Ads!`);
   }catch(e){
     console.error('Erro ao sincronizar Meta Ads:', e);
     if(status) status.textContent = '';
-    toast('Erro ao sincronizar: '+e.message);
+    if(!silencioso) toast('Erro ao sincronizar: '+e.message);
   }finally{
     if(btn){ btn.disabled=false; btn.style.opacity='1'; }
   }
