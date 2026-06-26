@@ -894,7 +894,10 @@ tr:hover td{background:var(--neon-glow)}
       <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Vendas hoje</div>
       <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:11px;padding:4px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#ddd;border-radius:6px;max-width:120px"><option value="">Todos</option></select>
     </div>
-    <div id="gw-vendas-hoje-valor" style="font-size:28px;font-weight:800;color:#fff;margin-bottom:10px">R$ 0,00</div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+      <div id="gw-vendas-hoje-valor" style="font-size:28px;font-weight:800;color:#fff">R$ 0,00</div>
+      <div id="gw-lucro-hoje" style="display:none;font-size:13px;font-weight:700"></div>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
       <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
@@ -937,12 +940,8 @@ tr:hover td{background:var(--neon-glow)}
       </div>
     </div>
 
-    <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Hoje, em detalhes</div>
-    <div id="adm-dash-metrics" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px"></div>
-    <div id="adm-dash-metrics2" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
-
     <div id="adm-dash-despesas-wrap" style="display:none">
-      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Despesas de hoje <span style="color:#666">(visível só p/ ADM)</span></div>
+      <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Despesas de hoje</div>
       <div id="adm-dash-despesas" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px"></div>
     </div>
   </div>
@@ -2678,7 +2677,6 @@ async function atualizarPontosDashGlobo(){
 
 function renderDashAdm(){
   const atend=document.getElementById('adm-dash-atend').value;
-  renderCardGatewayDashAdm(atend);
 
   // Sem filtros de período no globo — sempre mostra os números de HOJE.
   const agora=new Date();
@@ -2697,25 +2695,15 @@ function renderDashAdm(){
     if(String(a.ano)!==String(filAno))return false;
     return true;
   });
-  let tBruto=0,tVendas=0,tFrascos=0,tEnvio=0,tImpPJ=0,tPctAtend=0;
-  rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
-  let tMetaAds=0,tLeads=0;
-  admFil.forEach(a=>{tMetaAds+=a.investido||0;tLeads+=a.leads||0;});
+  let tFrascos=0,tEnvio=0,tImpPJ=0,tPctAtend=0;
+  rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
+  let tMetaAds=0;
+  admFil.forEach(a=>{tMetaAds+=a.investido||0;});
   const padC=calcPadCustos({dia:filDia,mes:filMes,ano:filAno,atendente:atend||null});
-  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;tBruto+=padC.bruto;tVendas+=padC.qtd;
+  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;
   const tLucro = calcLucroDia(filDia, filMes, filAno, atend);
-  const roas=tMetaAds>0?R(tBruto/tMetaAds,2):0;
-  const cpl=tLeads>0?R(tMetaAds/tLeads,2):0;
-  const margem=tBruto>0?R(tLucro/tBruto*100,1):0;
-  const cardStyle='background:rgba(255,255,255,.04);border-radius:9px;padding:.7rem .8rem;';
-  document.getElementById('adm-dash-metrics').innerHTML=
-    '<div style="'+cardStyle+'border-left:3px solid '+(tLucro>=0?'var(--green)':'var(--red)')+'"><div class="metric-label" style="font-size:9px">Lucro</div><div class="metric-value '+(tLucro>=0?'mv-green':'mv-red')+'" style="font-size:15px">'+fmt(tLucro)+'</div><div style="font-size:9px;color:var(--t3)">Margem '+margem+'%</div></div>'
-    +'<div style="'+cardStyle+'border-left:3px solid var(--amber)"><div class="metric-label" style="font-size:9px">Meta Ads</div><div class="metric-value mv-amber" style="font-size:15px">'+fmt(tMetaAds)+'</div><div style="font-size:9px;color:var(--t3)">ROAS '+(roas>0?roas+'x':'—')+'</div></div>'
-    +'<div style="'+cardStyle+'border-left:3px solid var(--purple)"><div class="metric-label" style="font-size:9px">Leads</div><div class="metric-value mv-purple" style="font-size:15px">'+tLeads+'</div><div style="font-size:9px;color:var(--t3)">CPL '+(cpl>0?fmt(cpl):'—')+'</div></div>';
-  const rowStyle='display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.03);border-radius:7px;padding:.45rem .7rem;';
-  document.getElementById('adm-dash-metrics2').innerHTML=
-    '<div style="'+rowStyle+'"><span class="metric-label" style="font-size:10px">Vendas hoje</span><span style="font-size:13px;font-weight:700">'+tVendas+'</span></div>'
-    +(()=>{const pp=pads.filter(p=>p.dia===filDia&&p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>p.dia===filDia&&p.mes===filMes&&String(p.ano)===String(filAno)&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+rowStyle+'border-left:3px solid '+corPad+'"><span class="metric-label" style="font-size:10px">Conv. PAD</span><span style="font-size:13px;font-weight:700;color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</span></div>';})();
+
+  renderCardGatewayDashAdm(atend, tLucro);
 
   // Card de Despesas — detalhado, visível apenas para o ADM logado.
   const despesasWrap = document.getElementById('adm-dash-despesas-wrap');
@@ -2740,7 +2728,7 @@ function renderDashAdm(){
 
 // Card de resumo estilo gateway de pagamento: Vendas hoje, variação vs ontem,
 // nível do atendente (quando filtrado por um específico), e resumo Ontem/Semana/Mês.
-function renderCardGatewayDashAdm(atendFiltro){
+function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   const hoje = hojeDate();
   const ontem = addDias(hoje,-1);
   const inicioSem = inicioSemana(hoje);
@@ -2762,6 +2750,14 @@ function renderCardGatewayDashAdm(atendFiltro){
   const vMes = somaPeriodo(inicioM, hoje);
 
   document.getElementById('gw-vendas-hoje-valor').textContent = fmt(vHoje.bruto);
+  const lucroEl = document.getElementById('gw-lucro-hoje');
+  if(adminLogado && lucroHoje!=null){
+    lucroEl.style.display = 'inline';
+    lucroEl.style.color = lucroHoje>=0 ? 'var(--neon)' : '#FCA5A5';
+    lucroEl.textContent = (lucroHoje>=0?'+':'')+fmt(lucroHoje)+' lucro';
+  } else {
+    lucroEl.style.display = 'none';
+  }
   document.getElementById('gw-qtd-vendas').textContent = vHoje.vendas+' venda'+(vHoje.vendas!==1?'s':'');
   // Ticket médio removido do card (já disponível no Panorama)
 
