@@ -790,7 +790,7 @@ tr:hover td{background:var(--neon-glow)}
       <button class="btn btn-primary btn-sm" onclick="openAtendModal()"><i class="ti ti-plus"></i> Novo</button>
     </div>
     <div class="tw"><table>
-      <thead><tr><th>Nome</th><th>Comissão %</th><th>Registros</th><th>Receita total</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Nome</th><th>Comissão %</th><th>Identificador Meta</th><th>Registros</th><th>Receita total</th><th>Ações</th></tr></thead>
       <tbody id="atend-tbody"></tbody>
     </table></div>
   </div>
@@ -826,6 +826,13 @@ tr:hover td{background:var(--neon-glow)}
     <div class="tw"><table>
       <thead><tr><th>Dia</th><th>Mês</th><th>Ano</th><th>Conta</th><th>Investimento</th><th>Leads</th><th>CPL</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>Impressões</th><th>Alcance</th><th>Ações</th></tr></thead>
       <tbody id="adm-inv-tbody"></tbody>
+    </table></div>
+  </div>
+  <div class="table-card">
+    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Meta Ads — Investimento por atendente <span style="font-size:10px;color:var(--t3);font-weight:400">(detalhamento por conjunto de anúncios identificado)</span></p></div>
+    <div class="tw"><table>
+      <thead><tr><th>Dia</th><th>Atendente</th><th>Conjunto de anúncios</th><th>Investimento</th><th>Leads</th><th>CPL</th></tr></thead>
+      <tbody id="adm-inv-atend-tbody"></tbody>
     </table></div>
   </div>
   <div class="table-card">
@@ -923,11 +930,16 @@ tr:hover td{background:var(--neon-glow)}
 
 <!-- Modal atendente -->
 <div class="modal-overlay" id="modal-atend" onclick="if(event.target===this)closeAtendModal()">
-  <div class="modal" style="width:400px">
+  <div class="modal" style="width:420px">
     <p class="modal-title" id="atend-modal-title">Novo atendente</p>
     <div class="form-grid">
       <div class="form-group full"><label>Nome completo</label><input type="text" id="ma-nome" placeholder="Ex: João Silva"></div>
       <div class="form-group"><label>Comissão (%)</label><input type="number" id="ma-comissao" value="5" step="0.1" min="0" max="100"></div>
+      <div class="form-group full">
+        <label>Identificador no Meta Ads <span style="font-size:11px;color:var(--t2)">— opcional</span></label>
+        <input type="text" id="ma-meta-id" placeholder="Ex: ALEX01">
+        <p style="font-size:11px;color:var(--t3);margin-top:6px">Use esse texto no nome do conjunto de anúncios ao criar campanhas para este atendente. O MATRIX vai atribuir o investimento automaticamente quando encontrar esse identificador no nome do conjunto.</p>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeAtendModal()">Cancelar</button>
@@ -1644,18 +1656,20 @@ function renderAtendentes(){
   atendentes.forEach((a,i)=>{
     const rows=filtrar(a.nome,'','');
     let bruto=0;rows.forEach(r=>bruto+=r.bruto||0);
-    tb+=`<tr><td style="font-weight:600">${a.nome}</td><td><span class="badge b-green">${a.comissao}%</span></td><td>${rows.length}</td><td>${fmt(bruto)}</td><td style="display:flex;gap:4px"><button class="btn btn-sm" onclick="editAtend(${i})"><i class="ti ti-edit"></i></button><button class="btn btn-danger btn-sm" onclick="deleteAtend(${i})"><i class="ti ti-trash"></i></button></td></tr>`;
+    const metaIdBadge = a.metaId ? `<span class="badge b-blue" style="font-size:9px" title="Identificador no Meta Ads">${a.metaId}</span>` : '<span style="font-size:11px;color:var(--t3)">—</span>';
+    tb+=`<tr><td style="font-weight:600">${a.nome}</td><td><span class="badge b-green">${a.comissao}%</span></td><td>${metaIdBadge}</td><td>${rows.length}</td><td>${fmt(bruto)}</td><td style="display:flex;gap:4px"><button class="btn btn-sm" onclick="editAtend(${i})"><i class="ti ti-edit"></i></button><button class="btn btn-danger btn-sm" onclick="deleteAtend(${i})"><i class="ti ti-trash"></i></button></td></tr>`;
   });
-  if(!tb)tb='<tr><td colspan="5" class="empty">Nenhum atendente</td></tr>';
+  if(!tb)tb='<tr><td colspan="6" class="empty">Nenhum atendente</td></tr>';
   document.getElementById('atend-tbody').innerHTML=tb;
 }
-function openAtendModal(){editAtendIdx=-1;document.getElementById('atend-modal-title').textContent='Novo atendente';document.getElementById('ma-nome').value='';document.getElementById('ma-comissao').value=5;document.getElementById('modal-atend').classList.add('open');}
+function openAtendModal(){editAtendIdx=-1;document.getElementById('atend-modal-title').textContent='Novo atendente';document.getElementById('ma-nome').value='';document.getElementById('ma-comissao').value=5;document.getElementById('ma-meta-id').value='';document.getElementById('modal-atend').classList.add('open');}
 function closeAtendModal(){document.getElementById('modal-atend').classList.remove('open');}
-function editAtend(idx){editAtendIdx=idx;const a=atendentes[idx];document.getElementById('atend-modal-title').textContent='Editar atendente';document.getElementById('ma-nome').value=a.nome;document.getElementById('ma-comissao').value=a.comissao;document.getElementById('modal-atend').classList.add('open');}
+function editAtend(idx){editAtendIdx=idx;const a=atendentes[idx];document.getElementById('atend-modal-title').textContent='Editar atendente';document.getElementById('ma-nome').value=a.nome;document.getElementById('ma-comissao').value=a.comissao;document.getElementById('ma-meta-id').value=a.metaId||'';document.getElementById('modal-atend').classList.add('open');}
 function salvarAtendente(){
   const nome=document.getElementById('ma-nome').value.trim(),com=parseFloat(document.getElementById('ma-comissao').value)||5;
+  const metaId=document.getElementById('ma-meta-id').value.trim();
   if(!nome){toast('Informe o nome!');return;}
-  if(editAtendIdx>=0)atendentes[editAtendIdx]={nome,comissao:com};else atendentes.push({nome,comissao:com});
+  if(editAtendIdx>=0)atendentes[editAtendIdx]={...atendentes[editAtendIdx],nome,comissao:com,metaId};else atendentes.push({nome,comissao:com,metaId});
   closeAtendModal();initAllSelects();renderAtendentes();toast(editAtendIdx>=0?'Atualizado!':'Adicionado!');
 }
 function deleteAtend(idx){if(confirm('Remover?')){atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');}}
@@ -1676,7 +1690,11 @@ function renderAdmin(){
   const { inicio, fim } = getPeriodoMetaAtual();
   const contasFiltro = getContasSelecionadasMeta();
 
+  // Apenas registros "Geral" (sem atendente) entram nas métricas e na tabela principal —
+  // os registros por atendente são um detalhamento complementar do mesmo investimento,
+  // não uma soma adicional (evita contar o gasto em duplicidade).
   const admFil = adminLancs.filter(a => {
+    if(a.origemMeta && a.atendente) return false; // detalhamento por atendente, não soma aqui
     if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
     if(a.origemMeta && contasFiltro.length>0 && !contasFiltro.includes(a.contaMeta)) return false;
     return true;
@@ -1725,6 +1743,21 @@ function renderAdmin(){
   });
   if(!tb1)tb1='<tr><td colspan="13" class="empty"><i class="ti ti-inbox"></i>Nenhum dado sincronizado para o período/contas selecionadas.</td></tr>';
   document.getElementById('adm-inv-tbody').innerHTML=tb1;
+
+  // Tabela de investimento por atendente (detalhamento por conjunto de anúncios identificado)
+  const admPorAtendente = adminLancs.filter(a => {
+    if(!(a.origemMeta && a.atendente)) return false;
+    if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
+    if(contasFiltro.length>0 && !contasFiltro.includes(a.contaMeta)) return false;
+    return true;
+  });
+  let tbAtend='';
+  admPorAtendente.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) || a.atendente.localeCompare(b.atendente) ).forEach(a=>{
+    const cpl = a.leads>0?fmt(a.investido/a.leads):'—';
+    tbAtend+=`<tr><td style="font-weight:700">${a.dia}/${a.mes.substring(0,3)}</td><td>${a.atendente}</td><td style="font-size:11px;color:var(--t2);max-width:180px;overflow:hidden;text-overflow:ellipsis">${a.adsetNome||'—'}</td><td>${fmt(a.investido)}</td><td>${a.leads}</td><td>${cpl}</td></tr>`;
+  });
+  if(!tbAtend)tbAtend='<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum conjunto de anúncios identificado para um atendente neste período. Cadastre o "Identificador no Meta Ads" em Atendentes.</td></tr>';
+  document.getElementById('adm-inv-atend-tbody').innerHTML=tbAtend;
 
   let tb2='';
   rows.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) ).forEach(r=>{
@@ -1996,6 +2029,51 @@ async function sincronizarMetaAds(silencioso){
         if(window.fbSave) window.fbSave('adminLancs', rec.fbId, rec);
         totalNovos++;
       });
+
+      // Busca adicional por conjunto de anúncios, para atribuir investimento aos
+      // atendentes que tiverem um "Identificador no Meta Ads" cadastrado. Isso é
+      // complementar ao "Geral" acima — não substitui nem altera esses registros.
+      const atendentesComId = atendentes.filter(a => a.metaId && a.metaId.trim());
+      if(atendentesComId.length>0){
+        try{
+          const resAdset = await fetch(META_FUNC_URL, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ action:'insights_por_adset', token, account:conta, inicio:dataInicioPermitida(), fim:isoHojeMatrix() })
+          });
+          const dataAdset = await resAdset.json();
+          if(!dataAdset.erro){
+            const linhas = dataAdset.linhas || [];
+            // Remove registros antigos por atendente desta conta antes de reinserir
+            const antigosAtend = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta && a.atendente);
+            adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta && a.atendente));
+            if(window.fbDelete){
+              for(const old of antigosAtend){
+                if(old.fbId) await window.fbDelete('adminLancs', old.fbId);
+              }
+            }
+            linhas.forEach(l=>{
+              if(!l.investido && !l.leads && !l.impressoes) return;
+              const nomeAdset = (l.adset_nome||'').toLowerCase();
+              const atendenteBatido = atendentesComId.find(a => nomeAdset.includes(a.metaId.trim().toLowerCase()));
+              if(!atendenteBatido) return; // adset sem identificador conhecido, ignora (já está contado no Geral)
+              const rec = {
+                dia: l.dia, mes: l.mes, ano: l.ano,
+                atendente: atendenteBatido.nome,
+                investido: l.investido, leads: l.leads,
+                cliques: l.cliques, cpc: l.cpc, ctr: l.ctr,
+                impressoes: l.impressoes, alcance: l.alcance,
+                origemMeta: true, contaMeta: conta,
+                adsetNome: l.adset_nome,
+                fbId: 'metaadset_'+conta+'_'+(l.adset_id||l.adset_nome)+'_'+l.data_iso
+              };
+              adminLancs.push(rec);
+              if(window.fbSave) window.fbSave('adminLancs', rec.fbId, rec);
+            });
+          }
+        }catch(e){
+          console.error('Erro ao buscar adsets da conta '+conta+':', e);
+        }
+      }
     }catch(e){
       console.error('Erro ao sincronizar conta '+conta+':', e);
       erros.push(getNomeContaMeta(conta)+': '+e.message);
