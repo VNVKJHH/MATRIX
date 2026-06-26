@@ -904,6 +904,54 @@ tr:hover td{background:var(--neon-glow)}
     </div>
   </div>
 
+  <!-- Card de resumo estilo gateway (Vendas hoje + Nível + Demais períodos) -->
+  <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;z-index:10;width:280px;background:rgba(10,10,10,.88);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.1rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Vendas hoje</div>
+    <div id="gw-vendas-hoje-valor" style="font-size:26px;font-weight:800;color:#fff;margin-bottom:8px">R$ 0,00</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
+      <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
+      <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-ticket">tkt R$ 0,00</span>
+    </div>
+
+    <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#7a4a14,#c47f1f);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:9px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:1px;font-weight:700">Seu nível</div>
+          <div id="gw-nivel-nome" style="font-size:17px;font-weight:800;color:#fff">Starter</div>
+          <div id="gw-nivel-receita" style="font-size:11px;color:rgba(255,255,255,.85)">R$ 0</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:9px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:1px;font-weight:700">Próximo</div>
+          <div id="gw-nivel-proximo-nome" style="font-size:13px;font-weight:700;color:#fff">—</div>
+          <div id="gw-nivel-falta" style="font-size:11px;color:rgba(255,255,255,.85)">—</div>
+        </div>
+      </div>
+      <div style="height:5px;background:rgba(0,0,0,.25);border-radius:3px;overflow:hidden;margin-top:10px">
+        <div id="gw-nivel-progress" style="height:100%;background:#fff;width:0%;border-radius:3px;transition:width .4s"></div>
+      </div>
+    </div>
+
+    <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Demais períodos</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
+        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Ontem</div>
+        <div id="gw-ontem-valor" style="font-size:13px;font-weight:700;color:#fff;margin-top:2px">R$ 0</div>
+        <div id="gw-ontem-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
+        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Semana</div>
+        <div id="gw-semana-valor" style="font-size:13px;font-weight:700;color:#fff;margin-top:2px">R$ 0</div>
+        <div id="gw-semana-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
+        <div style="font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase">Mês</div>
+        <div id="gw-mes-valor" style="font-size:13px;font-weight:700;color:var(--neon);margin-top:2px">R$ 0</div>
+        <div id="gw-mes-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Legenda status -->
   <div style="position:absolute;top:70px;right:1.5rem;z-index:10;display:flex;flex-direction:column;gap:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;backdrop-filter:blur(8px)">
     <div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Status</div>
@@ -1328,6 +1376,34 @@ function calcPadCustos(filtro){
   });
   return calcPadCustosPorLista(padsFil);
 }
+// ===== NÍVEIS DE ATENDENTE (gamificação por receita acumulada vitalícia) =====
+const NIVEIS_ATENDENTE = [
+  { nome:'Starter', min:0, cor:'#9CA3AF' },
+  { nome:'Closer', min:10000, cor:'#0EA5E9' },
+  { nome:'Top Performer', min:70000, cor:'#A855F7' },
+  { nome:'Master', min:150000, cor:'#F59E0B' },
+  { nome:'Legend', min:500000, cor:'#00FF80' },
+];
+
+function getReceitaAcumuladaAtendente(nome){
+  return dados.filter(d=>d.atendente===nome && !d.isPad).reduce((s,d)=>s+(d.bruto||0),0);
+}
+
+function getNivelAtendente(nome){
+  const receita = getReceitaAcumuladaAtendente(nome);
+  let nivelAtual = NIVEIS_ATENDENTE[0];
+  let proximoNivel = null;
+  for(let i=0;i<NIVEIS_ATENDENTE.length;i++){
+    if(receita >= NIVEIS_ATENDENTE[i].min){
+      nivelAtual = NIVEIS_ATENDENTE[i];
+      proximoNivel = NIVEIS_ATENDENTE[i+1] || null;
+    }
+  }
+  const faltam = proximoNivel ? R(proximoNivel.min - receita,2) : 0;
+  const pctProgresso = proximoNivel ? Math.min(100, R((receita - nivelAtual.min) / (proximoNivel.min - nivelAtual.min) * 100, 1)) : 100;
+  return { nome: nivelAtual.nome, cor: nivelAtual.cor, receita, proximoNome: proximoNivel?proximoNivel.nome:null, faltam, pctProgresso };
+}
+
 function calcLucroDia(dia,mes,ano,atendente){
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&(!atendente||d.atendente===atendente)&&!d.isPad);
   let totalSub=0;
@@ -1553,8 +1629,10 @@ function renderPanorama(){
     <div class="metric-card"><div class="metric-label">Lucro líquido</div><div class="metric-value ${tLucro>=0?'mv-green':'mv-red'}">${fmt(tLucro)}</div></div>
     <div class="metric-card"><div class="metric-label">Vendas</div><div class="metric-value">${tVendas}</div></div>
     <div class="metric-card"><div class="metric-label">Frascos</div><div class="metric-value">${tFrascos}</div></div>
+    <div class="metric-card"><div class="metric-label">Custo frascos</div><div class="metric-value mv-red">${fmt(tFrascos*CUSTO_FRASCO)}</div></div>
     <div class="metric-card"><div class="metric-label">Custo envio</div><div class="metric-value mv-red">${fmt(tEnvio)}</div></div>
     <div class="metric-card"><div class="metric-label">Imp. PJ</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
+    <div class="metric-card"><div class="metric-label">% Atendentes</div><div class="metric-value">${fmt(tPct)}</div></div>
     <div class="metric-card"><div class="metric-label">Leads</div><div class="metric-value">${tLeads}</div></div>
   `;
   const chaves = Object.keys(byD).sort((a,b)=>{
@@ -2625,6 +2703,7 @@ function renderDashAdm(){
   const mes=document.getElementById('adm-dash-mes').value;
   const ano=document.getElementById('adm-dash-ano').value;
   const atend=document.getElementById('adm-dash-atend').value;
+  renderCardGatewayDashAdm(atend);
   const diaWrap=document.getElementById('adm-dash-dia-wrap');
   diaWrap.style.display=(modo==='dia')?'block':'none';
   let filDia='',filMes='',filAno='';
@@ -2673,13 +2752,70 @@ function renderDashAdm(){
     '<div style="'+card2Style+'"><div class="metric-label">Vendas</div><div class="metric-value">'+tVendas+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">Ticket médio</div><div class="metric-value">'+(ticket>0?fmt(ticket):'—')+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">Frascos</div><div class="metric-value">'+tFrascos+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">Custo frascos</div><div class="metric-value mv-red">'+fmt(tFrascos*CUSTO_FRASCO)+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">Custo envios</div><div class="metric-value mv-red">'+fmt(tVendas*CUSTO_ENVIO)+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">Imp. PJ 10%</div><div class="metric-value">'+fmt(tImpPJ)+'</div></div>'
-    +'<div style="'+card2Style+'"><div class="metric-label">% Atendentes</div><div class="metric-value">'+fmt(tPctAtend)+'</div></div>'
     +'<div style="'+card2Style+'"><div class="metric-label">Conversão</div><div class="metric-value">'+(conv>0?conv+'%':'—')+'</div></div>'
     +(()=>{const pp=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Pago').length;const pf=pads.filter(p=>(!filMes||p.mes===filMes)&&(!filAno||String(p.ano)===String(filAno))&&(!atend||p.atendente===atend)&&p.status==='Frustrado').length;const pt=pp+pf;const convPad=pt>0?R(pp/pt*100,1):0;const corPad=convPad>=70?'var(--green)':convPad>=40?'var(--amber)':'var(--red)';return'<div style="'+card2Style+'border-left:3px solid '+corPad+'"><div class="metric-label">Conv. PAD</div><div class="metric-value" style="color:'+corPad+'">'+(pt>0?convPad+'%':'—')+'</div><div style="font-size:10px;color:var(--t3)">'+(pt>0?pp+' pagos · '+pf+' frustrados':'Sem PADs')+'</div></div>';})();
   if(!dashGloboLoaded){iniciarDashGlobo();}else if(dashGloboInstance){setTimeout(atualizarPontosDashGlobo,100);}
+}
+
+// Card de resumo estilo gateway de pagamento: Vendas hoje, variação vs ontem,
+// nível do atendente (quando filtrado por um específico), e resumo Ontem/Semana/Mês.
+function renderCardGatewayDashAdm(atendFiltro){
+  const hoje = hojeDate();
+  const ontem = addDias(hoje,-1);
+  const inicioSem = inicioSemana(hoje);
+  const inicioM = inicioMes(hoje);
+
+  function somaPeriodo(de, ate){
+    let bruto=0, vendas=0;
+    dados.filter(d=>!d.isPad && (!atendFiltro || d.atendente===atendFiltro)).forEach(d=>{
+      const iso = diaToISO(d.dia, d.mes, d.ano);
+      if(!iso) return;
+      if(iso>=isoDate(de) && iso<=isoDate(ate)){ bruto+=d.bruto||0; vendas+=d.qtd_vendas||0; }
+    });
+    return { bruto, vendas };
+  }
+
+  const vHoje = somaPeriodo(hoje, hoje);
+  const vOntem = somaPeriodo(ontem, ontem);
+  const vSemana = somaPeriodo(inicioSem, hoje);
+  const vMes = somaPeriodo(inicioM, hoje);
+
+  document.getElementById('gw-vendas-hoje-valor').textContent = fmt(vHoje.bruto);
+  document.getElementById('gw-qtd-vendas').textContent = vHoje.vendas+' venda'+(vHoje.vendas!==1?'s':'');
+  document.getElementById('gw-ticket').textContent = 'tkt '+(vHoje.vendas>0?fmt(vHoje.bruto/vHoje.vendas):'R$ 0,00');
+
+  const variacaoEl = document.getElementById('gw-variacao');
+  if(vOntem.bruto>0){
+    const pct = R((vHoje.bruto-vOntem.bruto)/vOntem.bruto*100,1);
+    const subiu = pct>=0;
+    variacaoEl.textContent = (subiu?'↗ +':'↘ ')+pct+'% vs ontem';
+    variacaoEl.style.background = subiu?'rgba(0,255,128,.15)':'rgba(239,68,68,.15)';
+    variacaoEl.style.color = subiu?'var(--neon)':'#FCA5A5';
+  } else {
+    variacaoEl.textContent = vHoje.bruto>0?'Sem comparação':'—';
+    variacaoEl.style.background = 'rgba(255,255,255,.08)';
+    variacaoEl.style.color = '#ddd';
+  }
+
+  document.getElementById('gw-ontem-valor').textContent = fmt(vOntem.bruto).replace('R$ ','R$');
+  document.getElementById('gw-ontem-vendas').textContent = vOntem.vendas+' ped.';
+  document.getElementById('gw-semana-valor').textContent = fmt(vSemana.bruto).replace('R$ ','R$');
+  document.getElementById('gw-semana-vendas').textContent = vSemana.vendas+' ped.';
+  document.getElementById('gw-mes-valor').textContent = fmt(vMes.bruto).replace('R$ ','R$');
+  document.getElementById('gw-mes-vendas').textContent = vMes.vendas+' ped.';
+
+  const nivelBloco = document.getElementById('gw-nivel-bloco');
+  if(atendFiltro){
+    const nivel = getNivelAtendente(atendFiltro);
+    nivelBloco.style.display = 'block';
+    document.getElementById('gw-nivel-nome').textContent = nivel.nome;
+    document.getElementById('gw-nivel-receita').textContent = fmt(nivel.receita)+' acumulado';
+    document.getElementById('gw-nivel-proximo-nome').textContent = nivel.proximoNome || 'Nível máximo!';
+    document.getElementById('gw-nivel-falta').textContent = nivel.proximoNome ? ('faltam '+fmt(nivel.faltam)) : '🏆';
+    document.getElementById('gw-nivel-progress').style.width = nivel.pctProgresso+'%';
+  } else {
+    nivelBloco.style.display = 'none';
+  }
 }
 
 function renderRankingPublico(){
