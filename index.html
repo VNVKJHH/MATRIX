@@ -949,6 +949,9 @@ tr:hover td{background:var(--neon-glow)}
     </div>
   </div>
 
+  <!-- Filtros de status dos pedidos -->
+  <div id="adm-dash-status-filtros" style="position:absolute;bottom:1.5rem;left:0;right:0;z-index:10;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 1rem"></div>
+
   <!-- Loading overlay -->
   <div id="dash-globo-loading" style="position:absolute;inset:0;z-index:20;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
     <div style="font-size:60px">🌍</div>
@@ -2485,20 +2488,21 @@ function renderRegistrosDia(){
   const dia=parseInt(document.getElementById('f-dia').value);
   const mes=document.getElementById('f-mes').value;
   const ano=parseInt(document.getElementById('f-ano').value);
-  const atendente=document.getElementById('f-atend').value;
   const sub=document.getElementById('registros-dia-sub');
   const tbody=document.getElementById('registros-dia-tbody');
   const totalVendas=document.getElementById('registros-total-vendas');
   const totalBruto=document.getElementById('registros-total-bruto');
-  if(!dia||!mes||!ano||!atendente){
-    if(sub)sub.textContent='Selecione dia, mês, ano e atendente';
+  if(!dia||!mes||!ano){
+    if(sub)sub.textContent='Selecione dia, mês e ano';
     if(tbody)tbody.innerHTML='<tr><td colspan="5" class="empty" style="padding:1.5rem"><i class="ti ti-calendar"></i>Preencha os campos ao lado</td></tr>';
     if(totalVendas)totalVendas.textContent='0';
     if(totalBruto)totalBruto.textContent='R$ 0,00';
     return;
   }
-  const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&d.atendente===atendente);
-  if(sub)sub.textContent=`${atendente.split(' ')[0]} — ${dia} de ${mes} de ${ano}`;
+  // ADM vê as vendas de todos os atendentes naquele dia; atendente comum só vê as próprias.
+  const atendenteFiltro = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
+  const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&!d.isPad&&(!atendenteFiltro||d.atendente===atendenteFiltro));
+  if(sub)sub.textContent=(atendenteFiltro?atendenteFiltro.split(' ')[0]+' — ':'Todos os atendentes — ')+`${dia} de ${mes} de ${ano}`;
   if(totalVendas)totalVendas.textContent=rows.length;
   let tBruto=0;
   let tb='';
@@ -2506,10 +2510,13 @@ function renderRegistrosDia(){
     const gi=dados.indexOf(r);
     const o=OFERTAS.find(x=>x.id===r.ofertaId)||{nome:'—',frascos:0};
     tBruto+=r.bruto||0;
+    // Marcação leve de origem/atendente — só aparece pro ADM, que vê vendas de todos.
+    const marcacaoAtendente = (!atendenteFiltro && r.atendente) ? `<span class="badge b-blue" style="font-size:8px;padding:1px 5px" title="Atendente">${r.atendente.split(' ')[0]}</span>` : '';
+    const marcacaoOrigem = r.origemPayt ? `<span class="badge b-purple" style="font-size:8px;padding:1px 5px" title="Vindo automaticamente da Payt"><i class="ti ti-bolt" style="font-size:8px"></i> Payt</span>` : '';
     tb+=`<tr id="row-dia-${gi}">
       <td style="font-weight:700;color:var(--t2)">${i+1}</td>
       <td>
-        <div id="view-nome-${gi}" style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px">${r.nomeCliente||'<span style="color:var(--t3)">—</span>'}${r.recuperacao?'<span class="badge b-amber" style="font-size:9px;padding:1px 5px">RECUP.</span>':''}</div>
+        <div id="view-nome-${gi}" style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;flex-wrap:wrap">${r.nomeCliente||'<span style="color:var(--t3)">—</span>'}${r.recuperacao?'<span class="badge b-amber" style="font-size:9px;padding:1px 5px">RECUP.</span>':''}${marcacaoAtendente}${marcacaoOrigem}</div>
         <div id="edit-nome-${gi}" style="display:none"><input type="text" value="${r.nomeCliente||''}" id="inp-nome-${gi}" style="width:110px;font-size:12px;padding:3px 6px"></div>
         <div style="font-size:11px;color:var(--t3)">${r.telefone||''}</div>
         ${r.rastreamento?`<div style="margin-top:3px"><span class="badge b-green" style="font-size:9px"><i class="ti ti-truck-delivery" style="font-size:9px"></i> ${r.rastreamento}</span></div>`:''}
@@ -2527,7 +2534,7 @@ function renderRegistrosDia(){
       </td>
     </tr>`;
   });
-  if(!tb)tb='<tr><td colspan="4" class="empty" style="padding:1.5rem"><i class="ti ti-shopping-cart"></i>Nenhuma venda registrada</td></tr>';
+  if(!tb)tb='<tr><td colspan="4" class="empty" style="padding:1.5rem"><i class="ti ti-shopping-cart"></i>Nenhuma venda registrada neste dia</td></tr>';
   if(tbody)tbody.innerHTML=tb;
   if(totalBruto)totalBruto.textContent=fmt(tBruto);
 }
@@ -2868,7 +2875,7 @@ async function atualizarPontosDashGlobo(){
   if(userAtend)rows=rows.filter(r=>r.atendente===userAtend);
   if(atend)rows=rows.filter(r=>r.atendente===atend);
   rows=rows.filter(r=>r.rastreamento&&(r.trackData||(r.trackHistorico&&r.trackHistorico.length>0)));
-  const pontos=[];
+  const todosPontos=[];
   for(const r of rows){
     let local='';
     if(r.trackHistorico&&r.trackHistorico.length>0){for(const e of r.trackHistorico){if(e.local&&e.local.includes('/')){local=e.local.trim();break;}}}
@@ -2878,9 +2885,67 @@ async function atualizarPontosDashGlobo(){
     const coords=await geocodDash(local);
     if(!coords)continue;
     const st=getStatusCorreios(r);
-    pontos.push({lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,cor:cores[st.tipo]||'#888',nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,local,cod:r.rastreamento,atend:r.atendente.split(' ')[0]});
+    todosPontos.push({lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,local,cod:r.rastreamento,atend:r.atendente.split(' ')[0]});
     if(!jaEmCache) await new Promise(res=>setTimeout(res,200)); // só espera quando consultou a API de verdade
   }
+
+  _pontosGloboTodos = todosPontos; // guarda a lista completa para reaplicar o filtro sem buscar tudo de novo
+  renderFiltrosStatusDashAdm(todosPontos);
+  aplicarFiltroStatusEDesenharPontos();
+}
+
+// Conta quantos pontos existem por status e desenha os botões-pílula de filtro,
+// cada um com ícone, cor e contador. Multi-seleção: nenhum marcado = mostra todos.
+const STATUS_GLOBO_CONFIG = [
+  { tipo:'postagem', label:'Aguardando postagem', cor:'#888888', icone:'ti-clock' },
+  { tipo:'rota', label:'Em rota', cor:'#0EA5E9', icone:'ti-truck-delivery' },
+  { tipo:'retirada', label:'Aguardando retirada', cor:'#F59E0B', icone:'ti-building-store' },
+  { tipo:'entregue', label:'Entregue', cor:'#00FF80', icone:'ti-circle-check' },
+  { tipo:'devolucao', label:'Devolução', cor:'#EF4444', icone:'ti-arrow-back-up' },
+];
+let _pontosGloboTodos = [];
+let _statusGloboSelecionados = new Set(); // vazio = mostra todos
+
+function renderFiltrosStatusDashAdm(pontos){
+  const cont = document.getElementById('adm-dash-status-filtros');
+  if(!cont) return;
+  const contagem = {};
+  pontos.forEach(p => { contagem[p.tipo] = (contagem[p.tipo]||0)+1; });
+
+  cont.innerHTML = STATUS_GLOBO_CONFIG.map(s => {
+    const ativo = _statusGloboSelecionados.has(s.tipo);
+    const qtd = contagem[s.tipo] || 0;
+    return `
+      <button onclick="toggleFiltroStatusDashAdm('${s.tipo}')" style="
+        display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:30px;
+        border:1.5px solid ${ativo?s.cor:'rgba(255,255,255,.15)'};
+        background:${ativo?s.cor+'22':'rgba(10,10,10,.7)'};
+        color:${ativo?s.cor:'#ddd'};
+        font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(10px);
+        box-shadow:${ativo?'0 0 16px '+s.cor+'55':'0 2px 8px rgba(0,0,0,.3)'};
+        transition:all .2s;font-family:inherit;white-space:nowrap;
+      ">
+        <span style="width:9px;height:9px;border-radius:50%;background:${s.cor};box-shadow:0 0 6px ${s.cor};flex-shrink:0"></span>
+        <i class="ti ${s.icone}" style="font-size:14px"></i>
+        ${s.label}
+        <span style="background:${ativo?'rgba(255,255,255,.18)':'rgba(255,255,255,.08)'};padding:1px 8px;border-radius:20px;font-size:11px;margin-left:2px">${qtd}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function toggleFiltroStatusDashAdm(tipo){
+  if(_statusGloboSelecionados.has(tipo)) _statusGloboSelecionados.delete(tipo);
+  else _statusGloboSelecionados.add(tipo);
+  renderFiltrosStatusDashAdm(_pontosGloboTodos);
+  aplicarFiltroStatusEDesenharPontos();
+}
+
+function aplicarFiltroStatusEDesenharPontos(){
+  const pontos = _statusGloboSelecionados.size===0
+    ? _pontosGloboTodos
+    : _pontosGloboTodos.filter(p => _statusGloboSelecionados.has(p.tipo));
+
   const sub=document.getElementById('dash-globo-subtitle');
   if(sub)sub.textContent=pontos.length+' envio'+(pontos.length!==1?'s':'')+' no mapa';
   dashGloboInstance
