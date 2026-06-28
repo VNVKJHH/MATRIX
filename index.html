@@ -2654,30 +2654,6 @@ async function construirDashGlobo(){
   dashGloboInstance.controls().rotateSpeed=0.6; // mais lento = menos recálculos por segundo
   dashGloboInstance.controls().zoomSpeed=0.6;
 
-  // Garante luz suficiente na cena para o brilho especular do material das logos
-  // 3D (MeshPhongMaterial precisa de luz; sem isso poderia ficar escura demais).
-  // Usamos uma layer dedicada (1) para que essa luz NÃO afete a Terra/atmosfera,
-  // preservando exatamente a aparência do globo já aprovada.
-  // Protegido com try/catch — se a API de cena não estiver disponível como
-  // esperado, a logo cai para sua aparência sem brilho, mas continua visível.
-  try{
-    const THREE = getThreeRef();
-    const cena = dashGloboInstance.scene && dashGloboInstance.scene();
-    if(THREE && cena){
-      const luzAmbiente = new THREE.AmbientLight(0xffffff, 0.7);
-      const luzDirecional = new THREE.DirectionalLight(0xffffff, 0.6);
-      luzDirecional.position.set(1, 1, 1);
-      luzAmbiente.layers.set(1);
-      luzDirecional.layers.set(1);
-      cena.add(luzAmbiente);
-      cena.add(luzDirecional);
-      // A câmera precisa "ver" a layer 1 além da padrão (0) para captar essa luz
-      const cam = dashGloboInstance.camera && dashGloboInstance.camera();
-      if(cam) cam.layers.enable(1);
-      _logoLayerDisponivel = true;
-    }
-  }catch(e){ /* segue sem luz extra — logo ainda visível, só sem brilho */ }
-
   if(loadingEl)loadingEl.style.display='none';
 
   window.addEventListener('resize',()=>{
@@ -2767,7 +2743,6 @@ function getThreeRef(){
 }
 
 let _caixasRotacaoAtivas = [];
-let _logoLayerDisponivel = false;
 function pararTodasRotacoesCaixaGlobo(){
   _caixasRotacaoAtivas.forEach(ctrl => ctrl.parar = true);
   _caixasRotacaoAtivas = [];
@@ -2818,12 +2793,31 @@ function iniciarRotacaoCaixaGlobo(caixa){
 const CONTORNOS_LOGO_MAXIMUS = {"largura_total":3.2875399361022364,"altura_total":1.0,"formas":[{"pontos":[[1.1022,0.7188],[1.0703,0.7572],[1.0479,0.77],[0.9744,0.7093],[1.0032,0.6965],[1.0256,0.6741],[1.0383,0.6454],[1.0319,0.6006],[0.9968,0.5623],[0.9681,0.5527],[0.7827,0.5527],[0.6805,0.4665],[0.9521,0.4665],[1.0064,0.4728],[1.0383,0.4856],[1.0863,0.524],[1.1118,0.5623],[1.1214,0.5879],[1.1246,0.6581]],"area":4735.5,"pai":-1},{"pontos":[[1.1054,0.7732],[1.2428,0.6358],[1.3131,0.6965],[1.2524,0.7604],[1.2332,0.77]],"area":1393.5,"pai":-1},{"pontos":[[2.1406,0.7859],[2.1438,0.5911],[2.1629,0.5431],[2.1981,0.5016],[2.262,0.4696],[2.3259,0.4665],[2.3866,0.4888],[2.4217,0.5176],[2.4441,0.5495],[2.4601,0.5911],[2.4601,0.7859],[2.3898,0.7859],[2.3866,0.6038],[2.377,0.5815],[2.3482,0.5527],[2.3195,0.5399],[2.2843,0.5399],[2.2556,0.5527],[2.2204,0.5942],[2.2141,0.6198],[2.2141,0.7859]],"area":5127.5,"pai":-1},{"pontos":[[2.5399,0.7891],[2.5112,0.7732],[2.4888,0.7476],[2.4792,0.7125],[2.4824,0.6805],[2.4952,0.655],[2.5304,0.6262],[2.6358,0.5847],[2.6518,0.5687],[2.655,0.5495],[2.6294,0.5272],[2.5815,0.524],[2.524,0.5367],[2.4824,0.5591],[2.4824,0.492],[2.5623,0.4665],[2.639,0.4665],[2.6741,0.476],[2.7093,0.5016],[2.722,0.5272],[2.7252,0.5751],[2.7125,0.607],[2.6773,0.639],[2.5655,0.6837],[2.5527,0.6997],[2.5527,0.7157],[2.5751,0.7348],[2.6198,0.738],[2.6709,0.7252],[2.6997,0.7093],[2.6997,0.7732],[2.6358,0.7955],[2.5655,0.7955]],"area":4492.5,"pai":-1},{"pontos":[[1.7157,0.8019],[1.7157,0.4665],[1.7891,0.4665],[1.7923,0.6166],[1.8051,0.6102],[1.9105,0.5048],[2.0319,0.6166],[2.0351,0.4665],[2.1118,0.4665],[2.1118,0.8019],[1.9169,0.6134],[1.9105,0.6134]],"area":6999.0,"pai":-1},{"pontos":[[1.6901,0.8019],[1.5783,0.6933],[1.5783,0.4665],[1.6901,0.4665]],"area":3097.0,"pai":-1},{"pontos":[[0.3355,0.4696],[0.4249,0.4665],[0.4281,0.6102],[0.6006,0.4728],[0.8562,0.6869],[0.8562,0.7955],[0.6038,0.5879],[0.5942,0.5879],[0.3387,0.8019]],"area":7430.5,"pai":-1},{"pontos":[[1.77,0.9712],[1.6486,0.9712],[1.623,0.9585],[1.1054,0.476],[1.2332,0.4792],[1.2556,0.492],[1.3163,0.5495],[1.3259,0.5527],[1.4952,0.3866],[1.5208,0.377],[1.6358,0.377],[1.3962,0.6166],[1.3962,0.623]],"area":9242.5,"pai":-1}]};
 
 const logoExtrusaoCacheGlobo = {};
+// Escurece uma cor hex (#RRGGBB) por um fator (0 = sem mudança, 1 = preto total).
+// Usado para dar a aparência de "face lateral em sombra" sem depender de luz real.
+function escurecerCor(corHex, fator){
+  const hex = corHex.replace('#','');
+  const r = Math.round(parseInt(hex.substring(0,2),16) * (1-fator));
+  const g = Math.round(parseInt(hex.substring(2,4),16) * (1-fator));
+  const b = Math.round(parseInt(hex.substring(4,6),16) * (1-fator));
+  const toHex = v => v.toString(16).padStart(2,'0');
+  return '#'+toHex(r)+toHex(g)+toHex(b);
+}
+
 function criarCaixaPedidoGlobo(cor){
   const THREE = getThreeRef();
   if(!THREE) return null; // sem THREE: globe.gl usa sua esfera padrão automaticamente
   try{
     if(!logoExtrusaoCacheGlobo[cor]){
-      const material = new THREE.MeshPhongMaterial({ color: cor, shininess: 90, specular: 0xffffff });
+      // Dois materiais sólidos (sem depender de luz na cena, que se mostrou
+      // pouco confiável neste bundle): a face frontal/traseira usa a cor do
+      // status normal, e a lateral (a "espessura" visível da extrusão) usa uma
+      // versão mais escura da mesma cor — isso já cria a ilusão de volume e
+      // profundidade sem precisar de nenhuma luz funcionando.
+      const corEscurecida = escurecerCor(cor, 0.45);
+      const materialFace = new THREE.MeshBasicMaterial({ color: cor });
+      const materialLateral = new THREE.MeshBasicMaterial({ color: corEscurecida });
+
       const grupo = new THREE.Group();
       const espessura = 0.26; // profundidade ajustada ao novo tamanho menor
       const escalaTamanho = 1.6; // ajustado para um tamanho mais discreto
@@ -2840,8 +2834,8 @@ function criarCaixaPedidoGlobo(cor){
           if(i===0) shape.moveTo(x,y); else shape.lineTo(x,y);
         });
         const geometria = new THREE.ExtrudeGeometry(shape, { depth: espessura, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 2 });
-        const malha = new THREE.Mesh(geometria, material);
-        if(_logoLayerDisponivel){ malha.layers.enable(0); malha.layers.enable(1); }
+        // ExtrudeGeometry separa a malha em grupos: 0 = face frontal/traseira, 1 = laterais do bisel/extrusão
+        const malha = new THREE.Mesh(geometria, [materialFace, materialLateral]);
         grupo.add(malha);
       });
 
