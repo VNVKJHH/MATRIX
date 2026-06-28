@@ -95,7 +95,7 @@ exports.handler = async (event) => {
       if (docSnap.exists) {
         await docRef.set({
           paytStatus: payload['shipping.status'],
-          rastreamento: payload['shipping.tracking_code'] || payload['shipping.code'] || docSnap.data().rastreamento || '',
+          rastreamento: payload['shipping.tracking_code'] || docSnap.data().rastreamento || '',
         }, { merge: true });
         return resposta(200, { ok: true, acao: 'rastreio_atualizado', fbId });
       }
