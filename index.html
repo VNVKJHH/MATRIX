@@ -774,7 +774,7 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card">
     <div class="tw">
       <table>
-        <thead><tr><th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Oferta / Valor</th><th>Rastreamento</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Oferta / Valor</th><th>Rastreamento</th><th>Acompanhamento</th><th>Status</th><th></th></tr></thead>
         <tbody id="pad-tbody"></tbody>
       </table>
     </div>
@@ -3483,10 +3483,11 @@ function renderPad(){
       const rval=p.rastreamento||'';
       rastrCol='<td>'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Aguardando</span>')+'</td>';
     }
+    const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${p.trackInvalido?`<div style="font-weight:600;font-size:11px;color:var(--red);margin-bottom:3px">⚠️ Código inválido</div>`:p.trackStatus?`<div style="font-weight:600;font-size:11px;color:var(--neon);margin-bottom:2px">${p.trackStatus}</div><div style="font-size:9px;color:var(--t3);margin-bottom:3px">${p.trackData||''}</div>`:`<div style="font-size:10px;color:var(--t3);margin-bottom:3px;font-style:italic">Aguardando busca</div>`}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
     const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':'<td></td>';
     const neg=p.negociacao?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
     const cidade=p.cidade?'<div style="font-size:10px;color:var(--t3)">'+p.cidade+(p.estado?' - '+p.estado:'')+'</div>':'';
-    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+rastrCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
+    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+rastrCol+acompanhamentoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
   });
   if(!tb)tb='<tr><td colspan="8" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
   const tbody=document.getElementById('pad-tbody');
@@ -3563,7 +3564,7 @@ function renderRastreamento(){
       <td style="font-size:11px;color:var(--t2)">${nomeCurto}</td>
       <td style="font-weight:600;color:var(--green)">${fmt(r.bruto)}</td>
       ${rastreioCell}
-      <td id="track-cell-${gi}" style="min-width:200px">${r.rastreamento?`<div>${r.trackInvalido?`<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>`:r.trackStatus?`<div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>`:`<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`}${r.trackHistorico&&r.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi})" style="font-size:11px;padding:3px 8px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>
+      <td id="track-cell-${gi}" style="min-width:200px">${r.rastreamento?`<div>${r.trackInvalido?`<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>`:r.trackStatus?`<div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>`:`<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`}${r.trackHistorico&&r.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'rast')" style="font-size:11px;padding:3px 8px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>
       <td style="font-size:11px;white-space:nowrap">${r.previsaoEntrega?`<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> ${new Date(r.previsaoEntrega).toLocaleDateString('pt-BR')}</span>`:'<span style="color:var(--t3)">—</span>'}</td>
       <td style="font-size:11px;white-space:nowrap;min-width:120px">${(()=>{const hoje=new Date();const lancado=new Date(r.ano,MESES.indexOf(r.mes),r.dia);const diasTotal=Math.floor((hoje-lancado)/86400000);return'<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há '+diasTotal+'d</div>';})()}</td>
     </tr>`;
@@ -3608,8 +3609,17 @@ async function atualizarTodosRastreios(){
   const btn=document.getElementById('btn-atualizar-todos');
   const status=document.getElementById('rast-update-status');
   if(btn)btn.disabled=true;
-  const pendentes=dados.filter(r=>r.rastreamento&&!r.trackStatus&&!r.isPad);
-  const padPendentes=pads.filter(p=>p.rastreamento&&!p.trackStatus);
+  // Considera "pendente de atualização" todo pedido com rastreamento que ainda NÃO
+  // chegou a um status final (Entregue ou Devolução) — antes, só buscava pedidos que
+  // nunca tinham sido consultados, então o status ficava congelado na 1ª consulta
+  // pra sempre, mesmo que o pedido tivesse avançado de verdade nos Correios depois.
+  const naoFinal = obj => {
+    if(!obj.trackStatus) return true; // nunca buscado ainda
+    const st = getStatusCorreios(obj);
+    return st.tipo!=='entregue' && st.tipo!=='devolucao';
+  };
+  const pendentes=dados.filter(r=>r.rastreamento&&!r.isPad&&naoFinal(r));
+  const padPendentes=pads.filter(p=>p.rastreamento&&naoFinal(p));
   const total=pendentes.length+padPendentes.length;
   if(total===0){toast('Nenhum rastreamento pendente!');return;}
   if(status)status.textContent=`Atualizando 0/${total}...`;
@@ -3638,7 +3648,12 @@ async function buscarRastreioSilent(gi,tipo){
 }
 
 function atualizarBotaoRastreio(){
-  const pendentes=dados.filter(r=>r.rastreamento&&!r.trackStatus&&!r.isPad).length+pads.filter(p=>p.rastreamento&&!p.trackStatus).length;
+  const naoFinal = obj => {
+    if(!obj.trackStatus) return true;
+    const st = getStatusCorreios(obj);
+    return st.tipo!=='entregue' && st.tipo!=='devolucao';
+  };
+  const pendentes=dados.filter(r=>r.rastreamento&&!r.isPad&&naoFinal(r)).length+pads.filter(p=>p.rastreamento&&naoFinal(p)).length;
   const btn=document.getElementById('btn-atualizar-todos');
   const count=document.getElementById('rast-pendentes-count');
   if(btn){if(pendentes>0){btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';}else{btn.disabled=true;btn.style.opacity='.4';btn.style.cursor='not-allowed';}}
@@ -3657,8 +3672,8 @@ function getStatusCorreios(r){
   return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
 }
 
-function verHistorico(gi){
-  const obj=dados[gi];
+function verHistorico(gi, tipo){
+  const obj = tipo==='pad' ? pads[gi] : dados[gi];
   if(!obj||!obj.trackHistorico||obj.trackHistorico.length===0){toast('Sem histórico ainda.');return;}
   mostrarModalHistorico(obj.rastreamento,obj.trackHistorico);
 }
