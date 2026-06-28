@@ -466,6 +466,7 @@ tr:hover td{background:var(--neon-glow)}
     <button class="nav-item" onclick="showPage('admin')" id="nav-meta-ads"><i class="ti ti-ad"></i> Meta Ads</button>
     <div class="nav-section">Financeiro</div>
     <button class="nav-item" onclick="showPage('panorama')" id="nav-panorama"><i class="ti ti-chart-bar"></i> Panorama</button>
+    <button class="nav-item" onclick="showPage('calendario-fin')" id="nav-calendario-fin"><i class="ti ti-calendar-stats"></i> Calendário Financeiro</button>
     <button class="nav-item" onclick="showPage('comparativo')" id="nav-comparativo"><i class="ti ti-arrows-diff"></i> Comparativo</button>
     <button class="nav-item" onclick="showPage('ranking')" id="nav-ranking-adm"><i class="ti ti-trophy"></i> Ranking</button>
     <button class="nav-item" onclick="showPage('metas')" id="nav-metas"><i class="ti ti-target"></i> Metas</button>
@@ -620,6 +621,27 @@ tr:hover td{background:var(--neon-glow)}
       <thead><tr><th>Dia</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Envio</th><th>Imp.PJ</th><th>%Atend</th><th>Investido</th><th>Leads</th><th>Lucro</th><th>Margem</th></tr></thead>
       <tbody id="pan-tbody"></tbody>
     </table></div>
+  </div>
+</div>
+
+<!-- CALENDÁRIO FINANCEIRO -->
+<div class="page" id="page-calendario-fin">
+  <p class="page-title">Calendário Financeiro</p>
+  <div class="filters">
+    <div><label>Atendente</label><select id="calfin-atend" onchange="renderCalendarioFin()"><option value="">Todos</option></select></div>
+    <div id="calfin-breadcrumb" style="margin-top:18px;font-size:13px;color:var(--t2);display:flex;align-items:center;gap:6px"></div>
+  </div>
+  <div id="calfin-conteudo"></div>
+
+  <!-- Modal detalhe do dia -->
+  <div class="modal-overlay" id="modal-calfin-dia" onclick="if(event.target===this)closeCalfinDiaModal()">
+    <div class="modal" style="width:480px">
+      <p class="modal-title" id="calfin-dia-titulo">Detalhe do dia</p>
+      <div id="calfin-dia-conteudo"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeCalfinDiaModal()">Fechar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1412,7 +1434,7 @@ function addOpt(sel,val,label){const o=document.createElement('option');o.value=
 
 function initAllSelects(){
   const nomes=getNomes(),anos=getAnos().map(String);
-  ['dados-atend','pan-atend','cmp-atend-a','cmp-atend-b','adm-dash-atend','rast-atend','pad-atend-fil'].forEach(id=>{
+  ['dados-atend','pan-atend','cmp-atend-a','cmp-atend-b','adm-dash-atend','rast-atend','pad-atend-fil','calfin-atend'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     nomes.forEach(n=>addOpt(el,n,n));if(v)el.value=v;
@@ -1526,6 +1548,7 @@ function showPage(p){
     dashboard:renderDashboard,
     'dashboard-adm':()=>{renderDashAdm();setTimeout(iniciarDashGlobo,300);},
     panorama:()=>{atualizarLabelPeriodo('panoramaPeriodo','pan-periodo-label');renderPanorama();},
+    'calendario-fin':()=>{renderCalendarioFin();},
     comparativo:()=>{atualizarLabelPeriodo('comparativoPeriodoA','cmp-periodo-a-label');atualizarLabelPeriodo('comparativoPeriodoB','cmp-periodo-b-label','Mês passado');renderComparativo();},
     ranking:()=>{atualizarLabelPeriodo('rankingPeriodo','rank-periodo-label');renderRanking();},
     'ranking-publico':renderRankingPublico,
@@ -1599,6 +1622,196 @@ function renderDashboard(){
   const dk=Object.keys(dias).map(Number).sort((a,b)=>a-b);
   dc('lucro');
   if(dk.length>0)charts['lucro']=new Chart(document.getElementById('ch-lucro'),{type:'line',data:{labels:dk,datasets:[{label:'Lucro',data:dk.map(d=>R(dias[d],2)),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#0F6E56'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
+}
+
+// ===== CALENDÁRIO FINANCEIRO: navegação em 3 níveis (Ano → Mês → Dia) =====
+let _calfinNivel = 'ano'; // 'ano' | 'mes' | 'dia'
+let _calfinAnoAtual = new Date().getFullYear();
+let _calfinMesAtual = null; // nome do mês (string), quando nível='mes' ou 'dia'
+let _calfinDiaAtual = null; // número do dia, quando nível='dia'
+
+// Calcula o resumo financeiro (bruto, lucro líquido, custos, ROI, etc.) para um
+// conjunto de registros já filtrados por período e atendente.
+function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atendente){
+  let bruto=0, vendas=0, frascos=0, custoEnvio=0, impPJ=0, pctAtend=0;
+  rowsVendas.filter(r=>!r.isPad).forEach(r=>{
+    const c=calcRow(r);
+    bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnvTotal; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
+  });
+  let investido=0, leads=0;
+  admRowsPeriodo.filter(a=>!a.atendente).forEach(a=>{ investido+=a.investido||0; leads+=a.leads||0; });
+
+  const custoFrascos = frascos*CUSTO_FRASCO;
+  const custoTotal = custoFrascos + custoEnvio + impPJ + pctAtend + investido;
+
+  // Lucro: soma do calcLucroDia de cada dia único presente no conjunto.
+  const diasUnicos = [...new Set(rowsVendas.filter(r=>!r.isPad).map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
+  let lucro=0;
+  diasUnicos.forEach(k=>{ const[dd,mm,aa]=k.split('|'); lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendente||''); });
+
+  const roi = investido>0 ? R((lucro/investido)*100,1) : null; // ROI em %, null = sem investimento no período
+  const margem = bruto>0 ? R(lucro/bruto*100,1) : 0;
+
+  return { bruto:R(bruto,2), lucro:R(lucro,2), custoTotal:R(custoTotal,2), custoFrascos:R(custoFrascos,2), custoEnvio:R(custoEnvio,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2), investido:R(investido,2), leads, vendas, frascos, roi, margem };
+}
+
+function abrirGerenciarAtendCalfin(){ /* placeholder reservado, não usado por enquanto */ }
+
+function renderCalendarioFin(){
+  const atend = document.getElementById('calfin-atend').value;
+  const cont = document.getElementById('calfin-conteudo');
+  const breadcrumb = document.getElementById('calfin-breadcrumb');
+
+  if(_calfinNivel==='ano'){
+    breadcrumb.innerHTML = `<strong style="color:var(--t1)">${_calfinAnoAtual}</strong>`;
+    renderCalfinNivelAno(atend, cont);
+  } else if(_calfinNivel==='mes'){
+    breadcrumb.innerHTML = `<span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAno()">${_calfinAnoAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <strong style="color:var(--t1)">${_calfinMesAtual}</strong>`;
+    renderCalfinNivelMes(atend, cont);
+  } else {
+    breadcrumb.innerHTML = `<span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAno()">${_calfinAnoAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarMes()">${_calfinMesAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <strong style="color:var(--t1)">${_calfinDiaAtual}</strong>`;
+    abrirCalfinDiaModal(atend);
+  }
+}
+
+function calfinVoltarAno(){ _calfinNivel='ano'; renderCalendarioFin(); }
+function calfinVoltarMes(){ _calfinNivel='mes'; renderCalendarioFin(); }
+function calfinMudarAno(delta){ _calfinAnoAtual += delta; renderCalendarioFin(); }
+function calfinAbrirMes(nomeMes){ _calfinMesAtual = nomeMes; _calfinNivel='mes'; renderCalendarioFin(); }
+function calfinAbrirDia(dia){ _calfinDiaAtual = dia; _calfinNivel='dia'; renderCalendarioFin(); }
+
+function cardResumoMiniHtml(r, corDestaque){
+  const corLucro = r.lucro>=0 ? 'var(--green)' : 'var(--red)';
+  return `
+    <div style="display:flex;flex-direction:column;gap:3px;margin-top:6px">
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Bruto</span><span style="font-weight:700;color:${corDestaque}">${fmt(r.bruto)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Líquido</span><span style="font-weight:700;color:${corLucro}">${fmt(r.lucro)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Custos</span><span style="font-weight:700;color:var(--red-t)">${fmt(r.custoTotal)}</span></div>
+    </div>`;
+}
+
+// Nível 1: grade com os 12 meses do ano
+function renderCalfinNivelAno(atend, cont){
+  let html = `
+    <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1.5rem">
+      <button class="btn btn-sm" onclick="calfinMudarAno(-1)"><i class="ti ti-chevron-left"></i></button>
+      <p style="font-size:20px;font-weight:800">${_calfinAnoAtual}</p>
+      <button class="btn btn-sm" onclick="calfinMudarAno(1)"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">`;
+
+  let anoTotal = {bruto:0, lucro:0, custoTotal:0};
+
+  MESES.forEach(mes=>{
+    const rowsVendas = dados.filter(d=>d.mes===mes && String(d.ano)===String(_calfinAnoAtual) && (!atend||d.atendente===atend));
+    const admRows = adminLancs.filter(a=>a.mes===mes && String(a.ano)===String(_calfinAnoAtual));
+    const padsRows = pads.filter(p=>p.mes===mes && String(p.ano)===String(_calfinAnoAtual));
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+    anoTotal.bruto+=r.bruto; anoTotal.lucro+=r.lucro; anoTotal.custoTotal+=r.custoTotal;
+    const temDados = r.bruto>0 || r.custoTotal>0;
+    html += `
+      <div onclick="calfinAbrirMes('${mes}')" style="cursor:pointer;background:var(--bg-card);border:1px solid var(--border2);border-radius:var(--r-lg);padding:1rem;transition:all .2s;${!temDados?'opacity:.45':''}" onmouseover="this.style.borderColor='var(--neon-dim)'" onmouseout="this.style.borderColor='var(--border2)'">
+        <p style="font-size:14px;font-weight:700">${mes}</p>
+        ${cardResumoMiniHtml(r, 'var(--blue)')}
+      </div>`;
+  });
+  html += `</div>
+    <div class="table-card" style="margin-top:1.5rem">
+      <div class="table-header"><p style="font-size:13px;font-weight:700">Total do ano ${_calfinAnoAtual}</p></div>
+      <div class="metrics" style="padding:1rem;margin-bottom:0">
+        <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(anoTotal.bruto)}</div></div>
+        <div class="metric-card"><div class="metric-label">Lucro líquido</div><div class="metric-value ${anoTotal.lucro>=0?'mv-green':'mv-red'}">${fmt(anoTotal.lucro)}</div></div>
+        <div class="metric-card"><div class="metric-label">Custos totais</div><div class="metric-value mv-red">${fmt(anoTotal.custoTotal)}</div></div>
+      </div>
+    </div>`;
+  cont.innerHTML = html;
+}
+
+// Nível 2: grade tipo calendário com os dias do mês selecionado
+function renderCalfinNivelMes(atend, cont){
+  const mesIdx = MESES.indexOf(_calfinMesAtual);
+  const totalDias = new Date(_calfinAnoAtual, mesIdx+1, 0).getDate();
+  const primeiroDiaSemana = (new Date(_calfinAnoAtual, mesIdx, 1).getDay()+6)%7; // 0=segunda
+
+  let mesTotal = {bruto:0, lucro:0, custoTotal:0};
+  const porDia = {};
+  for(let d=1; d<=totalDias; d++){
+    const rowsVendas = dados.filter(x=>x.dia===d && x.mes===_calfinMesAtual && String(x.ano)===String(_calfinAnoAtual) && (!atend||x.atendente===atend));
+    const admRows = adminLancs.filter(a=>a.dia===d && a.mes===_calfinMesAtual && String(a.ano)===String(_calfinAnoAtual));
+    const padsRows = pads.filter(p=>p.dia===d && p.mes===_calfinMesAtual && String(p.ano)===String(_calfinAnoAtual));
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+    porDia[d]=r;
+    mesTotal.bruto+=r.bruto; mesTotal.lucro+=r.lucro; mesTotal.custoTotal+=r.custoTotal;
+  }
+
+  let html = `
+    <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem">
+      <p style="font-size:18px;font-weight:800">${_calfinMesAtual} de ${_calfinAnoAtual}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;font-size:11px;color:var(--t3);text-align:center;margin-bottom:6px;font-weight:700;text-transform:uppercase">
+      <div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div><div>Dom</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">`;
+
+  for(let i=0;i<primeiroDiaSemana;i++) html += '<div></div>';
+  for(let d=1; d<=totalDias; d++){
+    const r = porDia[d];
+    const temDados = r.bruto>0 || r.custoTotal>0;
+    html += `
+      <div onclick="calfinAbrirDia(${d})" style="cursor:pointer;background:var(--bg-card);border:1px solid var(--border2);border-radius:var(--r-md);padding:.6rem;min-height:90px;transition:all .2s;${!temDados?'opacity:.4':''}" onmouseover="this.style.borderColor='var(--neon-dim)'" onmouseout="this.style.borderColor='var(--border2)'">
+        <p style="font-size:13px;font-weight:800;color:var(--t1)">${d}</p>
+        ${temDados?cardResumoMiniHtml(r, 'var(--blue)'):''}
+      </div>`;
+  }
+  html += `</div>
+    <div class="table-card" style="margin-top:1.5rem">
+      <div class="table-header"><p style="font-size:13px;font-weight:700">Total de ${_calfinMesAtual}</p></div>
+      <div class="metrics" style="padding:1rem;margin-bottom:0">
+        <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(mesTotal.bruto)}</div></div>
+        <div class="metric-card"><div class="metric-label">Lucro líquido</div><div class="metric-value ${mesTotal.lucro>=0?'mv-green':'mv-red'}">${fmt(mesTotal.lucro)}</div></div>
+        <div class="metric-card"><div class="metric-label">Custos totais</div><div class="metric-value mv-red">${fmt(mesTotal.custoTotal)}</div></div>
+      </div>
+    </div>`;
+  cont.innerHTML = html;
+}
+
+// Nível 3: abre direto o modal de detalhe do dia (a tela "mês" continua visível por trás)
+function abrirCalfinDiaModal(atend){
+  renderCalfinNivelMes(atend, document.getElementById('calfin-conteudo')); // mantém o calendário do mês visível por trás
+  const dia = _calfinDiaAtual, mes = _calfinMesAtual, ano = _calfinAnoAtual;
+  const rowsVendas = dados.filter(x=>x.dia===dia && x.mes===mes && String(x.ano)===String(ano) && (!atend||x.atendente===atend));
+  const admRows = adminLancs.filter(a=>a.dia===dia && a.mes===mes && String(a.ano)===String(ano));
+  const padsRows = pads.filter(p=>p.dia===dia && p.mes===mes && String(p.ano)===String(ano));
+  const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+
+  document.getElementById('calfin-dia-titulo').textContent = `${dia} de ${mes} de ${ano}${atend?' — '+atend.split(' ')[0]:''}`;
+  const linha=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid var(--border)"><span style="color:var(--t2);font-size:13px">${label}</span><span style="font-weight:700;font-size:13px;${cor?'color:'+cor:''}">${valor}</span></div>`;
+  document.getElementById('calfin-dia-conteudo').innerHTML = `
+    ${linha('Receita bruta', fmt(r.bruto), 'var(--blue)')}
+    ${linha('Investimento (Meta Ads)', fmt(r.investido), 'var(--amber)')}
+    ${linha('ROI', r.roi!=null ? r.roi+'%' : '— (sem investimento)', r.roi!=null ? (r.roi>=0?'var(--green)':'var(--red)') : 'var(--t3)')}
+    ${linha('Custo de frascos', fmt(r.custoFrascos), 'var(--red-t)')}
+    ${linha('Custo de envio', fmt(r.custoEnvio), 'var(--red-t)')}
+    ${linha('Imposto PJ', fmt(r.impPJ))}
+    ${linha('% Atendentes', fmt(r.pctAtend))}
+    ${linha('Vendas', r.vendas)}
+    ${linha('Frascos', r.frascos)}
+    ${linha('Leads', r.leads||'—')}
+    <div style="margin-top:8px;padding-top:8px;border-top:1.5px solid var(--border2);display:flex;justify-content:space-between">
+      <span style="font-weight:800">Lucro líquido</span>
+      <span style="font-weight:800;font-size:15px;color:${r.lucro>=0?'var(--green)':'var(--red)'}">${fmt(r.lucro)}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <span style="font-size:12px;color:var(--t3)">Margem sobre receita</span>
+      <span style="font-size:12px;color:var(--t3)">${r.margem}%</span>
+    </div>
+  `;
+  document.getElementById('modal-calfin-dia').classList.add('open');
+}
+function closeCalfinDiaModal(){
+  document.getElementById('modal-calfin-dia').classList.remove('open');
+  _calfinNivel='mes';
+  renderCalendarioFin();
 }
 
 function renderPanorama(){
