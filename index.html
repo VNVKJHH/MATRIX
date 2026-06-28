@@ -1504,8 +1504,13 @@ function showPage(p){
   const mainEl = document.querySelector('.main');
   if(p === 'dashboard-adm'){
     if(mainEl) mainEl.style.padding = '0';
+    // Pausa a chuva Matrix enquanto o globo 3D está ativo — os dois competindo por
+    // CPU/GPU no mesmo frame é a causa mais provável da engasgada ao girar o globo
+    // com força. O fundo do globo já é escuro/estrelado, então nada se perde visualmente.
+    if(window.matrixStop) window.matrixStop();
   } else {
     if(mainEl) mainEl.style.padding = '2rem';
+    if(!document.body.classList.contains('tema-claro') && window.matrixStart) window.matrixStart();
   }
 
   const atualizarLabelPeriodo=(chave,elId,padrao)=>{const lbl=document.getElementById(elId);if(lbl)lbl.textContent=getPeriodoSalvo(chave,padrao).label;};
@@ -2627,6 +2632,13 @@ async function construirDashGlobo(){
   }
 
   dashGloboInstance.controls().autoRotate=false;
+  // Damping suaviza o movimento ao arrastar — sem isso, o navegador tenta recalcular
+  // a órbita imediatamente a cada pixel de movimento do mouse, o que é a causa mais
+  // provável da "engasgada" ao girar com força.
+  dashGloboInstance.controls().enableDamping=true;
+  dashGloboInstance.controls().dampingFactor=0.12;
+  dashGloboInstance.controls().rotateSpeed=0.6; // mais lento = menos recálculos por segundo
+  dashGloboInstance.controls().zoomSpeed=0.6;
 
   if(loadingEl)loadingEl.style.display='none';
 
