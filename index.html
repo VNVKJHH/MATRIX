@@ -1001,6 +1001,11 @@ tr:hover td{background:var(--neon-glow)}
         <input type="text" id="ma-meta-id" placeholder="Ex: ALEX01">
         <p style="font-size:11px;color:var(--t3);margin-top:6px">Use esse texto no nome do conjunto de anúncios ao criar campanhas para este atendente. O MATRIX vai atribuir o investimento automaticamente quando encontrar esse identificador no nome do conjunto.</p>
       </div>
+      <div class="form-group full">
+        <label>Identificador na Payt <span style="font-size:11px;color:var(--t2)">— opcional</span></label>
+        <input type="text" id="ma-payt-id" placeholder="Ex: ALEX01">
+        <p style="font-size:11px;color:var(--t3);margin-top:6px">Adicione <code>?utm_content=SEU-IDENTIFICADOR</code> ao final do link de checkout que este atendente usar. O MATRIX vai atribuir a venda automaticamente a ele quando o postback chegar com esse identificador.</p>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeAtendModal()">Cancelar</button>
@@ -1772,14 +1777,15 @@ function renderAtendentes(){
   if(!tb)tb='<tr><td colspan="6" class="empty">Nenhum atendente</td></tr>';
   document.getElementById('atend-tbody').innerHTML=tb;
 }
-function openAtendModal(){editAtendIdx=-1;document.getElementById('atend-modal-title').textContent='Novo atendente';document.getElementById('ma-nome').value='';document.getElementById('ma-comissao').value=5;document.getElementById('ma-meta-id').value='';document.getElementById('modal-atend').classList.add('open');}
+function openAtendModal(){editAtendIdx=-1;document.getElementById('atend-modal-title').textContent='Novo atendente';document.getElementById('ma-nome').value='';document.getElementById('ma-comissao').value=5;document.getElementById('ma-meta-id').value='';document.getElementById('ma-payt-id').value='';document.getElementById('modal-atend').classList.add('open');}
 function closeAtendModal(){document.getElementById('modal-atend').classList.remove('open');}
-function editAtend(idx){editAtendIdx=idx;const a=atendentes[idx];document.getElementById('atend-modal-title').textContent='Editar atendente';document.getElementById('ma-nome').value=a.nome;document.getElementById('ma-comissao').value=a.comissao;document.getElementById('ma-meta-id').value=a.metaId||'';document.getElementById('modal-atend').classList.add('open');}
+function editAtend(idx){editAtendIdx=idx;const a=atendentes[idx];document.getElementById('atend-modal-title').textContent='Editar atendente';document.getElementById('ma-nome').value=a.nome;document.getElementById('ma-comissao').value=a.comissao;document.getElementById('ma-meta-id').value=a.metaId||'';document.getElementById('ma-payt-id').value=a.paytId||'';document.getElementById('modal-atend').classList.add('open');}
 function salvarAtendente(){
   const nome=document.getElementById('ma-nome').value.trim(),com=parseFloat(document.getElementById('ma-comissao').value)||5;
   const metaId=document.getElementById('ma-meta-id').value.trim();
+  const paytId=document.getElementById('ma-payt-id').value.trim();
   if(!nome){toast('Informe o nome!');return;}
-  if(editAtendIdx>=0)atendentes[editAtendIdx]={...atendentes[editAtendIdx],nome,comissao:com,metaId};else atendentes.push({nome,comissao:com,metaId});
+  if(editAtendIdx>=0)atendentes[editAtendIdx]={...atendentes[editAtendIdx],nome,comissao:com,metaId,paytId};else atendentes.push({nome,comissao:com,metaId,paytId});
   closeAtendModal();initAllSelects();renderAtendentes();toast(editAtendIdx>=0?'Atualizado!':'Adicionado!');
 }
 function deleteAtend(idx){if(confirm('Remover?')){atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');}}
