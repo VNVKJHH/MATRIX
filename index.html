@@ -2781,8 +2781,8 @@ function criarCaixaPedidoGlobo(cor){
     if(!logoExtrusaoCacheGlobo[cor]){
       const material = new THREE.MeshBasicMaterial({ color: cor });
       const grupo = new THREE.Group();
-      const espessura = 0.16; // profundidade real das letras
-      const escalaTamanho = 1.05; // "um pouquinho maior", ajustável
+      const espessura = 0.42; // profundidade real das letras, ajustada ao novo tamanho
+      const escalaTamanho = 2.8; // aumentado bem, conforme pedido
 
       // Centraliza o grupo: desloca todos os contornos para que o centro da logo
       // fique na origem (0,0), facilitando o posicionamento sobre o globo.
