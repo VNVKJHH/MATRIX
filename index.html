@@ -1625,7 +1625,7 @@ function renderDashboard(){
 }
 
 // ===== CALENDÁRIO FINANCEIRO: navegação em 3 níveis (Ano → Mês → Dia) =====
-let _calfinNivel = 'ano'; // 'ano' | 'mes' | 'dia'
+let _calfinNivel = 'anos'; // 'anos' | 'ano' | 'mes' | 'dia'
 let _calfinAnoAtual = new Date().getFullYear();
 let _calfinMesAtual = null; // nome do mês (string), quando nível='mes' ou 'dia'
 let _calfinDiaAtual = null; // número do dia, quando nível='dia'
@@ -1662,35 +1662,68 @@ function renderCalendarioFin(){
   const cont = document.getElementById('calfin-conteudo');
   const breadcrumb = document.getElementById('calfin-breadcrumb');
 
-  if(_calfinNivel==='ano'){
-    breadcrumb.innerHTML = `<strong style="color:var(--t1)">${_calfinAnoAtual}</strong>`;
+  if(_calfinNivel==='anos'){
+    breadcrumb.innerHTML = `<strong style="color:var(--t1)">Todos os anos</strong>`;
+    renderCalfinNivelAnos(atend, cont);
+  } else if(_calfinNivel==='ano'){
+    breadcrumb.innerHTML = `<span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAnos()">Anos</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <strong style="color:var(--t1)">${_calfinAnoAtual}</strong>`;
     renderCalfinNivelAno(atend, cont);
   } else if(_calfinNivel==='mes'){
-    breadcrumb.innerHTML = `<span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAno()">${_calfinAnoAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <strong style="color:var(--t1)">${_calfinMesAtual}</strong>`;
+    breadcrumb.innerHTML = `<span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAnos()">Anos</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAno()">${_calfinAnoAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <strong style="color:var(--t1)">${_calfinMesAtual}</strong>`;
     renderCalfinNivelMes(atend, cont);
   } else {
-    breadcrumb.innerHTML = `<span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAno()">${_calfinAnoAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarMes()">${_calfinMesAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <strong style="color:var(--t1)">${_calfinDiaAtual}</strong>`;
+    breadcrumb.innerHTML = `<span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAnos()">Anos</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarAno()">${_calfinAnoAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <span style="cursor:pointer;color:var(--blue)" onclick="calfinVoltarMes()">${_calfinMesAtual}</span> <i class="ti ti-chevron-right" style="font-size:12px"></i> <strong style="color:var(--t1)">${_calfinDiaAtual}</strong>`;
     abrirCalfinDiaModal(atend);
   }
 }
 
+function calfinVoltarAnos(){ _calfinNivel='anos'; renderCalendarioFin(); }
 function calfinVoltarAno(){ _calfinNivel='ano'; renderCalendarioFin(); }
 function calfinVoltarMes(){ _calfinNivel='mes'; renderCalendarioFin(); }
 function calfinMudarAno(delta){ _calfinAnoAtual += delta; renderCalendarioFin(); }
+function calfinAbrirAno(ano){ _calfinAnoAtual = ano; _calfinNivel='ano'; renderCalendarioFin(); }
 function calfinAbrirMes(nomeMes){ _calfinMesAtual = nomeMes; _calfinNivel='mes'; renderCalendarioFin(); }
 function calfinAbrirDia(dia){ _calfinDiaAtual = dia; _calfinNivel='dia'; renderCalendarioFin(); }
 
 function cardResumoMiniHtml(r, corDestaque){
   const corLucro = r.lucro>=0 ? 'var(--green)' : 'var(--red)';
+  const roiTexto = r.roi!=null ? r.roi+'%' : '—';
+  const roiCor = r.roi!=null ? (r.roi>=0?'var(--green)':'var(--red)') : 'var(--t3)';
   return `
     <div style="display:flex;flex-direction:column;gap:3px;margin-top:6px">
       <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Bruto</span><span style="font-weight:700;color:${corDestaque}">${fmt(r.bruto)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Líquido</span><span style="font-weight:700;color:${corLucro}">${fmt(r.lucro)}</span></div>
       <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">Custos</span><span style="font-weight:700;color:var(--red-t)">${fmt(r.custoTotal)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--t3)">ROI</span><span style="font-weight:700;color:${roiCor}">${roiTexto}</span></div>
     </div>`;
 }
 
 // Nível 1: grade com os 12 meses do ano
+// Nível 0 (tela inicial): lista de todos os anos que têm algum dado registrado
+function renderCalfinNivelAnos(atend, cont){
+  const anosComDados = new Set();
+  dados.forEach(d=>{ if(!atend||d.atendente===atend) anosComDados.add(d.ano); });
+  // Garante que o ano atual sempre apareça, mesmo sem dados ainda
+  anosComDados.add(new Date().getFullYear());
+  const anos = [...anosComDados].sort((a,b)=>b-a); // mais recente primeiro
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">`;
+  anos.forEach(ano=>{
+    const rowsVendas = dados.filter(d=>String(d.ano)===String(ano) && (!atend||d.atendente===atend));
+    const admRows = adminLancs.filter(a=>String(a.ano)===String(ano));
+    const padsRows = pads.filter(p=>String(p.ano)===String(ano));
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+    const temDados = r.bruto>0 || r.custoTotal>0;
+    html += `
+      <div onclick="calfinAbrirAno(${ano})" style="cursor:pointer;background:var(--bg-card);border:1px solid var(--border2);border-radius:var(--r-lg);padding:1.1rem;transition:all .2s;${!temDados?'opacity:.45':''}" onmouseover="this.style.borderColor='var(--neon-dim)'" onmouseout="this.style.borderColor='var(--border2)'">
+        <p style="font-size:18px;font-weight:800">${ano}</p>
+        ${cardResumoMiniHtml(r, 'var(--blue)')}
+      </div>`;
+  });
+  html += `</div>`;
+  cont.innerHTML = html;
+}
+
 function renderCalfinNivelAno(atend, cont){
   let html = `
     <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1.5rem">
