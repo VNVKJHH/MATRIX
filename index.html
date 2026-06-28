@@ -2767,22 +2767,43 @@ function iniciarRotacaoCaixaGlobo(caixa){
   requestAnimationFrame(passo);
 }
 
+// Gera, via Canvas 2D nativo (sem nenhum arquivo externo), uma textura com o texto
+// "MAXIMUS" na cor do status — aplicada depois a um plano 3D que gira sobre o pedido.
+function gerarTexturaTextoMaximus(THREE, cor){
+  const canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 160;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.font = 'bold 92px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = cor;
+  ctx.fillText('MAXIMUS', canvas.width/2, canvas.height/2 - 8);
+  ctx.font = 'bold 28px Arial, sans-serif';
+  ctx.fillText('V6', canvas.width/2, canvas.height/2 + 48);
+
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.needsUpdate = true;
+  return textura;
+}
+
 function criarCaixaPedidoGlobo(cor){
   const THREE = getThreeRef();
   if(!THREE) return null; // sem THREE: globe.gl usa sua esfera padrão automaticamente
   try{
     if(!caixaCacheGlobo[cor]){
-      const material = new THREE.MeshLambertMaterial({ color: cor });
-      const geometria = new THREE.BoxGeometry(0.7, 0.7, 0.7);
-      const caixa = new THREE.Mesh(geometria, material);
-      if(!caixa || caixa.isObject3D !== true) return null;
-      caixaCacheGlobo[cor] = caixa;
+      const textura = gerarTexturaTextoMaximus(THREE, cor);
+      const material = new THREE.MeshBasicMaterial({ map: textura, transparent: true, side: THREE.DoubleSide });
+      const geometria = new THREE.PlaneGeometry(2.2, 0.7);
+      const plano = new THREE.Mesh(geometria, material);
+      if(!plano || plano.isObject3D !== true) return null;
+      caixaCacheGlobo[cor] = plano;
     }
     const clone = caixaCacheGlobo[cor].clone();
     iniciarRotacaoCaixaGlobo(clone);
     return clone;
   }catch(e){
-    console.error('Caixa 3D incompatível, usando esfera padrão:', e);
+    console.error('Texto 3D incompatível, usando esfera padrão:', e);
     return null;
   }
 }
