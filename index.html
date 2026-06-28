@@ -2654,6 +2654,30 @@ async function construirDashGlobo(){
   dashGloboInstance.controls().rotateSpeed=0.6; // mais lento = menos recálculos por segundo
   dashGloboInstance.controls().zoomSpeed=0.6;
 
+  // Garante luz suficiente na cena para o brilho especular do material das logos
+  // 3D (MeshPhongMaterial precisa de luz; sem isso poderia ficar escura demais).
+  // Usamos uma layer dedicada (1) para que essa luz NÃO afete a Terra/atmosfera,
+  // preservando exatamente a aparência do globo já aprovada.
+  // Protegido com try/catch — se a API de cena não estiver disponível como
+  // esperado, a logo cai para sua aparência sem brilho, mas continua visível.
+  try{
+    const THREE = getThreeRef();
+    const cena = dashGloboInstance.scene && dashGloboInstance.scene();
+    if(THREE && cena){
+      const luzAmbiente = new THREE.AmbientLight(0xffffff, 0.7);
+      const luzDirecional = new THREE.DirectionalLight(0xffffff, 0.6);
+      luzDirecional.position.set(1, 1, 1);
+      luzAmbiente.layers.set(1);
+      luzDirecional.layers.set(1);
+      cena.add(luzAmbiente);
+      cena.add(luzDirecional);
+      // A câmera precisa "ver" a layer 1 além da padrão (0) para captar essa luz
+      const cam = dashGloboInstance.camera && dashGloboInstance.camera();
+      if(cam) cam.layers.enable(1);
+      _logoLayerDisponivel = true;
+    }
+  }catch(e){ /* segue sem luz extra — logo ainda visível, só sem brilho */ }
+
   if(loadingEl)loadingEl.style.display='none';
 
   window.addEventListener('resize',()=>{
@@ -2743,6 +2767,7 @@ function getThreeRef(){
 }
 
 let _caixasRotacaoAtivas = [];
+let _logoLayerDisponivel = false;
 function pararTodasRotacoesCaixaGlobo(){
   _caixasRotacaoAtivas.forEach(ctrl => ctrl.parar = true);
   _caixasRotacaoAtivas = [];
@@ -2798,10 +2823,10 @@ function criarCaixaPedidoGlobo(cor){
   if(!THREE) return null; // sem THREE: globe.gl usa sua esfera padrão automaticamente
   try{
     if(!logoExtrusaoCacheGlobo[cor]){
-      const material = new THREE.MeshBasicMaterial({ color: cor });
+      const material = new THREE.MeshPhongMaterial({ color: cor, shininess: 90, specular: 0xffffff });
       const grupo = new THREE.Group();
-      const espessura = 0.42; // profundidade real das letras, ajustada ao novo tamanho
-      const escalaTamanho = 2.8; // aumentado bem, conforme pedido
+      const espessura = 0.26; // profundidade ajustada ao novo tamanho menor
+      const escalaTamanho = 1.6; // ajustado para um tamanho mais discreto
 
       // Centraliza o grupo: desloca todos os contornos para que o centro da logo
       // fique na origem (0,0), facilitando o posicionamento sobre o globo.
@@ -2814,8 +2839,9 @@ function criarCaixaPedidoGlobo(cor){
           const x = (p[0]-cx)*escalaTamanho, y = (p[1]-cy)*escalaTamanho;
           if(i===0) shape.moveTo(x,y); else shape.lineTo(x,y);
         });
-        const geometria = new THREE.ExtrudeGeometry(shape, { depth: espessura, bevelEnabled: false });
+        const geometria = new THREE.ExtrudeGeometry(shape, { depth: espessura, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 2 });
         const malha = new THREE.Mesh(geometria, material);
+        if(_logoLayerDisponivel){ malha.layers.enable(0); malha.layers.enable(1); }
         grupo.add(malha);
       });
 
