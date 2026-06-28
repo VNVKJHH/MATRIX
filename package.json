@@ -1,0 +1,9 @@
+{
+  "name": "matrix-netlify-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dependências das Netlify Functions do MATRIX",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
