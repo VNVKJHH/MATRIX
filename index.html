@@ -2817,12 +2817,22 @@ function criarCaixaPedidoGlobo(cor){
     if(!caixaCacheGlobo[cor]){
       const textura = gerarTexturaLogoMaximus(THREE, cor);
       if(!textura) return null;
-      const material = new THREE.MeshBasicMaterial({ map: textura, transparent: true, side: THREE.DoubleSide });
-      // Proporção real da logo (≈3,29:1) — tamanho levemente maior que o texto genérico anterior
-      const geometria = new THREE.PlaneGeometry(2.6, 2.6/3.2875);
-      const plano = new THREE.Mesh(geometria, material);
-      if(!plano || plano.isObject3D !== true) return null;
-      caixaCacheGlobo[cor] = plano;
+
+      // Caixa com espessura real (não um plano fino) — a logo fica estampada nas
+      // faces frontal e traseira, e as 4 faces laterais usam a cor sólida do status.
+      // Isso garante volume 3D visível em qualquer ângulo durante o giro, em vez
+      // de "desaparecer" como uma linha quando vista de perfil.
+      const largura = 3.4, proporcao = 3.2875, altura = largura/proporcao, espessura = 0.55;
+
+      const materialLateral = new THREE.MeshBasicMaterial({ color: cor });
+      const materialFace = new THREE.MeshBasicMaterial({ map: textura, transparent: true });
+      // Ordem do BoxGeometry: direita, esquerda, topo, baixo, frente, trás
+      const materiais = [materialLateral, materialLateral, materialLateral, materialLateral, materialFace, materialFace];
+
+      const geometria = new THREE.BoxGeometry(largura, altura, espessura);
+      const caixa = new THREE.Mesh(geometria, materiais);
+      if(!caixa || caixa.isObject3D !== true) return null;
+      caixaCacheGlobo[cor] = caixa;
     }
     const clone = caixaCacheGlobo[cor].clone();
     iniciarRotacaoCaixaGlobo(clone);
