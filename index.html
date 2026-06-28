@@ -2750,14 +2750,16 @@ function pararTodasRotacoesCaixaGlobo(){
 function iniciarRotacaoCaixaGlobo(caixa){
   const ctrl = { parar: false };
   _caixasRotacaoAtivas.push(ctrl);
-  let ultimoTempo = null;
+  const escalaBase = 1;
+  const amplitude = 0.18;   // quanto cresce/diminui (18% acima e abaixo do tamanho base)
+  const velocidade = 1.6;   // velocidade do pulso
+  let inicio = null;
   function passo(tempo){
-    if(ctrl.parar || !caixa.rotation) return;
-    if(ultimoTempo!=null){
-      const dt = (tempo - ultimoTempo)/1000;
-      caixa.rotation.y += dt*0.8; // velocidade do giro
-    }
-    ultimoTempo = tempo;
+    if(ctrl.parar || !caixa.scale) return;
+    if(inicio==null) inicio = tempo;
+    const t = (tempo - inicio)/1000;
+    const fator = escalaBase + Math.sin(t*velocidade)*amplitude;
+    caixa.scale.set(fator, fator, fator);
     requestAnimationFrame(passo);
   }
   requestAnimationFrame(passo);
