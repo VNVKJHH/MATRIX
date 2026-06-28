@@ -2718,6 +2718,46 @@ async function geocodDash(local){
   return null;
 }
 
+// Constrói um pequeno objeto 3D em formato de cápsula (cilindro + duas esferas nas
+// pontas) para representar cada pedido no globo, no lugar de um ponto genérico.
+// Three.js r128 não tem CapsuleGeometry nativa (só a partir da r142), por isso
+// montamos manualmente. Os objetos-base são cacheados por cor e clonados — construir
+// geometria nova para cada pedido seria caro e re-introduziria o problema de lentidão.
+const capsulaCacheGlobo = {};
+function getThreeRef(){
+  // globe.gl, carregado via <script> UMD, normalmente expõe THREE em window.THREE.
+  // Mantemos esse acesso com fallback defensivo para nunca quebrar o globo inteiro
+  // caso a biblioteca mude a forma de expor essa referência em alguma atualização.
+  return window.THREE || null;
+}
+function criarCapsulaGlobo(cor){
+  const THREE = getThreeRef();
+  if(!THREE) return null; // sem THREE disponível: objectThreeObject undefined faz o globe.gl usar sua esfera padrão
+  if(capsulaCacheGlobo[cor]) return capsulaCacheGlobo[cor].clone();
+
+  const raio = 0.35, alturaCorpo = 0.9;
+  const material = new THREE.MeshLambertMaterial({ color: cor });
+
+  const grupo = new THREE.Group();
+
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio, alturaCorpo, 10), material);
+  grupo.add(corpo);
+
+  const topo = new THREE.Mesh(new THREE.SphereGeometry(raio, 10, 8), material);
+  topo.position.y = alturaCorpo/2;
+  grupo.add(topo);
+
+  const base = new THREE.Mesh(new THREE.SphereGeometry(raio, 10, 8), material);
+  base.position.y = -alturaCorpo/2;
+  grupo.add(base);
+
+  // Deixa a cápsula "de pé" relativa à superfície do globo
+  grupo.rotation.x = Math.PI/2;
+
+  capsulaCacheGlobo[cor] = grupo;
+  return grupo.clone();
+}
+
 async function atualizarPontosDashGlobo(){
   if(!dashGloboInstance)return;
   const atend=document.getElementById('adm-dash-atend')?.value||'';
@@ -2744,8 +2784,9 @@ async function atualizarPontosDashGlobo(){
   const sub=document.getElementById('dash-globo-subtitle');
   if(sub)sub.textContent=pontos.length+' envio'+(pontos.length!==1?'s':'')+' no mapa';
   dashGloboInstance
-    .pointsData(pontos).pointLat('lat').pointLng('lng').pointColor('cor').pointRadius(0.4).pointAltitude(0.02)
-    .pointLabel(d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div></div>')
+    .objectsData(pontos).objectLat('lat').objectLng('lng').objectAltitude(0.02)
+    .objectThreeObject(d=>criarCapsulaGlobo(d.cor))
+    .objectLabel(d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div></div>')
     .ringsData(pontos).ringLat('lat').ringLng('lng').ringColor(d=>d.cor).ringMaxRadius(1.3).ringPropagationSpeed(1).ringRepeatPeriod(2800).ringAltitude(0.005);
 }
 
