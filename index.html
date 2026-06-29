@@ -263,6 +263,37 @@ tr:hover td{background:var(--neon-glow)}
   #page-dashboard-adm{left:0!important;width:100vw!important}
 }
 @media print{.sidebar,.filters,.btn,.modal-overlay,.senha-overlay{display:none!important}.main{margin:0;padding:0}}
+/* Elementos mobile: escondidos por padrão (desktop), aparecem só em telas pequenas */
+.mobile-header,.mobile-bottom-nav,.sidebar-overlay{display:none}
+@media (max-width:880px){
+  .mobile-header{
+    display:flex;align-items:center;justify-content:space-between;
+    position:fixed;top:0;left:0;right:0;height:56px;z-index:200;
+    background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 1rem;
+  }
+  .mobile-menu-btn{
+    background:none;border:none;color:var(--t1);font-size:22px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;width:36px;height:36px;
+  }
+  .mobile-header-logo{font-weight:800;color:var(--neon);font-size:16px;letter-spacing:.5px}
+  .mobile-bottom-nav{
+    display:flex;justify-content:space-around;align-items:center;
+    position:fixed;bottom:0;left:0;right:0;height:60px;z-index:200;
+    background:var(--bg2);border-top:1px solid var(--border2);
+  }
+  .mob-nav-btn{
+    background:none;border:none;color:var(--t3);display:flex;flex-direction:column;
+    align-items:center;gap:2px;font-size:10px;cursor:pointer;flex:1;padding:6px 0;
+  }
+  .mob-nav-btn.active{color:var(--neon)}
+  .mob-nav-btn i{font-size:18px}
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;top:56px;height:calc(100vh - 56px - 60px)}
+  .sidebar.open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.4)}
+  .sidebar-overlay.open{
+    display:block;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;top:56px;
+  }
+  .main{padding-top:56px!important;padding-bottom:60px!important;margin-left:0!important}
+}
 </style>
 <!-- Firebase SDK -->
 <script type="module">
@@ -717,6 +748,7 @@ tr:hover td{background:var(--neon-glow)}
     </div>
     <div><label>Buscar</label><input type="text" id="rast-busca" placeholder="Nome, telefone..." oninput="renderRastreamento()" style="width:180px"></div>
   </div>
+  <div id="rast-status-filtros" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem"></div>
   <div class="table-card">
     <div class="table-header">
       <p style="font-size:13px;font-weight:700;color:var(--t1)">Registros de envio</p>
@@ -3205,7 +3237,8 @@ function aplicarEstadoDespesasDashAdm(){
   const conteudo = document.getElementById('adm-dash-despesas');
   const chevron = document.getElementById('adm-dash-despesas-chevron');
   if(!conteudo||!chevron) return;
-  const minimizado = sessionStorage.getItem('dashDespesasMin')==='1';
+  // Padrão: fechado, a menos que o usuário já tenha explicitamente aberto antes nesta sessão.
+  const minimizado = sessionStorage.getItem('dashDespesasMin')!=='0';
   conteudo.style.display = minimizado?'none':'block';
   chevron.style.transform = minimizado?'rotate(180deg)':'rotate(0deg)';
 }
@@ -3526,6 +3559,40 @@ function salvarEdicaoPad(gi){
 function deletarPad(gi){if(confirm('Remover este PAD?')){if(window.fbDelete&&pads[gi].fbId)window.fbDelete('pads',pads[gi].fbId);pads.splice(gi,1);renderPad();toast('PAD removido.');}}
 
 // ===== RASTREAMENTO =====
+let _statusRastreamentoSelecionados = new Set(); // vazio = mostra todos
+
+function renderFiltrosStatusRastreamento(rows){
+  const cont = document.getElementById('rast-status-filtros');
+  if(!cont) return;
+  const contagem = {};
+  rows.forEach(r => { if(r.rastreamento){ const st=getStatusCorreios(r); contagem[st.tipo]=(contagem[st.tipo]||0)+1; } });
+
+  cont.innerHTML = STATUS_GLOBO_CONFIG.map(s => {
+    const ativo = _statusRastreamentoSelecionados.has(s.tipo);
+    const qtd = contagem[s.tipo] || 0;
+    return `
+      <button onclick="toggleFiltroStatusRastreamento('${s.tipo}')" style="
+        display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:30px;
+        border:1.5px solid ${ativo?s.cor:'var(--border2)'};
+        background:${ativo?s.cor+'18':'var(--bg2)'};
+        color:${ativo?s.cor:'var(--t2)'};
+        font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap;
+      ">
+        <span style="width:8px;height:8px;border-radius:50%;background:${s.cor};flex-shrink:0"></span>
+        <i class="ti ${s.icone}" style="font-size:13px"></i>
+        ${s.label}
+        <span style="background:${ativo?'rgba(0,0,0,.08)':'var(--bg3)'};padding:1px 7px;border-radius:20px;font-size:10px;margin-left:2px">${qtd}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function toggleFiltroStatusRastreamento(tipo){
+  if(_statusRastreamentoSelecionados.has(tipo)) _statusRastreamentoSelecionados.delete(tipo);
+  else _statusRastreamentoSelecionados.add(tipo);
+  renderRastreamento();
+}
+
 function renderRastreamento(){
   const filtrosAdm=document.getElementById('rast-filters-adm');
   if(filtrosAdm)filtrosAdm.style.display=adminLogado?'flex':'none';
@@ -3536,6 +3603,10 @@ function renderRastreamento(){
   if(atendFiltro)rows=rows.filter(r=>r.atendente===atendFiltro);
   if(periodoFiltro)rows=rows.filter(r=>dataNoPeriodo(r.dia,r.mes,r.ano,periodoFiltro));
   if(busca)rows=rows.filter(r=>{const s=((r.nomeCliente||'')+(r.telefone||'')+(r.rastreamento||'')+(r.atendente||'')).toLowerCase();return s.includes(busca);});
+  renderFiltrosStatusRastreamento(rows);
+  if(_statusRastreamentoSelecionados.size>0){
+    rows=rows.filter(r=>{ if(!r.rastreamento) return false; const st=getStatusCorreios(r); return _statusRastreamentoSelecionados.has(st.tipo); });
+  }
   rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const countEl=document.getElementById('rast-count');
   if(countEl)countEl.textContent=rows.length+' registro'+(rows.length!==1?'s':'');
