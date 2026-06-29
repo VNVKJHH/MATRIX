@@ -759,7 +759,7 @@ tr:hover td{background:var(--neon-glow)}
         <thead><tr>
           <th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Telefone</th>
           <th>Oferta</th><th>Valor</th><th>Rastreamento</th><th>Acompanhamento</th>
-          <th>Previsão</th><th>Tempo</th><th>Status</th>
+          <th>Previsão</th><th>Tempo</th>
         </tr></thead>
         <tbody id="rast-tbody"></tbody>
       </table>
@@ -3126,6 +3126,20 @@ function criarCaixaPedidoGlobo(cor){
       });
 
       if(!grupo || grupo.isObject3D !== true) return null;
+
+      // Pino triangular (cone apontando para baixo) embaixo da logo — funciona como
+      // um marcador de localização, ancorando visualmente onde o pedido está sobre
+      // o globo. Fica na mesma cor do status, dentro do mesmo grupo (acompanha a
+      // pulsação e a orientação de frente para a câmera automaticamente).
+      const alturaTotalLogo = CONTORNOS_LOGO_MAXIMUS.altura_total*escalaTamanho;
+      const materialPino = new THREE.MeshBasicMaterial({ color: cor });
+      const pinoGeo = new THREE.ConeGeometry(0.22, 0.5, 12);
+      const pino = new THREE.Mesh(pinoGeo, materialPino);
+      pino.rotation.x = Math.PI; // cone aponta para baixo
+      pino.position.y = -(alturaTotalLogo/2) - 0.25; // logo abaixo da base da logo
+      pino.position.z = espessura/2; // centrado na espessura da extrusão
+      grupo.add(pino);
+
       logoExtrusaoCacheGlobo[cor] = grupo;
     }
     const clone = logoExtrusaoCacheGlobo[cor].clone();
@@ -3635,7 +3649,7 @@ function renderRastreamento(){
       <td style="font-size:11px;white-space:nowrap;min-width:120px">${(()=>{const hoje=new Date();const lancado=new Date(r.ano,MESES.indexOf(r.mes),r.dia);const diasTotal=Math.floor((hoje-lancado)/86400000);return'<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há '+diasTotal+'d</div>';})()}</td>
     </tr>`;
   });
-  if(!tb)tb='<tr><td colspan="12" class="empty"><i class="ti ti-truck-delivery"></i>Nenhum registro encontrado</td></tr>';
+  if(!tb)tb='<tr><td colspan="11" class="empty"><i class="ti ti-truck-delivery"></i>Nenhum registro encontrado</td></tr>';
   document.getElementById('rast-tbody').innerHTML=tb;
 }
 
