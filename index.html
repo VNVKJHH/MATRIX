@@ -3046,23 +3046,10 @@ function iniciarRotacaoCaixaGlobo(caixa){
     const t = (tempo - inicio)/1000;
     const fator = escalaBase + Math.sin(t*velocidade)*amplitude;
     caixa.scale.set(fator, fator, fator);
-
-    // Billboard: a logo sempre vira de frente para a câmera, em qualquer ângulo
-    // que o globo esteja sendo visto (de cima, de lado, etc.) — sem isso, o objeto
-    // fica fixo no espaço e parece "de perfil" quando visto de certos ângulos.
-    // Como o objeto vive dentro de um grupo que gira com a Terra, convertemos a
-    // posição da câmera (que é em coordenadas de mundo) para o espaço local do
-    // pai do objeto antes de usar lookAt. Protegido com try/catch: se a API da
-    // câmera não se comportar como esperado, a pulsação continua funcionando
-    // normalmente, só sem o ajuste de frente.
-    try{
-      const cam = dashGloboInstance && dashGloboInstance.camera && dashGloboInstance.camera();
-      if(cam && caixa.parent){
-        const camPosLocal = caixa.parent.worldToLocal(cam.position.clone());
-        caixa.lookAt(camPosLocal);
-      }
-    }catch(e){ /* billboard indisponível nesta versão — segue só com a pulsação */ }
-
+    // Sem billboard: a logo fica fixa na orientação real sobre o globo, então ao
+    // girar a Terra é possível ver sua espessura/profundidade de lado, em vez de
+    // ela ficar se reajustando para sempre encarar a câmera (o que dava a
+    // impressão de "andar" pela tela ao girar o globo).
     requestAnimationFrame(passo);
   }
   requestAnimationFrame(passo);
