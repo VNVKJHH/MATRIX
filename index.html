@@ -338,14 +338,9 @@ tr:hover td{background:var(--neon-glow)}
     onSnapshot(collection(db, 'dados'), snap => {
       const fbDados = [];
       snap.forEach(d => fbDados.push(d.data()));
-      if(firstLoad.dados && fbDados.length === 0){
-        firstLoad.dados = false;
-        autoMigrate();
-      } else {
-        firstLoad.dados = false;
-        dados = fbDados;
-        scheduleRender();
-      }
+      firstLoad.dados = false;
+      dados = fbDados;
+      scheduleRender();
     });
 
     onSnapshot(collection(db, 'pads'), snap => {
