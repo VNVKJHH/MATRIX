@@ -910,17 +910,19 @@ tr:hover td{background:var(--neon-glow)}
     </table></div>
   </div>
   <div class="table-card">
-    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Meta Ads — Investimento por atendente <span style="font-size:10px;color:var(--t3);font-weight:400">(detalhamento por conjunto de anúncios identificado)</span></p></div>
+    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Meta Ads — Investimento por atendente <span style="font-size:10px;color:var(--t3);font-weight:400">(detalhamento por conjunto de anúncios identificado, com imposto incluso)</span></p></div>
+    <div style="padding:1rem;position:relative;height:260px"><canvas id="ch-adm-inv-atend"></canvas></div>
     <div class="tw"><table>
       <thead><tr><th>Dia</th><th>Atendente</th><th>Conjunto de anúncios</th><th>Investimento</th><th>Leads</th><th>CPL</th></tr></thead>
       <tbody id="adm-inv-atend-tbody"></tbody>
     </table></div>
   </div>
   <div class="table-card">
-    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Envios por dia (calculado pelos lançamentos)</p></div>
+    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">CPA — Custo por Aquisição <span style="font-size:10px;color:var(--t3);font-weight:400">(investimento com imposto ÷ vendas normais + PAD pagos)</span></p></div>
+    <div style="padding:1rem;position:relative;height:260px"><canvas id="ch-adm-cpa"></canvas></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Atendente</th><th>Oferta</th><th>Qtd. vendas</th><th>Frascos</th><th>Custo frascos</th><th>Custo envio (R$32)</th><th>Custo total</th></tr></thead>
-      <tbody id="adm-envios-tbody"></tbody>
+      <thead><tr><th>Dia</th><th>Investimento (c/ imposto)</th><th>Vendas normais</th><th>PAD pagos</th><th>Total aquisições</th><th>CPA</th></tr></thead>
+      <tbody id="adm-cpa-tbody"></tbody>
     </table></div>
   </div>
 </div>
@@ -2162,17 +2164,60 @@ function renderAdmin(){
   if(!tbAtend)tbAtend='<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum conjunto de anúncios identificado para um atendente neste período. Cadastre o "Identificador no Meta Ads" em Atendentes.</td></tr>';
   document.getElementById('adm-inv-atend-tbody').innerHTML=tbAtend;
 
-  let tb2='';
-  rows.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) ).forEach(r=>{
-    const c=calcRow(r);
-    tb2+=`<tr><td style="font-weight:700">${r.dia}</td><td>${r.atendente}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${getNomeOferta(r.ofertaId)}</td><td>${r.qtd_vendas||0}</td><td>${c.frascos}</td><td>${fmt(c.custoFrascos)}</td><td>${fmt((r.qtd_vendas||0)*CUSTO_ENVIO)}</td><td style="font-weight:600">${fmt(c.custoEnvTotal)}</td></tr>`;
+  // Gráfico: investimento por atendente ao longo dos dias (já incluindo o imposto
+  // de 13,83% sobre o Meta Ads), uma linha por atendente.
+  const PERCENTUAL_IMPOSTO_META_ADS_2 = 0.1383;
+  const diasUnicosAtend = [...new Set(admPorAtendente.map(a=>diaToISO(a.dia,a.mes,a.ano)))].sort();
+  const atendentesNoGrafico = [...new Set(admPorAtendente.map(a=>a.atendente))];
+  const coresGrafico = ['#378ADD','#5DCAA5','#EF9F27','#D85A30','#7F77DD','#E84393','#00B894'];
+  const datasetsInvAtend = atendentesNoGrafico.map((nome,i)=>({
+    label: nome.split(' ')[0],
+    data: diasUnicosAtend.map(diaIso=>{
+      const soma = admPorAtendente.filter(a=>a.atendente===nome && diaToISO(a.dia,a.mes,a.ano)===diaIso).reduce((s,a)=>s+(a.investido||0),0);
+      return R(soma * (1+PERCENTUAL_IMPOSTO_META_ADS_2), 2);
+    }),
+    borderColor: coresGrafico[i%coresGrafico.length],
+    backgroundColor: coresGrafico[i%coresGrafico.length]+'22',
+    tension: 0.3, fill:false,
+  }));
+  dc('adm-inv-atend');
+  if(diasUnicosAtend.length>0){
+    charts['adm-inv-atend']=new Chart(document.getElementById('ch-adm-inv-atend'),{
+      type:'line',
+      data:{ labels: diasUnicosAtend.map(iso=>iso.split('-').slice(1).reverse().join('/')), datasets: datasetsInvAtend },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{ y:{ ticks:{ callback:v=>'R$'+Number(v).toLocaleString('pt-BR') } } } }
+    });
+  }
+
+  // CPA — Custo por Aquisição: investimento (com imposto) ÷ (vendas normais + PAD pagos).
+  // PADs frustrados ou ainda pendentes NÃO entram na contagem de aquisições.
+  const diasUnicosCpa = [...new Set([...rows.map(r=>diaToISO(r.dia,r.mes,r.ano)), ...padsNoPeriodo.map(p=>diaToISO(p.dia,p.mes,p.ano)), ...admFil.map(a=>diaToISO(a.dia,a.mes,a.ano))])].sort();
+  let tbCpa='';
+  const cpaLabels=[], cpaValores=[];
+  diasUnicosCpa.forEach(diaIso=>{
+    const investidoDia = admFil.filter(a=>diaToISO(a.dia,a.mes,a.ano)===diaIso).reduce((s,a)=>s+(a.investido||0),0) * (1+PERCENTUAL_IMPOSTO_META_ADS_2);
+    const vendasNormaisDia = rows.filter(r=>diaToISO(r.dia,r.mes,r.ano)===diaIso).reduce((s,r)=>s+(r.qtd_vendas||0),0);
+    const padPagosDia = padsNoPeriodo.filter(p=>diaToISO(p.dia,p.mes,p.ano)===diaIso && p.status==='Pago').length;
+    const totalAquisicoes = vendasNormaisDia + padPagosDia;
+    const cpa = totalAquisicoes>0 ? investidoDia/totalAquisicoes : null;
+    const [aa,mm,dd] = diaIso.split('-');
+    cpaLabels.push(dd+'/'+mm);
+    cpaValores.push(cpa!=null?R(cpa,2):null);
+    if(investidoDia>0 || totalAquisicoes>0){
+      tbCpa+=`<tr><td style="font-weight:700">${dd}/${mm}</td><td>${fmt(investidoDia)}</td><td>${vendasNormaisDia}</td><td>${padPagosDia}</td><td>${totalAquisicoes}</td><td style="font-weight:600;${cpa!=null?'':'color:var(--t3)'}">${cpa!=null?fmt(cpa):'—'}</td></tr>`;
+    }
   });
-  padsNoPeriodo.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) ).forEach(p=>{
-    const o=OFERTAS.find(x=>x.id===p.ofertaId)||{frascos:0};
-    tb2+=`<tr style="background:var(--purple-l)"><td style="font-weight:700">${p.dia}</td><td>${p.atendente} <span class="badge b-purple" style="font-size:9px">PAD</span></td><td>${getNomeOferta(p.ofertaId)}</td><td>1</td><td>${o.frascos}</td><td>${fmt(o.frascos*CUSTO_FRASCO)}</td><td>${fmt(CUSTO_ENVIO)}</td><td style="font-weight:600">${fmt(o.frascos*CUSTO_FRASCO+CUSTO_ENVIO)}</td></tr>`;
-  });
-  if(!tb2)tb2='<tr><td colspan="8" class="empty"><i class="ti ti-inbox"></i>Nenhum envio</td></tr>';
-  document.getElementById('adm-envios-tbody').innerHTML=tb2;
+  if(!tbCpa)tbCpa='<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum dado no período</td></tr>';
+  document.getElementById('adm-cpa-tbody').innerHTML=tbCpa;
+
+  dc('adm-cpa');
+  if(diasUnicosCpa.length>0){
+    charts['adm-cpa']=new Chart(document.getElementById('ch-adm-cpa'),{
+      type:'line',
+      data:{ labels: cpaLabels, datasets:[{ label:'CPA', data: cpaValores, borderColor:'#EF9F27', backgroundColor:'#EF9F2722', tension:0.3, fill:true, spanGaps:true }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'R$'+Number(v).toLocaleString('pt-BR') } } } }
+    });
+  }
 }
 
 // ===== META ADS — Integração via Netlify Function (multi-conta, token por conta) =====
