@@ -511,7 +511,7 @@ tr:hover td{background:var(--neon-glow)}
 
   <div id="menu-comum" style="display:none;flex-direction:column;gap:3px;width:100%">
     <div class="nav-section">Principal</div>
-    <button class="nav-item" onclick="showPage('dashboard')" id="nav-dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+    <button class="nav-item" onclick="showPage('dashboard-adm')" id="nav-dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
     <button class="nav-item" onclick="showPage('lancamentos')" id="nav-lancamentos"><i class="ti ti-plus"></i> Lançamentos</button>
     <button class="nav-item" onclick="showPage('pad')" id="nav-pad"><i class="ti ti-credit-card"></i> PAD</button>
     <button class="nav-item" onclick="showPage('rastreamento')" id="nav-rastreamento"><i class="ti ti-truck-delivery"></i> Rastreamento</button>
@@ -3323,7 +3323,14 @@ function aplicarEstadoDespesasDashAdm(){
 }
 
 function renderDashAdm(){
-  const atend=document.getElementById('adm-dash-atend').value;
+  // Usuário comum: o globo mostra automaticamente só os próprios pedidos, sem
+  // possibilidade de trocar para ver dados de outros atendentes — o seletor fica
+  // escondido, e o filtro é travado no próprio nome dele.
+  const selAtend = document.getElementById('adm-dash-atend');
+  if(selAtend) selAtend.style.display = adminLogado ? 'inline-block' : 'none';
+  const atend = adminLogado
+    ? (selAtend ? selAtend.value : '')
+    : (usuarioLogado ? usuarioLogado.nome : '');
 
   // Sem filtros de período no globo — sempre mostra os números de HOJE.
   const agora=new Date();
