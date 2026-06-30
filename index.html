@@ -1597,7 +1597,11 @@ function renderDashboard(){
   let tBruto=0,tVendas=0,tLucro=0,tFrascos=0;
   const tituloEl=document.getElementById('db-titulo');
   if(tituloEl&&!adminLogado&&usuarioLogado)tituloEl.textContent='Dashboard — '+usuarioLogado.nome.split(' ')[0];
-  const admRows=adminLancs.filter(a=>(!mes||a.mes===mes)&&(!ano||String(a.ano)===String(ano)));
+  const admRows=adminLancs.filter(a=>{
+    if(!((!mes||a.mes===mes)&&(!ano||String(a.ano)===String(ano)))) return false;
+    if(atend) return a.atendente===atend;
+    return !(a.origemMeta && a.atendente);
+  });
   rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;});
   const diasUnicos=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
   diasUnicos.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
@@ -1642,8 +1646,9 @@ function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atend
     const c=calcRow(r);
     bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnvTotal; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
   });
-  let investido=0, leads=0;
-  admRowsPeriodo.filter(a=>!a.atendente).forEach(a=>{ investido+=a.investido||0; leads+=a.leads||0; });
+  let investidoBruto=0, leads=0;
+  admRowsPeriodo.filter(a=>atendente?a.atendente===atendente:!(a.origemMeta&&a.atendente)).forEach(a=>{ investidoBruto+=a.investido||0; leads+=a.leads||0; });
+  const investido = R(investidoBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
 
   const custoFrascos = frascos*CUSTO_FRASCO;
   const custoTotal = custoFrascos + custoEnvio + impPJ + pctAtend + investido;
@@ -1655,7 +1660,7 @@ function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atend
   const roi = investido>0 ? R((lucro/investido)*100,1) : null;
   const margem = bruto>0 ? R(lucro/bruto*100,1) : 0;
 
-  return { bruto:R(bruto,2), lucro:R(lucro,2), custoTotal:R(custoTotal,2), custoFrascos:R(custoFrascos,2), custoEnvio:R(custoEnvio,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2), investido:R(investido,2), leads, vendas, frascos, roi, margem };
+  return { bruto:R(bruto,2), lucro:R(lucro,2), custoTotal:R(custoTotal,2), custoFrascos:R(custoFrascos,2), custoEnvio:R(custoEnvio,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2), investido:investido, leads, vendas, frascos, roi, margem };
 }
 
 function abrirGerenciarAtendCalfin(){ }
@@ -1850,8 +1855,7 @@ function renderPanorama(){
   const atend=document.getElementById('pan-atend').value;
   const rows=filtrarPorPeriodo(dados, periodo, atend);
   let tBruto=0,tVendas=0,tLucro=0,tImpPJ=0,tPct=0,tFrascos=0,tEnvio=0;
-  const admRows=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
-  let tInv=0,tLeads=0;admRows.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
+  const { investido: tInv, leads: tLeads } = getInvestimentoMetaAds(periodo, atend);
   const byD={};
   rows.filter(r=>!r.isPad).forEach(r=>{
     const c=calcRow(r);
@@ -1860,7 +1864,12 @@ function renderPanorama(){
     byD[chaveDia].bruto+=(r.bruto||0);byD[chaveDia].vendas+=(r.qtd_vendas||0);byD[chaveDia].impPJ+=c.impPJ;byD[chaveDia].pct+=c.pctAtend;byD[chaveDia].frascos+=c.frascos;byD[chaveDia].envio+=c.custoEnvTotal;
     tBruto+=(r.bruto||0);tVendas+=(r.qtd_vendas||0);tImpPJ+=c.impPJ;tPct+=c.pctAtend;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;
   });
-  admRows.forEach(a=>{const chaveDia=a.dia+'|'+a.mes+'|'+a.ano;if(byD[chaveDia]){byD[chaveDia].investido+=(a.investido||0);byD[chaveDia].leads+=(a.leads||0);}});
+  const admFilPanorama = adminLancs.filter(a=>{
+    if(!dataNoPeriodo(a.dia,a.mes,a.ano,periodo)) return false;
+    if(atend) return a.atendente===atend;
+    return !(a.origemMeta && a.atendente);
+  });
+  admFilPanorama.forEach(a=>{const chaveDia=a.dia+'|'+a.mes+'|'+a.ano;if(byD[chaveDia]){byD[chaveDia].investido+=R((a.investido||0)*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);byD[chaveDia].leads+=(a.leads||0);}});
   Object.keys(byD).forEach(k=>{const dd=byD[k];dd.lucro=calcLucroDia(dd.dia,dd.mes,dd.ano,atend);tLucro+=dd.lucro;});
   document.getElementById('pan-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
@@ -1893,21 +1902,20 @@ function renderComparativo(){
   const periodoB = getPeriodoSalvo('comparativoPeriodoB','Mês passado');
   const atA=document.getElementById('cmp-atend-a').value;
   const atB=document.getElementById('cmp-atend-b').value;
-  function resumo(rows, periodo){
+  function resumo(rows, periodo, atendenteFiltro){
     let bruto=0,vendas=0,lucro=0;
     rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
     const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
-    diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
-    const admR=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
-    let inv=0,leads=0;admR.forEach(a=>{inv+=a.investido||0;leads+=a.leads||0;});
+    diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendenteFiltro||'');});
+    const { investido: inv, leads } = getInvestimentoMetaAds(periodo, atendenteFiltro);
     const ticket=vendas>0?R(bruto/vendas,2):0;
     const conv=leads>0?R(vendas/leads*100,1):0;
     const roas=inv>0?R(bruto/inv,2):0;
     const margem=bruto>0?R(lucro/bruto*100,1):0;
     return{bruto,inv,leads,vendas,lucro,ticket,conv,roas,margem};
   }
-  const rA=resumo(filtrarPorPeriodo(dados,periodoA,atA), periodoA);
-  const rB=resumo(filtrarPorPeriodo(dados,periodoB,atB), periodoB);
+  const rA=resumo(filtrarPorPeriodo(dados,periodoA,atA), periodoA, atA);
+  const rB=resumo(filtrarPorPeriodo(dados,periodoB,atB), periodoB, atB);
   function lA(){return`${periodoA.label}${atA?' · '+atA.split(' ')[0]:''}`;}
   function lB(){return`${periodoB.label}${atB?' · '+atB.split(' ')[0]:''}`;}
   const metrics=[
@@ -1932,8 +1940,6 @@ function renderComparativo(){
 function renderRanking(){
   const periodo = getPeriodoSalvo('rankingPeriodo');
   const ordem=document.getElementById('rank-ordem').value;
-  const admRows=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
-  let tLeads=0;admRows.forEach(a=>tLeads+=a.leads||0);
   const nomes=getNomes();
   const resumos=nomes.map(nome=>{
     const rows=filtrarPorPeriodo(dados, periodo, nome);
@@ -1941,9 +1947,10 @@ function renderRanking(){
     rows.forEach(r=>{const c=calcRow(r);bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;frascos+=c.frascos;});
     const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
     diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),nome);});
+    const { investido, leads } = getInvestimentoMetaAds(periodo, nome);
     const ticket=vendas>0?R(bruto/vendas,2):0;
-    const conv=tLeads>0?R(vendas/tLeads*100,1):0;
-    return{nome,bruto,vendas,lucro,frascos,ticket,conv,leads:tLeads};
+    const conv=leads>0?R(vendas/leads*100,1):0;
+    return{nome,bruto,vendas,lucro,frascos,ticket,conv,leads,investido};
   });
   resumos.sort((a,b)=>b[ordem]-a[ordem]);
   const medals=['🥇','🥈','🥉'];
@@ -2074,6 +2081,23 @@ function filtrarPorPeriodo(lista, periodo, atendente){
     if(atendente && r.atendente!==atendente) return false;
     return dataNoPeriodo(r.dia, r.mes, r.ano, periodo);
   });
+}
+
+// Função única usada em TODO o sistema (Dashboard, Panorama, Comparativo, Ranking,
+// Calendário Financeiro) para calcular investimento e leads do Meta Ads de forma
+// correta: já com o imposto de 13,83% incluso, e atribuindo certinho por atendente
+// — sem nunca somar o total "Geral" junto com o detalhamento por atendente (o que
+// duplicava o valor) e sem nunca usar o total da empresa inteira quando um
+// atendente específico está selecionado.
+function getInvestimentoMetaAds(periodo, atendente){
+  const admFil = adminLancs.filter(a=>{
+    if(!dataNoPeriodo(a.dia,a.mes,a.ano,periodo)) return false;
+    if(atendente) return a.atendente===atendente;
+    return !(a.origemMeta && a.atendente);
+  });
+  let investidoBruto=0, leads=0;
+  admFil.forEach(a=>{ investidoBruto+=a.investido||0; leads+=a.leads||0; });
+  return { investido: R(investidoBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2), leads };
 }
 
 function renderAdmin(){
