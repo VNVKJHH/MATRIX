@@ -1415,7 +1415,17 @@ function calcLucroDia(dia,mes,ano,atendente){
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&(!atendente||d.atendente===atendente)&&!d.isPad);
   let totalSub=0;
   rows.forEach(r=>{const c=calcRow(r);totalSub+=c.subtotal;});
-  const admFil=adminLancs.filter(a=>a.dia===dia&&a.mes===mes&&a.ano===ano&&(!atendente||!a.atendente||a.atendente===atendente));
+  const admFil=adminLancs.filter(a=>{
+    if(a.dia!==dia||a.mes!==mes||a.ano!==ano) return false;
+    if(!atendente){
+      // Visão geral (Todos): conta o investimento uma única vez, ignorando os
+      // registros de detalhamento por atendente — eles são só um recorte do
+      // mesmo gasto já somado no registro "Geral", e somar os dois duplicava
+      // o investimento e inflava o prejuízo artificialmente.
+      return !(a.origemMeta && a.atendente);
+    }
+    return (!a.atendente||a.atendente===atendente);
+  });
   let metaAds=0;
   admFil.forEach(a=>metaAds+=a.investido||0);
   const padC=calcPadCustos({dia,mes,ano,atendente:atendente||null});
