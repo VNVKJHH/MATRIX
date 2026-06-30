@@ -3046,14 +3046,22 @@ function iniciarRotacaoCaixaGlobo(caixa){
     const t = (tempo - inicio)/1000;
     const fator = escalaBase + Math.sin(t*velocidade)*amplitude;
     caixa.scale.set(fator, fator, fator);
-    // Mantém a logo sempre na MESMA orientação absoluta (a que foi desenhada),
-    // cancelando toda rotação herdada da posição no globo. Calculamos a rotação
-    // do pai em coordenadas de MUNDO (não local) e aplicamos o inverso exato.
-    if(caixa.parent){
-      const quatMundoPai = new (caixa.quaternion.constructor)();
-      caixa.parent.getWorldQuaternion(quatMundoPai);
-      caixa.quaternion.copy(quatMundoPai.clone().invert());
-    }
+    // Billboard suavizado: a logo vira gradualmente de frente para a câmera (não
+    // instantaneamente), eliminando a sensação de "andar" pela tela ao girar o
+    // globo rápido, mas sem ficar de lado/deitada como ficava sem nenhum ajuste.
+    try{
+      const cam = dashGloboInstance && dashGloboInstance.camera && dashGloboInstance.camera();
+      if(cam && caixa.parent){
+        const camPosLocal = caixa.parent.worldToLocal(cam.position.clone());
+        const posOriginal = caixa.position.clone();
+        const quatAtual = caixa.quaternion.clone(); // orientação real de antes deste frame
+        caixa.lookAt(camPosLocal); // efeito colateral: seta caixa.quaternion para "de frente"
+        const quatAlvo = caixa.quaternion.clone();
+        caixa.position.copy(posOriginal);
+        caixa.quaternion.copy(quatAtual); // volta para a orientação real...
+        caixa.quaternion.slerp(quatAlvo, 0.06); // ...e gira só um pouquinho em direção ao alvo
+      }
+    }catch(e){ /* câmera indisponível nesta chamada — segue só com a pulsação */ }
     requestAnimationFrame(passo);
   }
   requestAnimationFrame(passo);
