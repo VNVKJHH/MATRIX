@@ -401,6 +401,22 @@ tr:hover td{background:var(--neon-glow)}
       }
     });
 
+    onSnapshot(collection(db, 'notificacoesRastreamento'), snap => {
+      const arr = [];
+      snap.forEach(d => arr.push(d.data()));
+      notificacoesRast = arr;
+      if(typeof atualizarBadgeNotificacoes==='function') atualizarBadgeNotificacoes();
+      if(typeof renderNotificacoes==='function') renderNotificacoes();
+    });
+
+    onSnapshot(collection(db, 'notificacoesPad'), snap => {
+      const arr = [];
+      snap.forEach(d => arr.push(d.data()));
+      notificacoesPad = arr;
+      if(typeof atualizarBadgeNotificacoes==='function') atualizarBadgeNotificacoes();
+      if(typeof renderNotificacoes==='function') renderNotificacoes();
+    });
+
     console.log('Firebase real-time listeners ativos!');
     window.fbReady = true;
   }
@@ -499,6 +515,11 @@ tr:hover td{background:var(--neon-glow)}
 <nav class="sidebar" style="position:fixed;z-index:100">
   <div class="logo">MATRIX<span>Gestão comercial</span></div>
   <div id="sidebar-user"></div>
+
+  <button class="nav-item" onclick="abrirNotificacoesModal()" id="btn-notificacoes" style="display:none;justify-content:space-between;margin-bottom:6px">
+    <span style="display:flex;align-items:center;gap:9px"><i class="ti ti-bell"></i> Notificações</span>
+    <span id="notif-badge" style="display:none;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;min-width:18px;text-align:center">0</span>
+  </button>
 
   <div id="menu-adm" style="display:none;flex-direction:column;gap:3px;width:100%">
     <div class="nav-section">Principal</div>
@@ -1215,6 +1236,29 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-notificacoes" onclick="if(event.target===this)fecharNotificacoesModal()">
+  <div class="modal" style="width:520px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column">
+    <p class="modal-title" style="display:flex;align-items:center;gap:8px"><i class="ti ti-bell"></i> Notificações</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="tab-btn" id="notif-tab-rastreamento" onclick="trocarTipoNotif('rastreamento')" style="flex:1;text-align:center;padding:8px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);cursor:pointer;font-size:12px;font-weight:700">
+        <i class="ti ti-truck-delivery"></i> Rastreamento
+      </button>
+      <button class="tab-btn" id="notif-tab-pad" onclick="trocarTipoNotif('pad')" style="flex:1;text-align:center;padding:8px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);cursor:pointer;font-size:12px;font-weight:700">
+        <i class="ti ti-credit-card"></i> PAD
+      </button>
+    </div>
+    <div style="display:flex;gap:14px;margin-bottom:10px;border-bottom:1px solid var(--border2)">
+      <button onclick="trocarSubabaNotif('naolidos')" id="notif-sub-naolidos" style="background:none;border:none;cursor:pointer;padding:6px 2px;font-size:12px;font-weight:700;color:var(--t2);border-bottom:2px solid transparent">Não lidas</button>
+      <button onclick="trocarSubabaNotif('lidos')" id="notif-sub-lidos" style="background:none;border:none;cursor:pointer;padding:6px 2px;font-size:12px;font-weight:700;color:var(--t2);border-bottom:2px solid transparent">Lidas</button>
+      <button onclick="marcarTodasNotifComoLidas()" style="margin-left:auto;background:none;border:none;cursor:pointer;padding:6px 2px;font-size:11px;font-weight:600;color:var(--blue-t)"><i class="ti ti-checks"></i> Marcar todas como lidas</button>
+    </div>
+    <div id="notif-lista" style="display:flex;flex-direction:column;gap:8px;min-height:120px"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharNotificacoesModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1269,10 +1313,13 @@ function fazerLogin(){
     showPage('dashboard-adm');
     renderDashAdm();
   }
+  const btnNotif=document.getElementById('btn-notificacoes');
+  if(btnNotif)btnNotif.style.display='flex';
   setTimeout(()=>{
     const fA=document.getElementById('f-atend');
     if(fA){const opt=[...fA.options].find(o=>o.value===user.nome);if(opt)fA.value=user.nome;}
     renderRegistrosDia();
+    if(typeof gerarNotificacoes==='function')gerarNotificacoes();
   },100);
   toast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
 }
@@ -1287,6 +1334,8 @@ function fazerLogout(){
   document.getElementById('login-erro').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('sidebar-user').innerHTML='';
+  const btnNotif=document.getElementById('btn-notificacoes');
+  if(btnNotif)btnNotif.style.display='none';
 }
 const CUSTO_FRASCO=10;
 const PERCENTUAL_IMPOSTO_META_ADS_GLOBAL=0.1383;
@@ -1564,8 +1613,8 @@ function showPage(p){
     atendentes:renderAtendentes,
     admin:()=>{atualizarLabelPeriodo('metaPeriodo','adm-periodo-label');renderAdmin();initContaMetaSelect();autoSyncMetaAds();},
     lancamentos:renderRegistrosDia,
-    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');renderRastreamento();autoSyncRastreamento();},
-    pad:()=>{setPadTab('aberto');autoSyncRastreamento();}
+    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');renderRastreamento();autoSyncRastreamento();gerarNotificacoes();},
+    pad:()=>{setPadTab('aberto');autoSyncRastreamento();gerarNotificacoes();}
   };
   window.allRenders=fns;
   if(fns[p])fns[p]();
@@ -1881,7 +1930,6 @@ function renderPanorama(){
     <div class="metric-card"><div class="metric-label">Custo envio</div><div class="metric-value mv-red">${fmt(tEnvio)}</div></div>
     <div class="metric-card"><div class="metric-label">Imp. PJ</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
     <div class="metric-card"><div class="metric-label">% Atendentes</div><div class="metric-value">${fmt(tPct)}</div></div>
-    <div class="metric-card"><div class="metric-label">Leads</div><div class="metric-value">${tLeads}</div></div>
   `;
   const chaves = Object.keys(byD).sort((a,b)=>{
     const da=byD[a], db=byD[b];
@@ -3411,6 +3459,10 @@ function renderRankingPublico(){
 }
 
 let pads=[];
+let notificacoesRast=[];
+let notificacoesPad=[];
+let _notifAbaTipo='rastreamento';
+let _notifSubaba='naolidos';
 let padTab='aberto';
 
 function setPadTab(tab){
@@ -3438,6 +3490,7 @@ function openPadModal(){
   ['pad-dia','pad-nome','pad-tel','pad-negociacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('pad-ano').value='2026';
   initAllSelects();
+  document.getElementById('pad-atend').disabled=false;
   const pa=document.getElementById('pad-atend');
   if(pa&&usuarioLogado){const opt=[...pa.options].find(o=>o.value===usuarioLogado.nome);if(opt){pa.value=usuarioLogado.nome;}else if(pa.options.length>0){pa.selectedIndex=0;}}
   buildPadOfertasGrid();
@@ -3445,6 +3498,7 @@ function openPadModal(){
 }
 function closePadModal(){
   document.getElementById('modal-pad').classList.remove('open');
+  document.getElementById('pad-atend').disabled=false;
   const saveBtn=document.querySelector('#modal-pad .btn-primary');
   if(saveBtn){saveBtn.onclick=salvarPad;saveBtn.innerHTML='<i class="ti ti-device-floppy"></i> Lançar PAD';}
   const title=document.querySelector('#modal-pad .modal-title');
@@ -3522,7 +3576,8 @@ function renderPad(){
       rastrCol='<td>'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Aguardando</span>')+'</td>';
     }
     const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${p.trackInvalido?`<div style="font-weight:600;font-size:11px;color:var(--red);margin-bottom:3px">⚠️ Código inválido</div>`:p.trackStatus?`<div style="font-weight:600;font-size:11px;color:var(--neon);margin-bottom:2px">${p.trackStatus}</div><div style="font-size:9px;color:var(--t3);margin-bottom:3px">${p.trackData||''}</div>`:`<div style="font-size:10px;color:var(--t3);margin-bottom:3px;font-style:italic">Aguardando busca</div>`}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
-    const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':'<td></td>';
+    const podeEditar = adminLogado || (usuarioLogado && p.atendente===usuarioLogado.nome);
+    const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':(podeEditar?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px" title="Editar meu lançamento"><i class="ti ti-edit"></i></button></td>':'<td></td>');
     const neg=p.negociacao?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
     const cidade=p.cidade?'<div style="font-size:10px;color:var(--t3)">'+p.cidade+(p.estado?' - '+p.estado:'')+'</div>':'';
     tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+rastrCol+acompanhamentoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
@@ -3545,6 +3600,7 @@ function mudarStatusPad(gi,novoStatus){
     toast('✅ PAD marcado como Pago! Venda registrada em Lançamentos.');
   }else{toast('Status atualizado!');}
   renderPad();
+  gerarNotificacoes();
 }
 function editarRastPad(gi){document.getElementById('prview-'+gi).style.display='none';document.getElementById('predit-'+gi).style.display='flex';document.getElementById('prinp-'+gi).focus();}
 function cancelarRastPad(gi){document.getElementById('prview-'+gi).style.display='flex';document.getElementById('predit-'+gi).style.display='none';}
@@ -3552,6 +3608,7 @@ function salvarRastPad(gi){pads[gi].rastreamento=document.getElementById('prinp-
 function editarPad(gi){
   const p=pads[gi];
   document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
+  document.getElementById('pad-atend').disabled=!adminLogado;
   buildPadOfertasGrid();padOfertaSelecionada=p.ofertaId;padValorEditado=p.bruto;
   setTimeout(()=>{const item=document.querySelector('#pad-ofertas-grid .oferta-item[data-id="'+p.ofertaId+'"]');if(item){item.classList.add('selected');const inp=document.getElementById('padoval-'+p.ofertaId);if(inp)inp.value=p.bruto;const conf=document.getElementById('padoconf-'+p.ofertaId);if(conf){conf.textContent='✓ Valor: '+fmt(p.bruto);conf.style.display='block';}}},50);
   document.querySelector('#modal-pad .modal-title').textContent='Editar PAD';
@@ -3674,8 +3731,10 @@ async function buscarRastreio(gi,tipo){
     obj.trackStatus=eventos[0]?.descricao||'—';
     obj.trackData=(eventos[0]?.data||'')+(eventos[0]?.hora?' '+eventos[0].hora:'')+(eventos[0]?.local?' — '+eventos[0].local:'');
     obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;
+    marcarInicioRetiradaSeNecessario(obj);
     if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);
     if(tipo==='pad')renderPad();else renderRastreamento();
+    gerarNotificacoes();
     toast('Rastreamento atualizado!');
   }catch(e){console.error('Tracking error:',e);toast('Erro ao buscar. Verifique o código.');}
 }
@@ -3690,7 +3749,7 @@ async function atualizarTodosRastreios(silencioso){
   const pendentes=dados.filter(r=>r.rastreamento&&!r.isPad&&naoFinal(r));
   const padPendentes=pads.filter(p=>p.rastreamento&&naoFinal(p));
   const total=pendentes.length+padPendentes.length;
-  if(total===0){ if(!silencioso) toast('Nenhum rastreamento pendente!'); return; }
+  if(total===0){ gerarNotificacoes(); if(!silencioso) toast('Nenhum rastreamento pendente!'); return; }
   if(status)status.textContent=`Sincronizando rastreamentos (0/${total})...`;
   let done=0;
   for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,500));}
@@ -3698,6 +3757,7 @@ async function atualizarTodosRastreios(silencioso){
   if(status)status.textContent=`✅ Atualizado — ${new Date().toLocaleTimeString('pt-BR')}`;
   setTimeout(()=>{if(status)status.textContent='';},5000);
   renderRastreamento();
+  gerarNotificacoes();
   if(!silencioso) toast(`${total} rastreamentos atualizados!`);
 }
 
@@ -3722,7 +3782,7 @@ async function buscarRastreioSilent(gi,tipo){
     const eventos=[];
     if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''}));}
     else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});}
-    if(eventos.length>0){obj.trackStatus=eventos[0].descricao;obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
+    if(eventos.length>0){obj.trackStatus=eventos[0].descricao;obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
   }catch(e){console.error('Silent track error:',e);}
 }
 
@@ -3736,6 +3796,151 @@ function getStatusCorreios(r){
   if(s.includes('transferência')||s.includes('em rota')||s.includes('trânsito')||s.includes('postado')||s.includes('coletado')||s.includes('saiu para entrega')||s.includes('encaminhado')||s.includes('chegou')||s.includes('objeto recebido'))return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
   if(r.trackInvalido)return{label:'Código inválido',cor:'var(--red)',icon:'ti-alert-triangle',tipo:'invalido'};
   return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
+}
+
+// ===== NOTIFICAÇÕES DE ENTREGAS (Rastreamento e PAD) =====
+function diasDesdeLancamentoNotif(dia,mes,ano){
+  const lancado=new Date(ano,MESES.indexOf(mes),dia);
+  const hoje=new Date();
+  return Math.floor((hoje-lancado)/86400000);
+}
+function diasEmStatusRetirada(r){
+  if(!r.retiradaDesdeISO) return 0;
+  const d0=new Date(r.retiradaDesdeISO+'T00:00:00');
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  return Math.floor((hoje-d0)/86400000);
+}
+function isDevolvidoFinal(r){
+  const s=(r.trackStatus||'').toLowerCase();
+  return s.includes('devolvido ao remetente')||s.includes('entregue ao remetente');
+}
+// Sempre que o status virar "Aguardando retirada" pela primeira vez, grava a data —
+// é a partir dela que contamos os "mais de 3 dias parado".
+function marcarInicioRetiradaSeNecessario(obj){
+  if(getStatusCorreios(obj).tipo==='retirada' && !obj.retiradaDesdeISO){
+    obj.retiradaDesdeISO = isoHojeMatrix();
+  }
+}
+
+const REGRAS_NOTIF_RASTREAMENTO=[
+  {chave:'retirada', testa:r=>getStatusCorreios(r).tipo==='retirada', msg:r=>`O pedido de ${r.nomeCliente||'cliente'} está aguardando retirada.`},
+  {chave:'entregue', testa:r=>getStatusCorreios(r).tipo==='entregue', msg:r=>`O pedido de ${r.nomeCliente||'cliente'} foi entregue!`},
+  {chave:'retirada_atraso', testa:r=>getStatusCorreios(r).tipo==='retirada' && diasEmStatusRetirada(r)>=3, msg:r=>`O pedido de ${r.nomeCliente||'cliente'} está aguardando retirada há mais de 3 dias e ainda não foi retirado.`},
+  {chave:'em_devolucao', testa:r=>getStatusCorreios(r).tipo==='devolucao' && !isDevolvidoFinal(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} não foi entregue — está em devolução.`},
+  {chave:'devolvido', testa:r=>getStatusCorreios(r).tipo==='devolucao' && isDevolvidoFinal(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} foi devolvido ao remetente.`},
+];
+const REGRAS_NOTIF_PAD=[
+  {chave:'retirada', testa:p=>getStatusCorreios(p).tipo==='retirada', msg:p=>`O PAD de ${p.nomeCliente||'cliente'} está aguardando retirada.`},
+  {chave:'entregue', testa:p=>getStatusCorreios(p).tipo==='entregue', msg:p=>`O PAD de ${p.nomeCliente||'cliente'} foi entregue!`},
+  {chave:'retirada_atraso', testa:p=>getStatusCorreios(p).tipo==='retirada' && diasEmStatusRetirada(p)>=3, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} está aguardando retirada há mais de 3 dias e ainda não foi retirado.`},
+  {chave:'em_devolucao', testa:p=>getStatusCorreios(p).tipo==='devolucao' && !isDevolvidoFinal(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi entregue — está em devolução.`},
+  {chave:'devolvido', testa:p=>getStatusCorreios(p).tipo==='devolucao' && isDevolvidoFinal(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} foi devolvido ao remetente.`},
+  {chave:'atraso_10d', testa:p=>getStatusCorreios(p).tipo!=='entregue' && diasDesdeLancamentoNotif(p.dia,p.mes,p.ano)>=10, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} passou de 10 dias e ainda não foi entregue.`},
+  {chave:'saiu_entrega', testa:p=>(p.trackStatus||'').toLowerCase().includes('saiu para entrega'), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
+];
+
+function gerarNotificacoes(){
+  dados.filter(d=>!d.isPad && d.rastreamento).forEach(r=>{
+    REGRAS_NOTIF_RASTREAMENTO.forEach(regra=>{
+      if(!regra.testa(r)) return;
+      const chaveUnica=(r.fbId||r.rastreamento)+'_'+regra.chave;
+      if(notificacoesRast.some(n=>n.chaveUnica===chaveUnica)) return;
+      const notif={ chaveUnica, mensagem:regra.msg(r), lida:false, criadoEm:Date.now(), atendente:r.atendente||'', nomeCliente:r.nomeCliente||'', fbId:'notifrast_'+Date.now()+'_'+Math.random().toString(36).slice(2,8) };
+      notificacoesRast.push(notif);
+      if(window.fbSave)window.fbSave('notificacoesRastreamento',notif.fbId,notif);
+    });
+  });
+  pads.forEach(p=>{
+    REGRAS_NOTIF_PAD.forEach(regra=>{
+      if(!regra.testa(p)) return;
+      const chaveUnica=(p.fbId||p.id)+'_'+regra.chave;
+      if(notificacoesPad.some(n=>n.chaveUnica===chaveUnica)) return;
+      const notif={ chaveUnica, mensagem:regra.msg(p), lida:false, criadoEm:Date.now(), atendente:p.atendente||'', nomeCliente:p.nomeCliente||'', fbId:'notifpad_'+Date.now()+'_'+Math.random().toString(36).slice(2,8) };
+      notificacoesPad.push(notif);
+      if(window.fbSave)window.fbSave('notificacoesPad',notif.fbId,notif);
+    });
+  });
+  atualizarBadgeNotificacoes();
+}
+
+function atualizarBadgeNotificacoes(){
+  const badge=document.getElementById('notif-badge');
+  if(!badge) return;
+  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
+  const naoLidasRast=notificacoesRast.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
+  const naoLidasPad=notificacoesPad.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
+  const total=naoLidasRast+naoLidasPad;
+  if(total>0){ badge.style.display='inline-block'; badge.textContent=total>99?'99+':total; }
+  else{ badge.style.display='none'; }
+}
+
+function abrirNotificacoesModal(){
+  document.getElementById('modal-notificacoes').classList.add('open');
+  renderNotificacoes();
+}
+function fecharNotificacoesModal(){
+  document.getElementById('modal-notificacoes').classList.remove('open');
+}
+function trocarTipoNotif(tipo){ _notifAbaTipo=tipo; renderNotificacoes(); }
+function trocarSubabaNotif(sub){ _notifSubaba=sub; renderNotificacoes(); }
+
+function renderNotificacoes(){
+  const cont=document.getElementById('notif-lista');
+  if(!cont) return;
+  ['rastreamento','pad'].forEach(t=>{
+    const btn=document.getElementById('notif-tab-'+t);
+    if(!btn) return;
+    if(t===_notifAbaTipo){ btn.style.background='var(--neon-glow)'; btn.style.color='var(--neon)'; btn.style.borderColor='var(--neon-dim)'; }
+    else{ btn.style.background='var(--bg2)'; btn.style.color='var(--t2)'; btn.style.borderColor='var(--border2)'; }
+  });
+  ['naolidos','lidos'].forEach(s=>{
+    const btn=document.getElementById('notif-sub-'+s);
+    if(!btn) return;
+    if(s===_notifSubaba){ btn.style.color='var(--neon)'; btn.style.borderBottomColor='var(--neon)'; }
+    else{ btn.style.color='var(--t2)'; btn.style.borderBottomColor='transparent'; }
+  });
+  const lista = _notifAbaTipo==='pad' ? notificacoesPad : notificacoesRast;
+  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
+  let filtradas = lista.filter(n=> !meuNome || n.atendente===meuNome);
+  filtradas = filtradas.filter(n=> _notifSubaba==='lidos' ? n.lida : !n.lida);
+  filtradas.sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0));
+  if(filtradas.length===0){
+    cont.innerHTML='<div class="empty" style="padding:1.5rem"><i class="ti ti-bell-off"></i>Nenhuma notificação aqui.</div>';
+    return;
+  }
+  cont.innerHTML = filtradas.map(n=>{
+    const dataStr = n.criadoEm ? new Date(n.criadoEm).toLocaleString('pt-BR') : '';
+    return `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+      <div style="flex:1">
+        <div style="font-size:13px;color:var(--t1);line-height:1.4">${n.mensagem}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:4px">${n.atendente?n.atendente.split(' ')[0]+' · ':''}${dataStr}</div>
+      </div>
+      ${n.lida?'':`<button class="btn btn-sm" onclick="marcarNotifComoLida('${_notifAbaTipo}','${n.fbId}')" title="Marcar como lido"><i class="ti ti-check"></i></button>`}
+    </div>`;
+  }).join('');
+}
+
+function marcarNotifComoLida(tipo, fbId){
+  const lista = tipo==='pad' ? notificacoesPad : notificacoesRast;
+  const item = lista.find(n=>n.fbId===fbId);
+  if(!item) return;
+  item.lida=true;
+  if(window.fbSave) window.fbSave(tipo==='pad'?'notificacoesPad':'notificacoesRastreamento', fbId, item);
+  renderNotificacoes();
+  atualizarBadgeNotificacoes();
+}
+function marcarTodasNotifComoLidas(){
+  const lista = _notifAbaTipo==='pad' ? notificacoesPad : notificacoesRast;
+  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
+  const alvo=lista.filter(n=>!n.lida && (!meuNome||n.atendente===meuNome));
+  if(alvo.length===0){ toast('Nenhuma notificação pendente.'); return; }
+  alvo.forEach(n=>{
+    n.lida=true;
+    if(window.fbSave) window.fbSave(_notifAbaTipo==='pad'?'notificacoesPad':'notificacoesRastreamento', n.fbId, n);
+  });
+  renderNotificacoes();
+  atualizarBadgeNotificacoes();
+  toast('Notificações marcadas como lidas.');
 }
 
 function verHistorico(gi, tipo){
