@@ -3814,12 +3814,22 @@ function marcarInicioRetiradaSeNecessario(obj){
   }
 }
 
+function temCarteiroNaoAtendeu(obj){
+  const s=(obj.trackStatus||'').toLowerCase();
+  return s.includes('carteiro')&&(s.includes('não atendeu')||s.includes('nao atendeu')||s.includes('não atendido')||s.includes('nao atendido'));
+}
+function temPrazoRetiradaEncerrado(obj){
+  return (obj.trackStatus||'').toLowerCase().includes('prazo de retirada encerrado');
+}
+
 const REGRAS_NOTIF_RASTREAMENTO=[
   {chave:'retirada', testa:r=>getStatusCorreios(r).tipo==='retirada', msg:r=>`O pedido de ${r.nomeCliente||'cliente'} está aguardando retirada.`},
   {chave:'entregue', testa:r=>getStatusCorreios(r).tipo==='entregue', msg:r=>`O pedido de ${r.nomeCliente||'cliente'} foi entregue!`},
   {chave:'retirada_atraso', testa:r=>getStatusCorreios(r).tipo==='retirada' && diasEmStatusRetirada(r)>=3, msg:r=>`O pedido de ${r.nomeCliente||'cliente'} está aguardando retirada há mais de 3 dias e ainda não foi retirado.`},
   {chave:'em_devolucao', testa:r=>getStatusCorreios(r).tipo==='devolucao' && !isDevolvidoFinal(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} não foi entregue — está em devolução.`},
   {chave:'devolvido', testa:r=>getStatusCorreios(r).tipo==='devolucao' && isDevolvidoFinal(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} foi devolvido ao remetente.`},
+  {chave:'carteiro_nao_atendeu', testa:r=>temCarteiroNaoAtendeu(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} não foi entregue — o carteiro tentou entregar mas não foi atendido.`},
+  {chave:'prazo_retirada_encerrado', testa:r=>temPrazoRetiradaEncerrado(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} não foi retirado a tempo — o prazo de retirada na agência foi encerrado.`},
 ];
 const REGRAS_NOTIF_PAD=[
   {chave:'retirada', testa:p=>getStatusCorreios(p).tipo==='retirada', msg:p=>`O PAD de ${p.nomeCliente||'cliente'} está aguardando retirada.`},
@@ -3827,6 +3837,8 @@ const REGRAS_NOTIF_PAD=[
   {chave:'retirada_atraso', testa:p=>getStatusCorreios(p).tipo==='retirada' && diasEmStatusRetirada(p)>=3, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} está aguardando retirada há mais de 3 dias e ainda não foi retirado.`},
   {chave:'em_devolucao', testa:p=>getStatusCorreios(p).tipo==='devolucao' && !isDevolvidoFinal(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi entregue — está em devolução.`},
   {chave:'devolvido', testa:p=>getStatusCorreios(p).tipo==='devolucao' && isDevolvidoFinal(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} foi devolvido ao remetente.`},
+  {chave:'carteiro_nao_atendeu', testa:p=>temCarteiroNaoAtendeu(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi entregue — o carteiro tentou entregar mas não foi atendido.`},
+  {chave:'prazo_retirada_encerrado', testa:p=>temPrazoRetiradaEncerrado(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi retirado a tempo — o prazo de retirada na agência foi encerrado.`},
   {chave:'atraso_10d', testa:p=>getStatusCorreios(p).tipo!=='entregue' && diasDesdeLancamentoNotif(p.dia,p.mes,p.ano)>=10, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} passou de 10 dias e ainda não foi entregue.`},
   {chave:'saiu_entrega', testa:p=>(p.trackStatus||'').toLowerCase().includes('saiu para entrega'), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
 ];
