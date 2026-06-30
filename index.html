@@ -516,11 +516,6 @@ tr:hover td{background:var(--neon-glow)}
   <div class="logo">MATRIX<span>Gestão comercial</span></div>
   <div id="sidebar-user"></div>
 
-  <button class="nav-item" onclick="abrirNotificacoesModal()" id="btn-notificacoes" style="display:none;justify-content:space-between;margin-bottom:6px">
-    <span style="display:flex;align-items:center;gap:9px"><i class="ti ti-bell"></i> Notificações</span>
-    <span id="notif-badge" style="display:none;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;min-width:18px;text-align:center">0</span>
-  </button>
-
   <div id="menu-adm" style="display:none;flex-direction:column;gap:3px;width:100%">
     <div class="nav-section">Principal</div>
     <button class="nav-item" onclick="showPage('dashboard-adm')" id="nav-dashboard-adm"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
@@ -758,7 +753,13 @@ tr:hover td{background:var(--neon-glow)}
 </div>
 
 <div class="page" id="page-rastreamento">
-  <p class="page-title">Rastreamento</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+    <p class="page-title" style="margin-bottom:0">Rastreamento</p>
+    <button onclick="abrirNotificacoesModal('rastreamento')" style="position:relative;background:var(--bg2);border:1px solid var(--border2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)" title="Notificações de Rastreamento">
+      <i class="ti ti-bell" style="font-size:18px"></i>
+      <span id="notif-badge-rastreamento" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:20px;min-width:16px;text-align:center;border:2px solid var(--bg1)">0</span>
+    </button>
+  </div>
   <div style="display:flex;gap:12px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
     <span id="rast-update-status" style="font-size:12px;color:var(--t3)"></span>
   </div>
@@ -793,7 +794,13 @@ tr:hover td{background:var(--neon-glow)}
 </div>
 
 <div class="page" id="page-pad">
-  <p class="page-title">Pay After Delivery</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+    <p class="page-title" style="margin-bottom:0">Pay After Delivery</p>
+    <button onclick="abrirNotificacoesModal('pad')" style="position:relative;background:var(--bg2);border:1px solid var(--border2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)" title="Notificações de PAD">
+      <i class="ti ti-bell" style="font-size:18px"></i>
+      <span id="notif-badge-pad" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:20px;min-width:16px;text-align:center;border:2px solid var(--bg1)">0</span>
+    </button>
+  </div>
   <div id="pad-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
     <div><label style="font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Atendente</label>
       <select id="pad-atend-fil" onchange="renderPad()"><option value="">Todos</option></select>
@@ -1237,16 +1244,8 @@ tr:hover td{background:var(--neon-glow)}
 </div>
 
 <div class="modal-overlay" id="modal-notificacoes" onclick="if(event.target===this)fecharNotificacoesModal()">
-  <div class="modal" style="width:520px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column">
-    <p class="modal-title" style="display:flex;align-items:center;gap:8px"><i class="ti ti-bell"></i> Notificações</p>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="tab-btn" id="notif-tab-rastreamento" onclick="trocarTipoNotif('rastreamento')" style="flex:1;text-align:center;padding:8px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);cursor:pointer;font-size:12px;font-weight:700">
-        <i class="ti ti-truck-delivery"></i> Rastreamento
-      </button>
-      <button class="tab-btn" id="notif-tab-pad" onclick="trocarTipoNotif('pad')" style="flex:1;text-align:center;padding:8px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);cursor:pointer;font-size:12px;font-weight:700">
-        <i class="ti ti-credit-card"></i> PAD
-      </button>
-    </div>
+  <div class="modal" style="width:480px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column">
+    <p class="modal-title" id="notif-modal-titulo" style="display:flex;align-items:center;gap:8px"><i class="ti ti-bell"></i> Notificações</p>
     <div style="display:flex;gap:14px;margin-bottom:10px;border-bottom:1px solid var(--border2)">
       <button onclick="trocarSubabaNotif('naolidos')" id="notif-sub-naolidos" style="background:none;border:none;cursor:pointer;padding:6px 2px;font-size:12px;font-weight:700;color:var(--t2);border-bottom:2px solid transparent">Não lidas</button>
       <button onclick="trocarSubabaNotif('lidos')" id="notif-sub-lidos" style="background:none;border:none;cursor:pointer;padding:6px 2px;font-size:12px;font-weight:700;color:var(--t2);border-bottom:2px solid transparent">Lidas</button>
@@ -1313,13 +1312,12 @@ function fazerLogin(){
     showPage('dashboard-adm');
     renderDashAdm();
   }
-  const btnNotif=document.getElementById('btn-notificacoes');
-  if(btnNotif)btnNotif.style.display='flex';
   setTimeout(()=>{
     const fA=document.getElementById('f-atend');
     if(fA){const opt=[...fA.options].find(o=>o.value===user.nome);if(opt)fA.value=user.nome;}
     renderRegistrosDia();
     if(typeof gerarNotificacoes==='function')gerarNotificacoes();
+    if(typeof atualizarBadgeNotificacoes==='function')atualizarBadgeNotificacoes();
   },100);
   toast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
 }
@@ -1334,8 +1332,6 @@ function fazerLogout(){
   document.getElementById('login-erro').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('sidebar-user').innerHTML='';
-  const btnNotif=document.getElementById('btn-notificacoes');
-  if(btnNotif)btnNotif.style.display='none';
 }
 const CUSTO_FRASCO=10;
 const PERCENTUAL_IMPOSTO_META_ADS_GLOBAL=0.1383;
@@ -3864,35 +3860,30 @@ function gerarNotificacoes(){
 }
 
 function atualizarBadgeNotificacoes(){
-  const badge=document.getElementById('notif-badge');
-  if(!badge) return;
   const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
   const naoLidasRast=notificacoesRast.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
   const naoLidasPad=notificacoesPad.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
-  const total=naoLidasRast+naoLidasPad;
-  if(total>0){ badge.style.display='inline-block'; badge.textContent=total>99?'99+':total; }
-  else{ badge.style.display='none'; }
+  const badgeRast=document.getElementById('notif-badge-rastreamento');
+  if(badgeRast){ if(naoLidasRast>0){badgeRast.style.display='inline-block';badgeRast.textContent=naoLidasRast>99?'99+':naoLidasRast;}else{badgeRast.style.display='none';} }
+  const badgePad=document.getElementById('notif-badge-pad');
+  if(badgePad){ if(naoLidasPad>0){badgePad.style.display='inline-block';badgePad.textContent=naoLidasPad>99?'99+':naoLidasPad;}else{badgePad.style.display='none';} }
 }
 
-function abrirNotificacoesModal(){
+function abrirNotificacoesModal(tipo){
+  if(tipo) _notifAbaTipo=tipo;
   document.getElementById('modal-notificacoes').classList.add('open');
   renderNotificacoes();
 }
 function fecharNotificacoesModal(){
   document.getElementById('modal-notificacoes').classList.remove('open');
 }
-function trocarTipoNotif(tipo){ _notifAbaTipo=tipo; renderNotificacoes(); }
 function trocarSubabaNotif(sub){ _notifSubaba=sub; renderNotificacoes(); }
 
 function renderNotificacoes(){
   const cont=document.getElementById('notif-lista');
   if(!cont) return;
-  ['rastreamento','pad'].forEach(t=>{
-    const btn=document.getElementById('notif-tab-'+t);
-    if(!btn) return;
-    if(t===_notifAbaTipo){ btn.style.background='var(--neon-glow)'; btn.style.color='var(--neon)'; btn.style.borderColor='var(--neon-dim)'; }
-    else{ btn.style.background='var(--bg2)'; btn.style.color='var(--t2)'; btn.style.borderColor='var(--border2)'; }
-  });
+  const tituloEl=document.getElementById('notif-modal-titulo');
+  if(tituloEl) tituloEl.textContent = _notifAbaTipo==='pad' ? 'Notificações — PAD' : 'Notificações — Rastreamento';
   ['naolidos','lidos'].forEach(s=>{
     const btn=document.getElementById('notif-sub-'+s);
     if(!btn) return;
