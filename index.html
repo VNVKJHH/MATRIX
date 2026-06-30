@@ -109,9 +109,7 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI'
 .nav-item.active{background:var(--neon-glow);color:var(--neon);font-weight:600;border-left:2px solid var(--neon)}
 .nav-item i{font-size:16px}
 .nav-section{font-size:9px;color:var(--neon-dim);font-weight:700;letter-spacing:1.5px;padding:12px 12px 4px;text-transform:uppercase;opacity:.7}
-/* FIX: main area - dashboard-adm page takes full viewport */
 .main{margin-left:230px;padding:2rem;min-height:100vh;background:transparent;position:relative;z-index:1}
-/* FIX: dashboard-adm page gets special treatment - no padding, full height */
 #page-dashboard-adm.active ~ * { display: none; }
 .main:has(#page-dashboard-adm.active) { padding: 0 !important; }
 .page{display:none}.page.active{display:block}
@@ -172,8 +170,6 @@ tr:hover td{background:var(--neon-glow)}
 .toast.show{opacity:1;transform:translateY(0)}
 .divider{height:1px;background:var(--border2);margin:8px 0;opacity:.5}
 .progress-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:6px}
-
-/* LOGIN */
 .login-screen{position:fixed;inset:0;background:rgba(8,8,8,0.92);z-index:500;display:flex;align-items:center;justify-content:center}
 .login-box{background:rgba(13,13,13,0.92);border-radius:var(--r-lg);padding:2.5rem 2rem;width:380px;max-width:95vw;box-shadow:0 0 60px rgba(0,255,128,.15),0 20px 60px rgba(0,0,0,.8);border:1px solid rgba(0,255,128,.2);backdrop-filter:blur(8px)}
 .login-logo{text-align:center;margin-bottom:2rem}
@@ -203,8 +199,6 @@ tr:hover td{background:var(--neon-glow)}
 .comp-label{color:var(--t2)}
 .comp-val{font-weight:600}
 .winner{color:var(--neon);font-weight:700}
-
-/* OFERTAS */
 .ofertas-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
 .oferta-item{position:relative;border:1px solid var(--border2);border-radius:var(--r-md);padding:12px 14px;cursor:pointer;transition:all .2s;background:var(--bg2);user-select:none}
 .oferta-item:hover{border-color:var(--neon-dim);background:var(--neon-glow)}
@@ -219,8 +213,6 @@ tr:hover td{background:var(--neon-glow)}
 .oferta-item.selected .oferta-valor-edit{display:flex;align-items:center;gap:6px}
 .oferta-valor-edit input{width:100px;font-size:13px;font-weight:700;padding:4px 8px;border-radius:var(--r-sm);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1)}
 .oferta-confirm{font-size:11px;color:var(--blue-t);font-weight:600;margin-top:4px}
-
-/* ===== FIX DASHBOARD ADM - GLOBO FULL SCREEN ===== */
 #page-dashboard-adm {
   position: fixed !important;
   top: 0 !important;
@@ -251,7 +243,6 @@ tr:hover td{background:var(--neon-glow)}
   width: 100% !important;
   height: 100% !important;
 }
-
 @media(max-width:768px){
   .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;padding:.75rem}
   .logo{width:100%;padding-bottom:.5rem;margin-bottom:0;border-bottom:none}
@@ -263,7 +254,6 @@ tr:hover td{background:var(--neon-glow)}
   #page-dashboard-adm{left:0!important;width:100vw!important}
 }
 @media print{.sidebar,.filters,.btn,.modal-overlay,.senha-overlay{display:none!important}.main{margin:0;padding:0}}
-/* Elementos mobile: escondidos por padrão (desktop), aparecem só em telas pequenas */
 .mobile-header,.mobile-bottom-nav,.sidebar-overlay{display:none}
 @media (max-width:880px){
   .mobile-header{
@@ -295,7 +285,6 @@ tr:hover td{background:var(--neon-glow)}
   .main{padding-top:56px!important;padding-bottom:60px!important;margin-left:0!important}
 }
 </style>
-<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -446,7 +435,6 @@ tr:hover td{background:var(--neon-glow)}
 </head>
 <body>
 
-<!-- Mobile header -->
 <div class="mobile-header" id="mobile-header">
   <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
     <i class="ti ti-menu-2" id="menu-icon"></i>
@@ -532,7 +520,6 @@ tr:hover td{background:var(--neon-glow)}
 
 <main class="main">
 
-<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <p class="page-title" id="db-titulo">Dashboard</p>
   <div class="filters" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
@@ -562,7 +549,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- LANÇAMENTO -->
 <div class="page" id="page-lancamentos">
   <p class="page-title">Novo lançamento</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
@@ -627,7 +613,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- PANORAMA -->
 <div class="page" id="page-panorama">
   <p class="page-title">Panorama mensal</p>
   <div class="filters">
@@ -651,7 +636,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- CALENDÁRIO FINANCEIRO -->
 <div class="page" id="page-calendario-fin">
   <p class="page-title">Calendário Financeiro</p>
   <div class="filters">
@@ -660,7 +644,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
   <div id="calfin-conteudo"></div>
 
-  <!-- Modal detalhe do dia -->
   <div class="modal-overlay" id="modal-calfin-dia" onclick="if(event.target===this)closeCalfinDiaModal()">
     <div class="modal" style="width:480px">
       <p class="modal-title" id="calfin-dia-titulo">Detalhe do dia</p>
@@ -672,7 +655,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- COMPARATIVO -->
 <div class="page" id="page-comparativo">
   <p class="page-title">Comparativo de períodos</p>
   <div class="filters">
@@ -698,7 +680,6 @@ tr:hover td{background:var(--neon-glow)}
   <div class="chart-card" style="margin-bottom:1.5rem"><p class="chart-title">Comparativo visual</p><div style="position:relative;height:240px"><canvas id="ch-comp"></canvas></div></div>
 </div>
 
-<!-- RANKING -->
 <div class="page" id="page-ranking">
   <p class="page-title">Ranking de atendentes</p>
   <div class="filters">
@@ -729,7 +710,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- RASTREAMENTO -->
 <div class="page" id="page-rastreamento">
   <p class="page-title">Rastreamento</p>
   <div style="display:flex;gap:12px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
@@ -765,7 +745,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- PAD -->
 <div class="page" id="page-pad">
   <p class="page-title">Pay After Delivery</p>
   <div id="pad-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
@@ -806,7 +785,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- RANKING PÚBLICO -->
 <div class="page" id="page-ranking-publico">
   <p class="page-title">Ranking do mês</p>
   <div style="font-size:13px;color:var(--t2);margin-bottom:1.25rem;display:flex;align-items:center;gap:6px">
@@ -822,7 +800,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- METAS -->
 <div class="page" id="page-metas">
   <p class="page-title">Metas mensais</p>
   <div class="filters">
@@ -833,7 +810,6 @@ tr:hover td{background:var(--neon-glow)}
   <div id="metas-container"></div>
 </div>
 
-<!-- DADOS -->
 <div class="page" id="page-dados">
   <p class="page-title">Todos os registros</p>
   <div class="filters">
@@ -860,7 +836,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- ATENDENTES -->
 <div class="page" id="page-atendentes">
   <p class="page-title">Gerenciar atendentes</p>
   <div class="table-card">
@@ -875,7 +850,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- ADMINISTRAÇÃO -->
 <div class="page" id="page-admin">
   <p class="page-title">Administração</p>
   <div class="filters">
@@ -925,19 +899,15 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- DASHBOARD ADM - GLOBO FULL SCREEN (SEM BLOCO DUPLICADO) -->
 <div class="page" id="page-dashboard-adm">
 
-  <!-- Globo ocupa tudo -->
   <div id="dash-globo-container"></div>
 
-  <!-- Header flutuante -->
   <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)">
     <div style="font-size:20px;font-weight:800;color:var(--neon);letter-spacing:.5px">MATRIX</div>
     <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
   </div>
 
-  <!-- Coluna lateral esquerda: Vendas hoje + filtro de atendente + Nível + métricas do dia -->
   <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;z-index:10;width:300px;max-height:calc(100vh - 100px);overflow-y:auto;background:rgba(10,10,10,.92);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.25rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.45)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Vendas hoje</div>
@@ -998,18 +968,14 @@ tr:hover td{background:var(--neon-glow)}
     </div>
   </div>
 
-  <!-- Filtros de status dos pedidos -->
   <div id="adm-dash-status-filtros" style="position:absolute;bottom:1.5rem;left:0;right:0;z-index:10;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 1rem"></div>
 
-  <!-- Loading overlay -->
   <div id="dash-globo-loading" style="position:absolute;inset:0;z-index:20;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
     <div style="font-size:60px">🌍</div>
     <div style="color:var(--t2);font-size:14px" id="dash-globo-loading-text">Carregando globo...</div>
   </div>
 
-  <!-- Painel por atendente (oculto) -->
   <div id="adm-dash-atendentes" style="display:none"></div>
-  <!-- Gráficos (ocultos) -->
   <div style="display:none">
     <canvas id="adm-ch-financeiro"></canvas>
     <canvas id="adm-ch-atend"></canvas>
@@ -1017,11 +983,9 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 
 </div>
-<!-- FIM page-dashboard-adm - SEM BLOCO DUPLICADO -->
 
 </main>
 
-<!-- Modal registro -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <p class="modal-title" id="modal-title">Novo registro</p>
@@ -1041,7 +1005,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal atendente -->
 <div class="modal-overlay" id="modal-atend" onclick="if(event.target===this)closeAtendModal()">
   <div class="modal" style="width:420px">
     <p class="modal-title" id="atend-modal-title">Novo atendente</p>
@@ -1066,7 +1029,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal meta -->
 <div class="modal-overlay" id="modal-meta" onclick="if(event.target===this)closeMetaModal()">
   <div class="modal" style="width:440px">
     <p class="modal-title">Nova meta</p>
@@ -1091,7 +1053,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal gerenciar contas Meta Ads -->
 <div class="modal-overlay" id="modal-meta-contas" onclick="if(event.target===this)closeMetaContasModal()">
   <div class="modal" style="width:520px;max-height:85vh;overflow-y:auto">
     <p class="modal-title">Contas de anúncios</p>
@@ -1112,13 +1073,11 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal período estilo Facebook (calendário visual com arraste) -->
 <div class="modal-overlay" id="modal-meta-periodo" onclick="if(event.target===this)closeMetaPeriodoModal()">
   <div class="modal" style="width:700px;max-width:95vw">
     <p class="modal-title">Período</p>
     <div style="display:flex;gap:1rem;align-items:flex-start">
       <div id="meta-periodo-atalhos" style="display:flex;flex-direction:column;gap:2px;width:160px;flex-shrink:0;max-height:380px;overflow-y:auto;border-right:1px solid var(--border2);padding-right:10px">
-        <!-- preenchido via JS -->
       </div>
       <div style="flex:1">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -1143,7 +1102,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal inserir token de uma nova conta -->
 <div class="modal-overlay" id="modal-meta-token" onclick="if(event.target===this)closeMetaTokenModal()">
   <div class="modal" style="width:460px">
     <p class="modal-title">Adicionar conta de anúncios</p>
@@ -1160,7 +1118,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal nomear conta Meta Ads -->
 <div class="modal-overlay" id="modal-meta-nome" onclick="if(event.target===this)closeMetaNomeModal()">
   <div class="modal" style="width:380px">
     <p class="modal-title">Nome da conta</p>
@@ -1176,7 +1133,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
   <div class="login-box">
     <div class="login-logo">
@@ -1197,7 +1153,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal PAD -->
 <div class="modal-overlay" id="modal-pad" onclick="if(event.target===this)closePadModal()">
   <div class="modal" style="width:560px;max-height:90vh;overflow-y:auto">
     <p class="modal-title">Lançar PAD</p>
@@ -1224,7 +1179,6 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<!-- Modal histórico rastreamento -->
 <div class="modal-overlay" id="modal-track" onclick="if(event.target===this)document.getElementById('modal-track').classList.remove('open')">
   <div class="modal" style="width:560px;max-height:85vh;overflow-y:auto">
     <p class="modal-title" id="track-modal-title">Histórico de rastreamento</p>
@@ -1404,7 +1358,6 @@ function calcPadCustos(filtro){
   });
   return calcPadCustosPorLista(padsFil);
 }
-// ===== NÍVEIS DE ATENDENTE (gamificação por receita acumulada vitalícia) =====
 const NIVEIS_ATENDENTE = [
   { nome:'Starter', min:0, cor:'#9CA3AF' },
   { nome:'Closer', min:10000, cor:'#0EA5E9' },
@@ -1547,13 +1500,9 @@ function showPage(p){
   if(pg)pg.classList.add('active');
   ['nav-'+p,'nav-'+p+'-adm'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('active');});
 
-  // FIX: adjust main padding when dashboard-adm is active
   const mainEl = document.querySelector('.main');
   if(p === 'dashboard-adm'){
     if(mainEl) mainEl.style.padding = '0';
-    // Pausa a chuva Matrix enquanto o globo 3D está ativo — os dois competindo por
-    // CPU/GPU no mesmo frame é a causa mais provável da engasgada ao girar o globo
-    // com força. O fundo do globo já é escuro/estrelado, então nada se perde visualmente.
     if(window.matrixStop) window.matrixStop();
   } else {
     if(mainEl) mainEl.style.padding = '2rem';
@@ -1641,14 +1590,11 @@ function renderDashboard(){
   if(dk.length>0)charts['lucro']=new Chart(document.getElementById('ch-lucro'),{type:'line',data:{labels:dk,datasets:[{label:'Lucro',data:dk.map(d=>R(dias[d],2)),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#0F6E56'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
 }
 
-// ===== CALENDÁRIO FINANCEIRO: navegação em 3 níveis (Ano → Mês → Dia) =====
-let _calfinNivel = 'anos'; // 'anos' | 'ano' | 'mes' | 'dia'
+let _calfinNivel = 'anos';
 let _calfinAnoAtual = new Date().getFullYear();
-let _calfinMesAtual = null; // nome do mês (string), quando nível='mes' ou 'dia'
-let _calfinDiaAtual = null; // número do dia, quando nível='dia'
+let _calfinMesAtual = null;
+let _calfinDiaAtual = null;
 
-// Calcula o resumo financeiro (bruto, lucro líquido, custos, ROI, etc.) para um
-// conjunto de registros já filtrados por período e atendente.
 function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atendente){
   let bruto=0, vendas=0, frascos=0, custoEnvio=0, impPJ=0, pctAtend=0;
   rowsVendas.filter(r=>!r.isPad).forEach(r=>{
@@ -1661,18 +1607,17 @@ function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atend
   const custoFrascos = frascos*CUSTO_FRASCO;
   const custoTotal = custoFrascos + custoEnvio + impPJ + pctAtend + investido;
 
-  // Lucro: soma do calcLucroDia de cada dia único presente no conjunto.
   const diasUnicos = [...new Set(rowsVendas.filter(r=>!r.isPad).map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
   let lucro=0;
   diasUnicos.forEach(k=>{ const[dd,mm,aa]=k.split('|'); lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendente||''); });
 
-  const roi = investido>0 ? R((lucro/investido)*100,1) : null; // ROI em %, null = sem investimento no período
+  const roi = investido>0 ? R((lucro/investido)*100,1) : null;
   const margem = bruto>0 ? R(lucro/bruto*100,1) : 0;
 
   return { bruto:R(bruto,2), lucro:R(lucro,2), custoTotal:R(custoTotal,2), custoFrascos:R(custoFrascos,2), custoEnvio:R(custoEnvio,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2), investido:R(investido,2), leads, vendas, frascos, roi, margem };
 }
 
-function abrirGerenciarAtendCalfin(){ /* placeholder reservado, não usado por enquanto */ }
+function abrirGerenciarAtendCalfin(){ }
 
 function renderCalendarioFin(){
   const atend = document.getElementById('calfin-atend').value;
@@ -1715,14 +1660,11 @@ function cardResumoMiniHtml(r, corDestaque){
     </div>`;
 }
 
-// Nível 1: grade com os 12 meses do ano
-// Nível 0 (tela inicial): lista de todos os anos que têm algum dado registrado
 function renderCalfinNivelAnos(atend, cont){
   const anosComDados = new Set();
   dados.forEach(d=>{ if(!atend||d.atendente===atend) anosComDados.add(d.ano); });
-  // Garante que o ano atual sempre apareça, mesmo sem dados ainda
   anosComDados.add(new Date().getFullYear());
-  const anos = [...anosComDados].sort((a,b)=>b-a); // mais recente primeiro
+  const anos = [...anosComDados].sort((a,b)=>b-a);
 
   let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">`;
   anos.forEach(ano=>{
@@ -1777,11 +1719,10 @@ function renderCalfinNivelAno(atend, cont){
   cont.innerHTML = html;
 }
 
-// Nível 2: grade tipo calendário com os dias do mês selecionado
 function renderCalfinNivelMes(atend, cont){
   const mesIdx = MESES.indexOf(_calfinMesAtual);
   const totalDias = new Date(_calfinAnoAtual, mesIdx+1, 0).getDate();
-  const primeiroDiaSemana = (new Date(_calfinAnoAtual, mesIdx, 1).getDay()+6)%7; // 0=segunda
+  const primeiroDiaSemana = (new Date(_calfinAnoAtual, mesIdx, 1).getDay()+6)%7;
 
   let mesTotal = {bruto:0, lucro:0, custoTotal:0};
   const porDia = {};
@@ -1825,9 +1766,8 @@ function renderCalfinNivelMes(atend, cont){
   cont.innerHTML = html;
 }
 
-// Nível 3: abre direto o modal de detalhe do dia (a tela "mês" continua visível por trás)
 function abrirCalfinDiaModal(atend){
-  renderCalfinNivelMes(atend, document.getElementById('calfin-conteudo')); // mantém o calendário do mês visível por trás
+  renderCalfinNivelMes(atend, document.getElementById('calfin-conteudo'));
   const dia = _calfinDiaAtual, mes = _calfinMesAtual, ano = _calfinAnoAtual;
   const rowsVendas = dados.filter(x=>x.dia===dia && x.mes===mes && String(x.ano)===String(ano) && (!atend||x.atendente===atend));
   const admRows = adminLancs.filter(a=>a.dia===dia && a.mes===mes && String(a.ano)===String(ano));
@@ -2014,7 +1954,13 @@ function renderMetas(){
   document.getElementById('metas-container').innerHTML=html;
 }
 
-function deleteMeta(idx){if(confirm('Remover?')){metas.splice(idx,1);renderMetas();toast('Meta removida.');}}
+function deleteMeta(idx){
+  if(confirm('Remover?')){
+    const item=metas[idx];
+    if(item&&item.fbId&&window.fbDelete)window.fbDelete('metas',item.fbId);
+    metas.splice(idx,1);renderMetas();toast('Meta removida.');
+  }
+}
 
 function renderDados(){
   const atend=document.getElementById('dados-atend').value;
@@ -2067,7 +2013,6 @@ function dataNoPeriodo(dia, mes, ano, periodo){
   const { inicio, fim } = periodo || getPeriodoMetaAtual();
   return iso >= inicio && iso <= fim;
 }
-// Filtra uma lista de registros (que tenham dia/mes/ano) por um período {inicio,fim} ISO.
 function filtrarPorPeriodo(lista, periodo, atendente){
   return lista.filter(r => {
     if(atendente && r.atendente!==atendente) return false;
@@ -2079,11 +2024,8 @@ function renderAdmin(){
   const { inicio, fim } = getPeriodoMetaAtual();
   const contasFiltro = getContasSelecionadasMeta();
 
-  // Apenas registros "Geral" (sem atendente) entram nas métricas e na tabela principal —
-  // os registros por atendente são um detalhamento complementar do mesmo investimento,
-  // não uma soma adicional (evita contar o gasto em duplicidade).
   const admFil = adminLancs.filter(a => {
-    if(a.origemMeta && a.atendente) return false; // detalhamento por atendente, não soma aqui
+    if(a.origemMeta && a.atendente) return false;
     if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
     if(a.origemMeta && contasFiltro.length>0 && !contasFiltro.includes(a.contaMeta)) return false;
     return true;
@@ -2106,14 +2048,11 @@ function renderAdmin(){
   let tLucro=0;
   diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
 
-  // Imposto sobre o investimento em Meta Ads (taxa real observada nas faturas: ~13,83%)
   const PERCENTUAL_IMPOSTO_META_ADS = 0.1383;
   const impostoMetaAds = tInv * PERCENTUAL_IMPOSTO_META_ADS;
   const investimentoComImposto = tInv + impostoMetaAds;
   const roiMetaAds = tInv>0 ? R((tLucro/tInv)*100,1) : null;
 
-  // Vendas e valor retornado do dia: soma vendas normais (Front) + PAD lançados,
-  // desconsiderando PADs com status "Frustrado".
   const padsValidos = padsNoPeriodo.filter(p => p.status !== 'Frustrado');
   const qtdVendasFront = tVendas;
   const qtdVendasPad = padsValidos.length;
@@ -2122,7 +2061,6 @@ function renderAdmin(){
   const valorVendasPad = padsValidos.reduce((s,p)=>s+(p.bruto||0),0);
   const valorVendasTotal = valorVendasFront + valorVendasPad;
 
-  // CPA — Custo por Aquisição: investimento (com imposto) ÷ total de aquisições (Front + PAD pagos, sem frustrados)
   const padPagosTotal = padsNoPeriodo.filter(p => p.status === 'Pago').length;
   const totalAquisicoesCpa = qtdVendasFront + padPagosTotal;
   const cpaMetaAds = totalAquisicoesCpa>0 ? investimentoComImposto/totalAquisicoesCpa : null;
@@ -2150,7 +2088,6 @@ function renderAdmin(){
   if(!tb1)tb1='<tr><td colspan="13" class="empty"><i class="ti ti-inbox"></i>Nenhum dado sincronizado para o período/contas selecionadas.</td></tr>';
   document.getElementById('adm-inv-tbody').innerHTML=tb1;
 
-  // Tabela de investimento por atendente (detalhamento por conjunto de anúncios identificado)
   const admPorAtendente = adminLancs.filter(a => {
     if(!(a.origemMeta && a.atendente)) return false;
     if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
@@ -2165,8 +2102,6 @@ function renderAdmin(){
   if(!tbAtend)tbAtend='<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum conjunto de anúncios identificado para um atendente neste período. Cadastre o "Identificador no Meta Ads" em Atendentes.</td></tr>';
   document.getElementById('adm-inv-atend-tbody').innerHTML=tbAtend;
 
-  // Gráfico: investimento por atendente ao longo dos dias (já incluindo o imposto
-  // de 13,83% sobre o Meta Ads), uma linha por atendente.
   const PERCENTUAL_IMPOSTO_META_ADS_2 = 0.1383;
   const diasUnicosAtend = [...new Set(admPorAtendente.map(a=>diaToISO(a.dia,a.mes,a.ano)))].sort();
   const atendentesNoGrafico = [...new Set(admPorAtendente.map(a=>a.atendente))];
@@ -2190,8 +2125,6 @@ function renderAdmin(){
     });
   }
 
-  // CPA — Custo por Aquisição: investimento (com imposto) ÷ (vendas normais + PAD pagos).
-  // PADs frustrados ou ainda pendentes NÃO entram na contagem de aquisições.
   const diasUnicosCpa = [...new Set([...rows.map(r=>diaToISO(r.dia,r.mes,r.ano)), ...padsNoPeriodo.map(p=>diaToISO(p.dia,p.mes,p.ano)), ...admFil.map(a=>diaToISO(a.dia,a.mes,a.ano))])].sort();
   let tbCpa='';
   const cpaLabels=[], cpaValores=[];
@@ -2221,21 +2154,15 @@ function renderAdmin(){
   }
 }
 
-// ===== META ADS — Integração via Netlify Function (multi-conta, token por conta) =====
 const META_FUNC_URL = '/.netlify/functions/meta-ads';
-let contasMetaSalvas = []; // [{id, nome, token, visivel, fbId}] — cada conta com seu próprio token
-let _contaMetaParaNomear = null; // {id, novoRegistro} — estado temporário do modal de nomear
-let _tokenNovaContaTemp = null; // token digitado no modal "adicionar conta", antes de nomear/salvar
+let contasMetaSalvas = [];
+let _contaMetaParaNomear = null;
+let _tokenNovaContaTemp = null;
 
-// Contas marcadas para aparecer na Administração (filtro de visualização).
-// Se nenhuma estiver marcada, considera todas (comportamento "ver tudo").
 function getContasSelecionadasMeta(){
   const marcadas = contasMetaSalvas.filter(c => c.visivel).map(c => c.id);
-  return marcadas; // array vazio = sem filtro (mostra todas)
+  return marcadas;
 }
-// Conta "principal" usada como destino de uma sincronização manual avulsa
-// (ex: botão Atualizar quando só uma conta está marcada). Se houver mais de uma
-// marcada, sincronizarMetaAds() percorre todas.
 function getContaMetaSalva(){
   const marcadas = contasMetaSalvas.filter(c => c.visivel);
   if(marcadas.length>0) return marcadas[0].id;
@@ -2403,19 +2330,16 @@ function confirmarNomeContaMeta(){
   renderContasSalvasLista();
 }
 
-// Roda automaticamente sempre que a página Administração é aberta (entrada ou F5).
-// Tem um intervalo mínimo (cooldown) para não disparar a API do Meta repetidas vezes
-// em poucos segundos, por exemplo se o ADM ficar trocando de aba rapidamente.
-const META_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
+const META_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000;
 function autoSyncMetaAds(){
   const ultima = parseInt(sessionStorage.getItem('metaAutoSyncTs') || '0', 10);
   const agora = Date.now();
   if(agora - ultima < META_AUTOSYNC_COOLDOWN_MS){
-    return; // sincronizado recentemente, não repete
+    return;
   }
   const conta = getContaMetaSalva();
   if(!conta){
-    return; // sem conta configurada ainda, não tenta sincronizar sozinho
+    return;
   }
   sessionStorage.setItem('metaAutoSyncTs', String(agora));
   sincronizarMetaAds(true);
@@ -2429,7 +2353,6 @@ async function sincronizarMetaAds(silencioso){
     }
     return;
   }
-  // Sincroniza todas as contas marcadas como visíveis; se nenhuma marcada, sincroniza todas.
   const marcadas = contasMetaSalvas.filter(c=>c.visivel);
   const contas = (marcadas.length>0 ? marcadas : contasMetaSalvas).map(c=>c.id);
 
@@ -2453,9 +2376,6 @@ async function sincronizarMetaAds(silencioso){
       if(data.erro){ erros.push(getNomeContaMeta(conta)+': '+data.erro); continue; }
 
       const dias = data.dias || [];
-      // Remove os lançamentos antigos vindos da Meta especificamente para ESTA conta
-      // (tanto localmente quanto no Firestore), para não afetar dados de outras contas
-      // sincronizadas anteriormente nem duplicar os desta.
       const antigos = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta);
       adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta));
       if(window.fbDelete){
@@ -2464,10 +2384,10 @@ async function sincronizarMetaAds(silencioso){
         }
       }
       dias.forEach(d=>{
-        if(!d.investido && !d.leads && !d.impressoes) return; // ignora dias totalmente vazios
+        if(!d.investido && !d.leads && !d.impressoes) return;
         const rec = {
           dia: d.dia, mes: d.mes, ano: d.ano,
-          atendente: '', // Geral — vindo da Meta, não é por atendente
+          atendente: '',
           investido: d.investido, leads: d.leads,
           cliques: d.cliques, cpc: d.cpc, ctr: d.ctr,
           impressoes: d.impressoes, alcance: d.alcance,
@@ -2479,9 +2399,6 @@ async function sincronizarMetaAds(silencioso){
         totalNovos++;
       });
 
-      // Busca adicional por conjunto de anúncios, para atribuir investimento aos
-      // atendentes que tiverem um "Identificador no Meta Ads" cadastrado. Isso é
-      // complementar ao "Geral" acima — não substitui nem altera esses registros.
       const atendentesComId = atendentes.filter(a => a.metaId && a.metaId.trim());
       if(atendentesComId.length>0){
         try{
@@ -2492,7 +2409,6 @@ async function sincronizarMetaAds(silencioso){
           const dataAdset = await resAdset.json();
           if(!dataAdset.erro){
             const linhas = dataAdset.linhas || [];
-            // Remove registros antigos por atendente desta conta antes de reinserir
             const antigosAtend = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta && a.atendente);
             adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta && a.atendente));
             if(window.fbDelete){
@@ -2504,7 +2420,7 @@ async function sincronizarMetaAds(silencioso){
               if(!l.investido && !l.leads && !l.impressoes) return;
               const nomeAdset = (l.adset_nome||'').toLowerCase();
               const atendenteBatido = atendentesComId.find(a => nomeAdset.includes(a.metaId.trim().toLowerCase()));
-              if(!atendenteBatido) return; // adset sem identificador conhecido, ignora (já está contado no Geral)
+              if(!atendenteBatido) return;
               const rec = {
                 dia: l.dia, mes: l.mes, ano: l.ano,
                 atendente: atendenteBatido.nome,
@@ -2547,19 +2463,17 @@ function isoHojeMatrix(){
   return new Date().toISOString().split('T')[0];
 }
 function dataInicioPermitida(){
-  // A Graph API rejeita períodos com mais de 37 meses. Usamos 36 como margem de segurança.
   const d = new Date();
   d.setMonth(d.getMonth() - 36);
   return d.toISOString().split('T')[0];
 }
 
-// ===== PERÍODO ESTILO FACEBOOK (Administração) — calendário visual com arraste =====
 function isoDate(d){ return d.toISOString().split('T')[0]; }
 function hojeDate(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
 function addDias(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function inicioMes(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
 function fimMes(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-function inicioSemana(d){ const x=new Date(d); const dia=(x.getDay()+6)%7; return addDias(x,-dia); } // semana começa segunda
+function inicioSemana(d){ const x=new Date(d); const dia=(x.getDay()+6)%7; return addDias(x,-dia); }
 
 const META_PERIODO_ATALHOS = [
   { label:'Hoje', calc:()=>{const h=hojeDate();return[h,h];} },
@@ -2575,16 +2489,12 @@ const META_PERIODO_ATALHOS = [
   { label:'Máximo', calc:()=>{const d=new Date();d.setFullYear(d.getFullYear()-10);return[d,hojeDate()];} },
 ];
 
-let _calMesBase = null;   // Date — mês exibido na primeira grade (a segunda mostra o mês seguinte)
-let _calSelInicio = null; // ISO yyyy-mm-dd — início da seleção em andamento/concluída
-let _calSelFim = null;    // ISO yyyy-mm-dd
+let _calMesBase = null;
+let _calSelInicio = null;
+let _calSelFim = null;
 let _calArrastando = false;
-let _calContextoAtual = null; // {chave, onAplicar, onAtalho} — qual página está usando o calendário agora
+let _calContextoAtual = null;
 
-// ===== Registro de contextos: cada página com filtro de período registra-se aqui =====
-// chave: nome usado no sessionStorage (ex: 'metaPeriodo', 'panoramaPeriodo')
-// onAplicar: função chamada depois de aplicar/fechar o calendário (normalmente o render da página)
-// labelElId: id do elemento que mostra o texto do período (ex: cartão clicável)
 const CAL_CONTEXTOS = {};
 function registrarContextoPeriodo(chave, onAplicar, labelElId, atalhoPadrao){
   CAL_CONTEXTOS[chave] = { chave, onAplicar, labelElId, atalhoPadrao };
@@ -2609,7 +2519,6 @@ function setPeriodoSalvo(chave, inicio, fim, label){
   return periodo;
 }
 
-// Compatibilidade com o código já existente da página Meta Ads (Administração)
 function getPeriodoMetaAtual(){ return getPeriodoSalvo('metaPeriodo'); }
 function setPeriodoMetaAtual(inicio, fim, label){ return setPeriodoSalvo('metaPeriodo', inicio, fim, label); }
 
@@ -2618,7 +2527,6 @@ function formatarDataBR(iso){
   return `${d}/${m}/${a}`;
 }
 
-// Abre o calendário para qualquer contexto registrado.
 function abrirCalendarioPeriodo(chave){
   const ctx = CAL_CONTEXTOS[chave];
   if(!ctx){ console.error('Contexto de período não registrado:', chave); return; }
@@ -2639,7 +2547,6 @@ function abrirCalendarioPeriodo(chave){
   renderCalendarioGenerico();
   document.getElementById('modal-meta-periodo').classList.add('open');
 }
-// Atalho de compatibilidade (mesma assinatura antiga usada pela página Meta Ads)
 function abrirPeriodoMeta(){ abrirCalendarioPeriodo('metaPeriodo'); }
 
 function closeMetaPeriodoModal(){ document.getElementById('modal-meta-periodo').classList.remove('open'); }
@@ -2653,7 +2560,6 @@ function aplicarAtalhoPeriodoGenerico(label){
   closeMetaPeriodoModal();
   if(_calContextoAtual.onAplicar) _calContextoAtual.onAplicar();
 }
-// Compatibilidade
 function aplicarAtalhoPeriodoMeta(label){ _calContextoAtual = CAL_CONTEXTOS['metaPeriodo']; aplicarAtalhoPeriodoGenerico(label); }
 
 function mudarMesCalendarioMeta(delta){
@@ -2676,7 +2582,7 @@ function renderCalendarioGenerico(){
 
 function montarGradeMesGenerico(mesData){
   const ano = mesData.getFullYear(), mes = mesData.getMonth();
-  const primeiroDiaSemana = (new Date(ano, mes, 1).getDay()+6)%7; // 0=segunda
+  const primeiroDiaSemana = (new Date(ano, mes, 1).getDay()+6)%7;
   const totalDias = new Date(ano, mes+1, 0).getDate();
   let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:var(--t3);text-align:center;margin-bottom:4px">';
   for(let i=0;i<7;i++) html += `<div>${nomeDiaSemana(i)}</div>`;
@@ -2745,14 +2651,10 @@ function confirmarPeriodoCalendarioGenerico(){
   closeMetaPeriodoModal();
   if(_calContextoAtual.onAplicar) _calContextoAtual.onAplicar();
 }
-// Compatibilidade
 function confirmarPeriodoCalendarioMeta(){ confirmarPeriodoCalendarioGenerico(); }
 
-// Em alguns navegadores, soltar o clique fora da grade não dispara onmouseup do container;
-// este listener global garante que o arraste sempre finalize.
 document.addEventListener('mouseup', ()=>{ if(_calArrastando) finalizarArrasteCalGenerico(); });
 
-// Registra o contexto da página Meta Ads (Administração) — mantém comportamento já existente
 registrarContextoPeriodo('metaPeriodo', renderAdmin, 'adm-periodo-label');
 registrarContextoPeriodo('panoramaPeriodo', renderPanorama, 'pan-periodo-label');
 registrarContextoPeriodo('comparativoPeriodoA', renderComparativo, 'cmp-periodo-a-label');
@@ -2822,7 +2724,6 @@ function renderRegistrosDia(){
     if(totalBruto)totalBruto.textContent='R$ 0,00';
     return;
   }
-  // ADM vê as vendas de todos os atendentes naquele dia; atendente comum só vê as próprias.
   const atendenteFiltro = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&!d.isPad&&(!atendenteFiltro||d.atendente===atendenteFiltro));
   if(sub)sub.textContent=(atendenteFiltro?atendenteFiltro.split(' ')[0]+' — ':'Todos os atendentes — ')+`${dia} de ${mes} de ${ano}`;
@@ -2833,7 +2734,6 @@ function renderRegistrosDia(){
     const gi=dados.indexOf(r);
     const o=OFERTAS.find(x=>x.id===r.ofertaId)||{nome:'—',frascos:0};
     tBruto+=r.bruto||0;
-    // Marcação leve de origem/atendente — só aparece pro ADM, que vê vendas de todos.
     const marcacaoAtendente = (!atendenteFiltro && r.atendente) ? `<span class="badge b-blue" style="font-size:8px;padding:1px 5px" title="Atendente">${r.atendente.split(' ')[0]}</span>` : '';
     const marcacaoOrigem = r.origemPayt ? `<span class="badge b-purple" style="font-size:8px;padding:1px 5px" title="Vindo automaticamente da Payt"><i class="ti ti-bolt" style="font-size:8px"></i> Payt</span>` : '';
     tb+=`<tr id="row-dia-${gi}">
@@ -2871,7 +2771,13 @@ function toggleRecuperacao(){
   else{btn.style.borderColor='var(--border2)';btn.style.background='var(--bg1)';btn.style.color='var(--t2)';icon.style.borderColor='var(--border2)';icon.style.background='transparent';icon.innerHTML='';}
 }
 
-function deletarVendaDia(idx){if(confirm('Remover esta venda?')){dados.splice(idx,1);initAllSelects();renderRegistrosDia();toast('Venda removida.');}}
+function deletarVendaDia(idx){
+  if(confirm('Remover esta venda?')){
+    const item=dados[idx];
+    if(item&&item.fbId&&window.fbDelete)window.fbDelete('dados',item.fbId);
+    dados.splice(idx,1);initAllSelects();renderRegistrosDia();toast('Venda removida.');
+  }
+}
 
 function toggleEditVenda(gi){
   ['nome','tel','valor'].forEach(f=>{
@@ -2908,7 +2814,13 @@ function salvarModal(){
   if(editIdx>=0)dados[editIdx]=rec;else dados.push(rec);
   closeModal();initAllSelects();renderDados();toast(editIdx>=0?'Atualizado!':'Adicionado!');
 }
-function deleteRow(idx){if(confirm('Remover?')){dados.splice(idx,1);initAllSelects();renderDados();toast('Removido.');}}
+function deleteRow(idx){
+  if(confirm('Remover?')){
+    const item=dados[idx];
+    if(item&&item.fbId&&window.fbDelete)window.fbDelete('dados',item.fbId);
+    dados.splice(idx,1);initAllSelects();renderDados();toast('Removido.');
+  }
+}
 
 function openMetaModal(){['mm-receita','mm-recuperacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('modal-meta').classList.add('open');}
 function closeMetaModal(){document.getElementById('modal-meta').classList.remove('open');}
@@ -2921,16 +2833,12 @@ function salvarMeta(){
   closeMetaModal();document.getElementById('meta-mes-fil').value=mes;document.getElementById('meta-ano-fil').value=String(ano);renderMetas();toast('Meta salva!');
 }
 
-// ===== GLOBO =====
 let dashGloboInstance=null;
 let dashGloboLoaded=false;
 
 function iniciarDashGlobo(){
   if(dashGloboLoaded)return;
   dashGloboLoaded=true;
-  // Carrega o three.js standalone primeiro (independente do bundle interno do globe.gl,
-  // que empacota sua própria cópia sem expô-la globalmente) — isso garante uma
-  // referência confiável a THREE para construir as cápsulas dos pedidos.
   function carregarGlobeGl(){
     if(!window.Globe){
       const s=document.createElement('script');
@@ -2946,7 +2854,7 @@ function iniciarDashGlobo(){
     const t=document.createElement('script');
     t.src='https://unpkg.com/three@0.128.0/build/three.min.js';
     t.onload=carregarGlobeGl;
-    t.onerror=carregarGlobeGl; // segue mesmo sem THREE — cápsula cai no fallback de esfera padrão
+    t.onerror=carregarGlobeGl;
     document.head.appendChild(t);
   } else {
     carregarGlobeGl();
@@ -2958,7 +2866,6 @@ async function construirDashGlobo(){
   if(!container)return;
   const loadingEl=document.getElementById('dash-globo-loading');
 
-  // FIX: ensure container has correct dimensions before init
   const w=container.offsetWidth||window.innerWidth-230;
   const h=container.offsetHeight||window.innerHeight;
 
@@ -2973,21 +2880,15 @@ async function construirDashGlobo(){
     .atmosphereAltitude(0.15)
     .pointOfView({lat:-15,lng:-50,altitude:1.8},1500);
 
-  // Limita a resolução de renderização (pixel ratio) — em monitores de alta densidade
-  // (retina, 4K), renderizar em 2x-3x pixels sem necessidade é uma causa comum de
-  // travamento/crash em globos 3D. 1.5 mantém boa nitidez sem o custo total.
   if(dashGloboInstance.renderer){
     const renderer = dashGloboInstance.renderer();
     if(renderer && renderer.setPixelRatio) renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
   }
 
   dashGloboInstance.controls().autoRotate=false;
-  // Damping suaviza o movimento ao arrastar — sem isso, o navegador tenta recalcular
-  // a órbita imediatamente a cada pixel de movimento do mouse, o que é a causa mais
-  // provável da "engasgada" ao girar com força.
   dashGloboInstance.controls().enableDamping=true;
   dashGloboInstance.controls().dampingFactor=0.12;
-  dashGloboInstance.controls().rotateSpeed=0.6; // mais lento = menos recálculos por segundo
+  dashGloboInstance.controls().rotateSpeed=0.6;
   dashGloboInstance.controls().zoomSpeed=0.6;
 
   if(loadingEl)loadingEl.style.display='none';
@@ -3004,8 +2905,6 @@ async function construirDashGlobo(){
   await atualizarPontosDashGlobo();
 }
 
-// Carrega e desenha as fronteiras de países (mundo) e estados (Brasil) no globo,
-// como camadas de polígonos sutis — apenas demarcação visual, sem interação/clique.
 async function carregarFronteirasDashGlobo(){
   if(!dashGloboInstance)return;
   try{
@@ -3016,8 +2915,6 @@ async function carregarFronteirasDashGlobo(){
     const paisesGeo = await paisesRes.json();
     const estadosGeo = await estadosRes.json();
 
-    // Só o contorno do Brasil entre os países (evita renderizar ~180 países do mundo,
-    // que é a causa mais provável do globo travar/crashar).
     const brasilFeature = paisesGeo.features.find(f =>
       (f.properties?.NAME === 'Brazil') || (f.properties?.ADMIN === 'Brazil') || (f.properties?.ISO_A3 === 'BRA')
     );
@@ -3038,10 +2935,6 @@ async function carregarFronteirasDashGlobo(){
   }
 }
 
-// Cache de geocodificação persistido no localStorage — evita reconsultar a API do
-// Nominatim (e o delay de limite de requisições) para locais já vistos antes,
-// mesmo depois de recarregar a página. Isso é a principal causa de lentidão/
-// crash no globo quando há muitos pedidos rastreados.
 const GEOCACHE_KEY = 'matrixGeoCacheDash';
 function carregarGeoCacheDash(){
   try{
@@ -3068,13 +2961,7 @@ async function geocodDash(local){
   return null;
 }
 
-// Constrói um pequeno objeto 3D em formato de cápsula (cilindro + duas esferas nas
-// pontas) para representar cada pedido no globo, no lugar de um ponto genérico.
-// Three.js r128 não tem CapsuleGeometry nativa (só a partir da r142), por isso
-// ===== ÍCONE DOS PEDIDOS NO GLOBO: letras 3D extrudadas girando =====
 function getThreeRef(){
-  // globe.gl, carregado via <script> UMD, não expõe THREE em window.THREE — por isso
-  // carregamos o three.js como biblioteca própria e independente (ver iniciarDashGlobo).
   return window.THREE || null;
 }
 
@@ -3087,8 +2974,8 @@ function iniciarRotacaoCaixaGlobo(caixa){
   const ctrl = { parar: false };
   _caixasRotacaoAtivas.push(ctrl);
   const escalaBase = 1;
-  const amplitude = 0.18;   // quanto cresce/diminui (18% acima e abaixo do tamanho base)
-  const velocidade = 1.6;   // velocidade do pulso
+  const amplitude = 0.18;
+  const velocidade = 1.6;
   let inicio = null;
   function passo(tempo){
     if(ctrl.parar || !caixa.scale) return;
@@ -3096,40 +2983,27 @@ function iniciarRotacaoCaixaGlobo(caixa){
     const t = (tempo - inicio)/1000;
     const fator = escalaBase + Math.sin(t*velocidade)*amplitude;
     caixa.scale.set(fator, fator, fator);
-    // Billboard suavizado: a logo vira gradualmente de frente para a câmera (não
-    // instantaneamente), eliminando a sensação de "andar" pela tela ao girar o
-    // globo rápido, mas sem ficar de lado/deitada como ficava sem nenhum ajuste.
     try{
       const cam = dashGloboInstance && dashGloboInstance.camera && dashGloboInstance.camera();
       if(cam && caixa.parent){
         const camPosLocal = caixa.parent.worldToLocal(cam.position.clone());
         const posOriginal = caixa.position.clone();
-        const quatAtual = caixa.quaternion.clone(); // orientação real de antes deste frame
-        caixa.lookAt(camPosLocal); // efeito colateral: seta caixa.quaternion para "de frente"
+        const quatAtual = caixa.quaternion.clone();
+        caixa.lookAt(camPosLocal);
         const quatAlvo = caixa.quaternion.clone();
         caixa.position.copy(posOriginal);
-        caixa.quaternion.copy(quatAtual); // volta para a orientação real...
-        caixa.quaternion.slerp(quatAlvo, 0.06); // ...e gira só um pouquinho em direção ao alvo
+        caixa.quaternion.copy(quatAtual);
+        caixa.quaternion.slerp(quatAlvo, 0.06);
       }
-    }catch(e){ /* câmera indisponível nesta chamada — segue só com a pulsação */ }
+    }catch(e){ }
     requestAnimationFrame(passo);
   }
   requestAnimationFrame(passo);
 }
 
-// Gera, via Canvas 2D nativo (sem nenhum arquivo externo), uma textura com o texto
-// "MAXIMUS" na cor do status — aplicada depois a um plano 3D que gira sobre o pedido.
-// ===== LETRAS 3D EXTRUDADAS: traços reais da logo MAXIMUS =====
-// Em vez de uma imagem/textura estampada num plano ou caixa, aqui construímos a
-// geometria 3D de verdade a partir do contorno exato de cada traço da logo
-// (extraído previamente da foto do produto), usando THREE.Shape + ExtrudeGeometry.
-// Isso dá profundidade real às próprias letras (incluindo o X estilizado), sem
-// depender de nenhum arquivo de fonte externo.
 const CONTORNOS_LOGO_MAXIMUS = {"largura_total":3.2875399361022364,"altura_total":1.0,"formas":[{"pontos":[[1.1022,0.7188],[1.0703,0.7572],[1.0479,0.77],[0.9744,0.7093],[1.0032,0.6965],[1.0256,0.6741],[1.0383,0.6454],[1.0319,0.6006],[0.9968,0.5623],[0.9681,0.5527],[0.7827,0.5527],[0.6805,0.4665],[0.9521,0.4665],[1.0064,0.4728],[1.0383,0.4856],[1.0863,0.524],[1.1118,0.5623],[1.1214,0.5879],[1.1246,0.6581]],"area":4735.5,"pai":-1},{"pontos":[[1.1054,0.7732],[1.2428,0.6358],[1.3131,0.6965],[1.2524,0.7604],[1.2332,0.77]],"area":1393.5,"pai":-1},{"pontos":[[2.1406,0.7859],[2.1438,0.5911],[2.1629,0.5431],[2.1981,0.5016],[2.262,0.4696],[2.3259,0.4665],[2.3866,0.4888],[2.4217,0.5176],[2.4441,0.5495],[2.4601,0.5911],[2.4601,0.7859],[2.3898,0.7859],[2.3866,0.6038],[2.377,0.5815],[2.3482,0.5527],[2.3195,0.5399],[2.2843,0.5399],[2.2556,0.5527],[2.2204,0.5942],[2.2141,0.6198],[2.2141,0.7859]],"area":5127.5,"pai":-1},{"pontos":[[2.5399,0.7891],[2.5112,0.7732],[2.4888,0.7476],[2.4792,0.7125],[2.4824,0.6805],[2.4952,0.655],[2.5304,0.6262],[2.6358,0.5847],[2.6518,0.5687],[2.655,0.5495],[2.6294,0.5272],[2.5815,0.524],[2.524,0.5367],[2.4824,0.5591],[2.4824,0.492],[2.5623,0.4665],[2.639,0.4665],[2.6741,0.476],[2.7093,0.5016],[2.722,0.5272],[2.7252,0.5751],[2.7125,0.607],[2.6773,0.639],[2.5655,0.6837],[2.5527,0.6997],[2.5527,0.7157],[2.5751,0.7348],[2.6198,0.738],[2.6709,0.7252],[2.6997,0.7093],[2.6997,0.7732],[2.6358,0.7955],[2.5655,0.7955]],"area":4492.5,"pai":-1},{"pontos":[[1.7157,0.8019],[1.7157,0.4665],[1.7891,0.4665],[1.7923,0.6166],[1.8051,0.6102],[1.9105,0.5048],[2.0319,0.6166],[2.0351,0.4665],[2.1118,0.4665],[2.1118,0.8019],[1.9169,0.6134],[1.9105,0.6134]],"area":6999.0,"pai":-1},{"pontos":[[1.6901,0.8019],[1.5783,0.6933],[1.5783,0.4665],[1.6901,0.4665]],"area":3097.0,"pai":-1},{"pontos":[[0.3355,0.4696],[0.4249,0.4665],[0.4281,0.6102],[0.6006,0.4728],[0.8562,0.6869],[0.8562,0.7955],[0.6038,0.5879],[0.5942,0.5879],[0.3387,0.8019]],"area":7430.5,"pai":-1},{"pontos":[[1.77,0.9712],[1.6486,0.9712],[1.623,0.9585],[1.1054,0.476],[1.2332,0.4792],[1.2556,0.492],[1.3163,0.5495],[1.3259,0.5527],[1.4952,0.3866],[1.5208,0.377],[1.6358,0.377],[1.3962,0.6166],[1.3962,0.623]],"area":9242.5,"pai":-1}]};
 
 const logoExtrusaoCacheGlobo = {};
-// Escurece uma cor hex (#RRGGBB) por um fator (0 = sem mudança, 1 = preto total).
-// Usado para dar a aparência de "face lateral em sombra" sem depender de luz real.
 function escurecerCor(corHex, fator){
   const hex = corHex.replace('#','');
   const r = Math.round(parseInt(hex.substring(0,2),16) * (1-fator));
@@ -3141,24 +3015,17 @@ function escurecerCor(corHex, fator){
 
 function criarCaixaPedidoGlobo(cor){
   const THREE = getThreeRef();
-  if(!THREE) return null; // sem THREE: globe.gl usa sua esfera padrão automaticamente
+  if(!THREE) return null;
   try{
     if(!logoExtrusaoCacheGlobo[cor]){
-      // Dois materiais sólidos (sem depender de luz na cena, que se mostrou
-      // pouco confiável neste bundle): a face frontal/traseira usa a cor do
-      // status normal, e a lateral (a "espessura" visível da extrusão) usa uma
-      // versão mais escura da mesma cor — isso já cria a ilusão de volume e
-      // profundidade sem precisar de nenhuma luz funcionando.
       const corEscurecida = escurecerCor(cor, 0.45);
       const materialFace = new THREE.MeshBasicMaterial({ color: cor });
       const materialLateral = new THREE.MeshBasicMaterial({ color: corEscurecida });
 
       const grupo = new THREE.Group();
-      const espessura = 0.26; // profundidade ajustada ao novo tamanho menor
-      const escalaTamanho = 1.6; // ajustado para um tamanho mais discreto
+      const espessura = 0.26;
+      const escalaTamanho = 1.6;
 
-      // Centraliza o grupo: desloca todos os contornos para que o centro da logo
-      // fique na origem (0,0), facilitando o posicionamento sobre o globo.
       const cx = (CONTORNOS_LOGO_MAXIMUS.largura_total/2);
       const cy = (CONTORNOS_LOGO_MAXIMUS.altura_total/2);
 
@@ -3169,28 +3036,19 @@ function criarCaixaPedidoGlobo(cor){
           if(i===0) shape.moveTo(x,y); else shape.lineTo(x,y);
         });
         const geometria = new THREE.ExtrudeGeometry(shape, { depth: espessura, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 2 });
-        // ExtrudeGeometry separa a malha em grupos: 0 = face frontal/traseira, 1 = laterais do bisel/extrusão
         const malha = new THREE.Mesh(geometria, [materialFace, materialLateral]);
         grupo.add(malha);
       });
 
-      // Sem rotação local: como cancelamos a rotação herdada do globo (na animação,
-      // via quaternion), a logo fica na orientação em que foi desenhada — plana,
-      // reta, sempre alinhada da mesma forma, em qualquer ponto do mapa.
-
       if(!grupo || grupo.isObject3D !== true) return null;
 
-      // Pino triangular (cone apontando para baixo) embaixo da logo — funciona como
-      // um marcador de localização, ancorando visualmente onde o pedido está sobre
-      // o globo. Fica na mesma cor do status, dentro do mesmo grupo (acompanha a
-      // pulsação e a orientação de frente para a câmera automaticamente).
       const alturaTotalLogo = CONTORNOS_LOGO_MAXIMUS.altura_total*escalaTamanho;
       const materialPino = new THREE.MeshBasicMaterial({ color: cor });
       const pinoGeo = new THREE.ConeGeometry(0.22, 0.5, 12);
       const pino = new THREE.Mesh(pinoGeo, materialPino);
-      pino.rotation.x = Math.PI; // cone aponta para baixo
-      pino.position.y = -(alturaTotalLogo/2) - 0.25; // logo abaixo da base da logo
-      pino.position.z = espessura/2; // centrado na espessura da extrusão
+      pino.rotation.x = Math.PI;
+      pino.position.y = -(alturaTotalLogo/2) - 0.25;
+      pino.position.z = espessura/2;
       grupo.add(pino);
 
       logoExtrusaoCacheGlobo[cor] = grupo;
@@ -3226,16 +3084,14 @@ async function atualizarPontosDashGlobo(){
     if(!coords)continue;
     const st=getStatusCorreios(r);
     todosPontos.push({lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,local,cod:r.rastreamento,atend:r.atendente.split(' ')[0]});
-    if(!jaEmCache) await new Promise(res=>setTimeout(res,200)); // só espera quando consultou a API de verdade
+    if(!jaEmCache) await new Promise(res=>setTimeout(res,200));
   }
 
-  _pontosGloboTodos = todosPontos; // guarda a lista completa para reaplicar o filtro sem buscar tudo de novo
+  _pontosGloboTodos = todosPontos;
   renderFiltrosStatusDashAdm(todosPontos);
   aplicarFiltroStatusEDesenharPontos();
 }
 
-// Conta quantos pontos existem por status e desenha os botões-pílula de filtro,
-// cada um com ícone, cor e contador. Multi-seleção: nenhum marcado = mostra todos.
 const STATUS_GLOBO_CONFIG = [
   { tipo:'postagem', label:'Aguardando postagem', cor:'#888888', icone:'ti-clock' },
   { tipo:'rota', label:'Em rota', cor:'#0EA5E9', icone:'ti-truck-delivery' },
@@ -3244,7 +3100,7 @@ const STATUS_GLOBO_CONFIG = [
   { tipo:'devolucao', label:'Devolução', cor:'#EF4444', icone:'ti-arrow-back-up' },
 ];
 let _pontosGloboTodos = [];
-let _statusGloboSelecionados = new Set(); // vazio = mostra todos
+let _statusGloboSelecionados = new Set();
 
 function renderFiltrosStatusDashAdm(pontos){
   const cont = document.getElementById('adm-dash-status-filtros');
@@ -3292,7 +3148,7 @@ function aplicarFiltroStatusEDesenharPontos(){
     .objectsData(pontos).objectLat('lat').objectLng('lng').objectAltitude(0.02)
     .objectThreeObject(d=>criarCaixaPedidoGlobo(d.cor))
     .objectLabel(d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div></div>')
-    .ringsData([]); // sem pulso/raio ao redor dos pontos — só a caixa girando
+    .ringsData([]);
 }
 
 function toggleDespesasDashAdm(){
@@ -3304,23 +3160,18 @@ function aplicarEstadoDespesasDashAdm(){
   const conteudo = document.getElementById('adm-dash-despesas');
   const chevron = document.getElementById('adm-dash-despesas-chevron');
   if(!conteudo||!chevron) return;
-  // Padrão: fechado, a menos que o usuário já tenha explicitamente aberto antes nesta sessão.
   const minimizado = sessionStorage.getItem('dashDespesasMin')!=='0';
   conteudo.style.display = minimizado?'none':'block';
   chevron.style.transform = minimizado?'rotate(180deg)':'rotate(0deg)';
 }
 
 function renderDashAdm(){
-  // Usuário comum: o globo mostra automaticamente só os próprios pedidos, sem
-  // possibilidade de trocar para ver dados de outros atendentes — o seletor fica
-  // escondido, e o filtro é travado no próprio nome dele.
   const selAtend = document.getElementById('adm-dash-atend');
   if(selAtend) selAtend.style.display = adminLogado ? 'inline-block' : 'none';
   const atend = adminLogado
     ? (selAtend ? selAtend.value : '')
     : (usuarioLogado ? usuarioLogado.nome : '');
 
-  // Sem filtros de período no globo — sempre mostra os números de HOJE.
   const agora=new Date();
   const filDia=agora.getDate(), filMes=MESES[agora.getMonth()], filAno=agora.getFullYear();
 
@@ -3347,7 +3198,6 @@ function renderDashAdm(){
 
   renderCardGatewayDashAdm(atend, tLucro);
 
-  // Card de Despesas — detalhado, visível apenas para o ADM logado.
   const despesasWrap = document.getElementById('adm-dash-despesas-wrap');
   if(adminLogado){
     despesasWrap.style.display = 'block';
@@ -3369,8 +3219,6 @@ function renderDashAdm(){
   if(!dashGloboLoaded){iniciarDashGlobo();}else if(dashGloboInstance){setTimeout(atualizarPontosDashGlobo,100);}
 }
 
-// Card de resumo estilo gateway de pagamento: Vendas hoje, variação vs ontem,
-// nível do atendente (quando filtrado por um específico), e resumo Ontem/Semana/Mês.
 function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   const hoje = hojeDate();
   const ontem = addDias(hoje,-1);
@@ -3403,7 +3251,6 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
     lucroEl.style.display = 'none';
   }
   document.getElementById('gw-qtd-vendas').textContent = vHoje.vendas+' venda'+(vHoje.vendas!==1?'s':'');
-  // Ticket médio removido do card (já disponível no Panorama)
 
   const variacaoEl = document.getElementById('gw-variacao');
   if(vOntem.bruto>0){
@@ -3467,7 +3314,6 @@ function renderRankingPublico(){
   if(canvas&&resumos.length>0){charts['rank-pub']=new Chart(canvas,{type:'bar',data:{labels:resumos.map(r=>r.nome.split(' ')[0]),datasets:[{label:'Receita',data:resumos.map(r=>R(r.bruto,2)),backgroundColor:colors.slice(0,resumos.length),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});}
 }
 
-// ===== PAD =====
 let pads=[];
 let padTab='aberto';
 
@@ -3508,7 +3354,6 @@ function closePadModal(){
   const title=document.querySelector('#modal-pad .modal-title');
   if(title)title.textContent='Lançar PAD';
 }
-// Funções de CEP/endereço removidas — PAD não coleta mais dados de entrega.
 function buildPadOfertasGrid(){
   const grid=document.getElementById('pad-ofertas-grid');
   if(!grid)return;
@@ -3627,8 +3472,7 @@ function salvarEdicaoPad(gi){
 }
 function deletarPad(gi){if(confirm('Remover este PAD?')){if(window.fbDelete&&pads[gi].fbId)window.fbDelete('pads',pads[gi].fbId);pads.splice(gi,1);renderPad();toast('PAD removido.');}}
 
-// ===== RASTREAMENTO =====
-let _statusRastreamentoSelecionados = new Set(); // vazio = mostra todos
+let _statusRastreamentoSelecionados = new Set();
 
 function renderFiltrosStatusRastreamento(rows){
   const cont = document.getElementById('rast-status-filtros');
@@ -3742,11 +3586,8 @@ async function buscarRastreio(gi,tipo){
 
 async function atualizarTodosRastreios(silencioso){
   const status=document.getElementById('rast-update-status');
-  // Considera "pendente de atualização" todo pedido com rastreamento que ainda NÃO
-  // chegou a um status final (Entregue ou Devolução) — assim o status nunca fica
-  // congelado na 1ª consulta, continua sendo atualizado enquanto o pedido "viver".
   const naoFinal = obj => {
-    if(!obj.trackStatus) return true; // nunca buscado ainda
+    if(!obj.trackStatus) return true;
     const st = getStatusCorreios(obj);
     return st.tipo!=='entregue' && st.tipo!=='devolucao';
   };
@@ -3764,9 +3605,6 @@ async function atualizarTodosRastreios(silencioso){
   if(!silencioso) toast(`${total} rastreamentos atualizados!`);
 }
 
-// Roda automaticamente ao entrar/recarregar a página de Rastreamento (ou PAD).
-// Tem um cooldown de 5 minutos para não disparar a API repetidas vezes se a pessoa
-// ficar trocando de aba rapidamente.
 const RASTREIO_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000;
 function autoSyncRastreamento(){
   const ultima = parseInt(sessionStorage.getItem('rastreioAutoSyncTs') || '0', 10);
@@ -3861,7 +3699,6 @@ function toggleTema(){
   else{if(icon)icon.className='ti ti-sun';if(label)label.textContent='Modo claro';if(ball)ball.style.transform='translateX(0)';if(toggle)toggle.style.background='var(--border2)';if(window.matrixStart)window.matrixStart();}
 }
 
-// MATRIX RAIN
 (function(){
   const canvas=document.getElementById('matrix-canvas');const ctx=canvas.getContext('2d');
   const chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF01';
