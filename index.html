@@ -2121,18 +2121,31 @@ function renderAdmin(){
   // Imposto sobre o investimento em Meta Ads (taxa real observada nas faturas: ~13,83%)
   const PERCENTUAL_IMPOSTO_META_ADS = 0.1383;
   const impostoMetaAds = tInv * PERCENTUAL_IMPOSTO_META_ADS;
+  const investimentoComImposto = tInv + impostoMetaAds;
   const roiMetaAds = tInv>0 ? R((tLucro/tInv)*100,1) : null;
 
+  // Vendas e valor retornado do dia: soma vendas normais (Front) + PAD lançados,
+  // desconsiderando PADs com status "Frustrado".
+  const padsValidos = padsNoPeriodo.filter(p => p.status !== 'Frustrado');
+  const qtdVendasFront = tVendas;
+  const qtdVendasPad = padsValidos.length;
+  const qtdVendasTotal = qtdVendasFront + qtdVendasPad;
+  const valorVendasFront = rows.reduce((s,r)=>s+(r.bruto||0),0);
+  const valorVendasPad = padsValidos.reduce((s,p)=>s+(p.bruto||0),0);
+  const valorVendasTotal = valorVendasFront + valorVendasPad;
+
+  // CPA — Custo por Aquisição: investimento (com imposto) ÷ total de aquisições (Front + PAD pagos, sem frustrados)
+  const padPagosTotal = padsNoPeriodo.filter(p => p.status === 'Pago').length;
+  const totalAquisicoesCpa = qtdVendasFront + padPagosTotal;
+  const cpaMetaAds = totalAquisicoesCpa>0 ? investimentoComImposto/totalAquisicoesCpa : null;
+
   document.getElementById('adm-metrics').innerHTML=`
-    <div class="metric-card"><div class="metric-label">Investimento Meta Ads</div><div class="metric-value mv-amber">${fmt(tInv)}</div></div>
+    <div class="metric-card"><div class="metric-label">Investimento Meta Ads</div><div class="metric-value mv-amber">${fmt(investimentoComImposto)}</div><div style="font-size:10px;color:var(--t3);margin-top:2px">+ ${fmt(impostoMetaAds)} de imposto (13,83%)</div></div>
     <div class="metric-card"><div class="metric-label">Leads</div><div class="metric-value">${tLeads}</div></div>
-    <div class="metric-card"><div class="metric-label">CPL</div><div class="metric-value">${tLeads>0?fmt(tInv/tLeads):'—'}</div></div>
     <div class="metric-card"><div class="metric-label">ROI</div><div class="metric-value ${roiMetaAds!=null&&roiMetaAds>=0?'mv-green':roiMetaAds!=null?'mv-red':''}">${roiMetaAds!=null?roiMetaAds+'%':'—'}</div></div>
-    <div class="metric-card"><div class="metric-label">Imposto Meta Ads (13,83%)</div><div class="metric-value mv-red">${fmt(impostoMetaAds)}</div></div>
-    <div class="metric-card"><div class="metric-label">Custo envios (vendas)</div><div class="metric-value mv-red">${fmt(tVendas*CUSTO_ENVIO)}</div></div>
-    <div class="metric-card"><div class="metric-label">Custo envios (PAD)</div><div class="metric-value mv-red">${fmt(padCAdm.custoEnvio)}</div></div>
-    <div class="metric-card"><div class="metric-label">PADs pagos</div><div class="metric-value mv-green">${fmt(padCAdm.bruto)}</div></div>
-    <div class="metric-card"><div class="metric-label">Lucro líquido</div><div class="metric-value ${tLucro>=0?'mv-green':'mv-red'}">${fmt(tLucro)}</div></div>
+    <div class="metric-card"><div class="metric-label">CPA</div><div class="metric-value">${cpaMetaAds!=null?fmt(cpaMetaAds):'—'}</div></div>
+    <div class="metric-card"><div class="metric-label">Qtd. vendas</div><div class="metric-value">${qtdVendasTotal}</div><div style="font-size:10px;color:var(--t3);margin-top:2px">${qtdVendasFront} front · ${qtdVendasPad} PAD</div></div>
+    <div class="metric-card"><div class="metric-label">Valor retornado</div><div class="metric-value mv-green">${fmt(valorVendasTotal)}</div></div>
   `;
   let tb1='';
   admFil.sort((a,b)=> diaToISO(a.dia,a.mes,a.ano).localeCompare(diaToISO(b.dia,b.mes,b.ano)) || (a.contaMeta||'').localeCompare(b.contaMeta||'') ).forEach((a)=>{
