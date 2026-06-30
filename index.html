@@ -1289,6 +1289,7 @@ function fazerLogout(){
   document.getElementById('sidebar-user').innerHTML='';
 }
 const CUSTO_FRASCO=10;
+const PERCENTUAL_IMPOSTO_META_ADS_GLOBAL=0.1383;
 const CUSTO_ENVIO=32;
 
 const OFERTAS=[
@@ -1417,17 +1418,21 @@ function calcLucroDia(dia,mes,ano,atendente){
   rows.forEach(r=>{const c=calcRow(r);totalSub+=c.subtotal;});
   const admFil=adminLancs.filter(a=>{
     if(a.dia!==dia||a.mes!==mes||a.ano!==ano) return false;
-    if(!atendente){
-      // Visão geral (Todos): conta o investimento uma única vez, ignorando os
-      // registros de detalhamento por atendente — eles são só um recorte do
-      // mesmo gasto já somado no registro "Geral", e somar os dois duplicava
-      // o investimento e inflava o prejuízo artificialmente.
-      return !(a.origemMeta && a.atendente);
+    if(atendente){
+      // Atendente específico: conta só o investimento atribuído a ele (seja via
+      // identificador no conjunto de anúncios, seja lançamento manual antigo) —
+      // nunca o total "Geral" de todos.
+      return a.atendente===atendente;
     }
-    return (!a.atendente||a.atendente===atendente);
+    // Visão geral (Todos): conta o investimento uma única vez, ignorando os
+    // registros de detalhamento por atendente — eles são só um recorte do
+    // mesmo gasto já somado no registro "Geral", e somar os dois duplicava
+    // o investimento e inflava o prejuízo artificialmente.
+    return !(a.origemMeta && a.atendente);
   });
-  let metaAds=0;
-  admFil.forEach(a=>metaAds+=a.investido||0);
+  let metaAdsBruto=0;
+  admFil.forEach(a=>metaAdsBruto+=a.investido||0);
+  const metaAds=R(metaAdsBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
   const padC=calcPadCustos({dia,mes,ano,atendente:atendente||null});
   const padLucro=padC.bruto-padC.totalCustos;
   return R(totalSub+padLucro-metaAds);
@@ -3244,12 +3249,21 @@ function renderDashAdm(){
     if(a.dia!==filDia)return false;
     if(a.mes!==filMes)return false;
     if(String(a.ano)!==String(filAno))return false;
-    return true;
+    if(atend){
+      // Atendente específico selecionado: conta só o investimento atribuído a ele,
+      // nunca o total "Geral" de todos os atendentes somados.
+      return a.atendente===atend;
+    }
+    // "Todos": conta o investimento uma única vez, ignorando os registros de
+    // detalhamento por atendente (que são um recorte do mesmo gasto já somado
+    // no registro "Geral"), evitando duplicar o investimento.
+    return !(a.origemMeta && a.atendente);
   });
   let tFrascos=0,tEnvio=0,tImpPJ=0,tPctAtend=0;
   rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
-  let tMetaAds=0;
-  admFil.forEach(a=>{tMetaAds+=a.investido||0;});
+  let tMetaAdsBruto=0;
+  admFil.forEach(a=>{tMetaAdsBruto+=a.investido||0;});
+  const tMetaAds=R(tMetaAdsBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
   const padC=calcPadCustos({dia:filDia,mes:filMes,ano:filAno,atendente:atend||null});
   tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;
   const tLucro = calcLucroDia(filDia, filMes, filAno, atend);
