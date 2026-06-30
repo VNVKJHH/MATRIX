@@ -287,7 +287,7 @@ tr:hover td{background:var(--neon-glow)}
 </style>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyAPwURZrZGNjZr2IV8Ba0vcp2-b4XkKZ_w",
@@ -387,8 +387,39 @@ tr:hover td{background:var(--neon-glow)}
       if(typeof renderContasSalvasLista === 'function') renderContasSalvasLista();
     });
 
+    let primeiraVezAtendentes = true;
+    onSnapshot(collection(db, 'atendentes'), snap => {
+      const fbAtend = [];
+      snap.forEach(d => fbAtend.push(d.data()));
+      if(primeiraVezAtendentes && fbAtend.length === 0){
+        primeiraVezAtendentes = false;
+        seedAtendentesUmaVez();
+      } else {
+        primeiraVezAtendentes = false;
+        atendentes = fbAtend;
+        scheduleRender();
+      }
+    });
+
     console.log('Firebase real-time listeners ativos!');
     window.fbReady = true;
+  }
+
+  // Migra a lista padrão de atendentes para o Firebase apenas UMA VEZ na vida do
+  // projeto (controlado por uma flag salva no próprio Firestore, não por "coleção
+  // vazia"). Isso evita o bug de repor atendentes excluídos de propósito.
+  async function seedAtendentesUmaVez(){
+    try{
+      const flagRef = doc(db, 'config', 'flags');
+      const flagSnap = await getDoc(flagRef);
+      if(flagSnap.exists() && flagSnap.data().atendentesSeeded) return;
+      for(let i=0;i<atendentes.length;i++){
+        const a=atendentes[i];
+        if(!a.fbId) a.fbId='atend_'+Date.now()+'_'+i;
+        await window.fbSave('atendentes', a.fbId, a);
+      }
+      await setDoc(flagRef, { atendentesSeeded: true }, { merge: true });
+    }catch(e){ console.error('seedAtendentesUmaVez error:', e); }
   }
 
   async function autoMigrate(){
@@ -1992,10 +2023,23 @@ function salvarAtendente(){
   const metaId=document.getElementById('ma-meta-id').value.trim();
   const paytId=document.getElementById('ma-payt-id').value.trim();
   if(!nome){toast('Informe o nome!');return;}
-  if(editAtendIdx>=0)atendentes[editAtendIdx]={...atendentes[editAtendIdx],nome,comissao:com,metaId,paytId};else atendentes.push({nome,comissao:com,metaId,paytId});
+  if(editAtendIdx>=0){
+    atendentes[editAtendIdx]={...atendentes[editAtendIdx],nome,comissao:com,metaId,paytId};
+    if(window.fbSave&&atendentes[editAtendIdx].fbId)window.fbSave('atendentes',atendentes[editAtendIdx].fbId,atendentes[editAtendIdx]);
+  }else{
+    const novo={nome,comissao:com,metaId,paytId,fbId:'atend_'+Date.now()};
+    atendentes.push(novo);
+    if(window.fbSave)window.fbSave('atendentes',novo.fbId,novo);
+  }
   closeAtendModal();initAllSelects();renderAtendentes();toast(editAtendIdx>=0?'Atualizado!':'Adicionado!');
 }
-function deleteAtend(idx){if(confirm('Remover?')){atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');}}
+function deleteAtend(idx){
+  if(confirm('Remover?')){
+    const item=atendentes[idx];
+    if(item&&item.fbId&&window.fbDelete)window.fbDelete('atendentes',item.fbId);
+    atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');
+  }
+}
 
 function diaToISO(dia, mes, ano){
   const mi = MESES.indexOf(mes);
@@ -2806,7 +2850,14 @@ function editRow(idx){
 }
 function salvarModal(){
   const rec={dia:parseInt(document.getElementById('m-dia').value)||0,mes:document.getElementById('m-mes').value,ano:parseInt(document.getElementById('m-ano').value)||2026,atendente:document.getElementById('m-atend').value,ofertaId:parseInt(document.getElementById('m-oferta').value)||1,bruto:parseFloat(document.getElementById('m-bruto').value)||0,qtd_vendas:parseInt(document.getElementById('m-qtdv').value)||0};
-  if(editIdx>=0)dados[editIdx]=rec;else dados.push(rec);
+  if(editIdx>=0){
+    rec.fbId=dados[editIdx].fbId||('dado_'+Date.now());
+    dados[editIdx]=rec;
+  }else{
+    rec.fbId='dado_'+Date.now();
+    dados.push(rec);
+  }
+  if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
   closeModal();initAllSelects();renderDados();toast(editIdx>=0?'Atualizado!':'Adicionado!');
 }
 function deleteRow(idx){
@@ -3662,6 +3713,7 @@ async function migrarParaFirebase(){
   for(let i=0;i<pads.length;i++){const p=pads[i];if(!p.fbId)p.fbId='pad_'+i+'_'+Date.now();await window.fbSave('pads',p.fbId,p);total++;}
   for(let i=0;i<adminLancs.length;i++){const a=adminLancs[i];if(!a.fbId)a.fbId='adm_'+i+'_'+Date.now();await window.fbSave('adminLancs',a.fbId,a);total++;}
   for(let i=0;i<metas.length;i++){const m=metas[i];if(!m.fbId)m.fbId='meta_'+i+'_'+Date.now();await window.fbSave('metas',m.fbId,m);total++;}
+  for(let i=0;i<atendentes.length;i++){const a=atendentes[i];if(!a.fbId)a.fbId='atend_'+i+'_'+Date.now();await window.fbSave('atendentes',a.fbId,a);total++;}
   toast('✅ '+total+' registros migrados para o Firebase!');
 }
 
