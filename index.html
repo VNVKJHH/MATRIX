@@ -504,7 +504,6 @@ tr:hover td{background:var(--neon-glow)}
     <button class="nav-item" onclick="showPage('atendentes')" id="nav-atendentes"><i class="ti ti-users"></i> Atendentes</button>
     <div class="divider"></div>
     <button class="nav-item" onclick="exportarCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
-    <button class="nav-item" id="btn-migrar" onclick="migrarParaFirebase()" style="color:var(--amber)"><i class="ti ti-cloud-upload"></i> Migrar p/ Firebase</button>
     <button class="nav-item" onclick="window.print()"><i class="ti ti-printer"></i> Imprimir</button>
     <button class="nav-item" onclick="fazerLogout()" style="color:var(--red-t)"><i class="ti ti-power"></i> Sair</button>
   </div>
@@ -518,7 +517,6 @@ tr:hover td{background:var(--neon-glow)}
     <button class="nav-item" onclick="showPage('ranking-publico')" id="nav-ranking"><i class="ti ti-trophy"></i> Ranking</button>
     <div class="divider"></div>
     <button class="nav-item" onclick="exportarCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
-    <button class="nav-item" id="btn-migrar" onclick="migrarParaFirebase()" style="color:var(--amber)"><i class="ti ti-cloud-upload"></i> Migrar p/ Firebase</button>
     <button class="nav-item" onclick="window.print()"><i class="ti ti-printer"></i> Imprimir</button>
     <button class="nav-item" onclick="fazerLogout()" style="color:var(--red-t)"><i class="ti ti-power"></i> Sair</button>
   </div>
@@ -1201,7 +1199,7 @@ tr:hover td{background:var(--neon-glow)}
 
 <!-- Modal PAD -->
 <div class="modal-overlay" id="modal-pad" onclick="if(event.target===this)closePadModal()">
-  <div class="modal" style="width:600px;max-height:90vh;overflow-y:auto">
+  <div class="modal" style="width:560px;max-height:90vh;overflow-y:auto">
     <p class="modal-title">Lançar PAD</p>
     <div class="form-grid">
       <div class="form-group"><label>Dia</label><input type="number" id="pad-dia" min="1" max="31" placeholder="18"></div>
@@ -1210,16 +1208,6 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Atendente</label><select id="pad-atend"></select></div>
       <div class="form-group"><label>Nome do cliente</label><input type="text" id="pad-nome" placeholder="Ex: João Silva"></div>
       <div class="form-group"><label>Telefone</label><input type="text" id="pad-tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
-      <div class="form-group">
-        <label>CEP <span style="font-size:11px;color:var(--blue);cursor:pointer" onclick="buscarCEP()">🔍 buscar</span></label>
-        <input type="text" id="pad-cep" placeholder="00000-000" oninput="mascaraCEP(this)" onblur="buscarCEP()" maxlength="9">
-      </div>
-      <div class="form-group"><label>Número</label><input type="text" id="pad-numero" placeholder="Ex: 123"></div>
-      <div class="form-group full"><label>Endereço</label><input type="text" id="pad-endereco" placeholder="Rua, Avenida..."></div>
-      <div class="form-group"><label>Bairro</label><input type="text" id="pad-bairro" placeholder="Bairro"></div>
-      <div class="form-group"><label>Complemento</label><input type="text" id="pad-complemento" placeholder="Apto, Bloco..."></div>
-      <div class="form-group"><label>Cidade</label><input type="text" id="pad-cidade" placeholder="Cidade"></div>
-      <div class="form-group"><label>Estado</label><input type="text" id="pad-estado" placeholder="SP" maxlength="2" style="text-transform:uppercase"></div>
       <div class="form-group full">
         <label>Negociação <span style="font-size:11px;color:var(--t2)">— como ficou acordado</span></label>
         <textarea id="pad-negociacao" placeholder="Ex: Cliente aceitou pagar na entrega..." style="width:100%;font-size:13px;padding:8px 10px;border-radius:var(--r-md);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1);resize:vertical;min-height:70px;font-family:inherit"></textarea>
@@ -3505,7 +3493,7 @@ const PAD_STATUS=['Aguardando postagem','Em rota','Aguardando pagamento','Pago',
 
 function openPadModal(){
   padOfertaSelecionada=null;padValorEditado=null;
-  ['pad-dia','pad-nome','pad-tel','pad-cep','pad-numero','pad-endereco','pad-bairro','pad-complemento','pad-cidade','pad-estado','pad-negociacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pad-dia','pad-nome','pad-tel','pad-negociacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('pad-ano').value='2026';
   initAllSelects();
   const pa=document.getElementById('pad-atend');
@@ -3520,12 +3508,7 @@ function closePadModal(){
   const title=document.querySelector('#modal-pad .modal-title');
   if(title)title.textContent='Lançar PAD';
 }
-function mascaraCEP(el){let v=el.value.replace(/\D/g,'');if(v.length>8)v=v.substring(0,8);if(v.length>5)v=v.substring(0,5)+'-'+v.substring(5);el.value=v;}
-async function buscarCEP(){
-  const cep=document.getElementById('pad-cep').value.replace(/\D/g,'');
-  if(cep.length!==8)return;
-  try{const res=await fetch('https://viacep.com.br/ws/'+cep+'/json/');const data=await res.json();if(!data.erro){document.getElementById('pad-endereco').value=data.logradouro||'';document.getElementById('pad-bairro').value=data.bairro||'';document.getElementById('pad-cidade').value=data.localidade||'';document.getElementById('pad-estado').value=data.uf||'';document.getElementById('pad-numero').focus();toast('Endereço encontrado!');}else{toast('CEP não encontrado.');}}catch(e){toast('Erro ao buscar CEP.');}
-}
+// Funções de CEP/endereço removidas — PAD não coleta mais dados de entrega.
 function buildPadOfertasGrid(){
   const grid=document.getElementById('pad-ofertas-grid');
   if(!grid)return;
@@ -3562,7 +3545,7 @@ function salvarPad(){
   const atendente=document.getElementById('pad-atend').value;
   const nome=document.getElementById('pad-nome').value.trim();
   if(!dia){toast('Informe o dia!');return;}if(!mes){toast('Informe o mês!');return;}if(!atendente){toast('Selecione o atendente!');return;}if(!nome){toast('Informe o nome do cliente!');return;}if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
-  const rec={dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),cep:document.getElementById('pad-cep').value,endereco:document.getElementById('pad-endereco').value,numero:document.getElementById('pad-numero').value,bairro:document.getElementById('pad-bairro').value,complemento:document.getElementById('pad-complemento').value,cidade:document.getElementById('pad-cidade').value,estado:document.getElementById('pad-estado').value,negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0,status:'Aguardando postagem',rastreamento:'',id:Date.now()};
+  const rec={dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0,status:'Aguardando postagem',rastreamento:'',id:Date.now()};
   rec.fbId='pad_'+Date.now();
   pads.push(rec);
   if(window.fbSave)window.fbSave('pads',rec.fbId,rec);
@@ -3627,7 +3610,7 @@ function cancelarRastPad(gi){document.getElementById('prview-'+gi).style.display
 function salvarRastPad(gi){pads[gi].rastreamento=document.getElementById('prinp-'+gi).value.trim();if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);renderPad();toast('Código salvo!');}
 function editarPad(gi){
   const p=pads[gi];
-  document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-cep').value=p.cep||'';document.getElementById('pad-endereco').value=p.endereco||'';document.getElementById('pad-numero').value=p.numero||'';document.getElementById('pad-bairro').value=p.bairro||'';document.getElementById('pad-complemento').value=p.complemento||'';document.getElementById('pad-cidade').value=p.cidade||'';document.getElementById('pad-estado').value=p.estado||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
+  document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
   buildPadOfertasGrid();padOfertaSelecionada=p.ofertaId;padValorEditado=p.bruto;
   setTimeout(()=>{const item=document.querySelector('#pad-ofertas-grid .oferta-item[data-id="'+p.ofertaId+'"]');if(item){item.classList.add('selected');const inp=document.getElementById('padoval-'+p.ofertaId);if(inp)inp.value=p.bruto;const conf=document.getElementById('padoconf-'+p.ofertaId);if(conf){conf.textContent='✓ Valor: '+fmt(p.bruto);conf.style.display='block';}}},50);
   document.querySelector('#modal-pad .modal-title').textContent='Editar PAD';
@@ -3638,7 +3621,7 @@ function editarPad(gi){
 function salvarEdicaoPad(gi){
   const dia=parseInt(document.getElementById('pad-dia').value);const mes=document.getElementById('pad-mes').value;const ano=parseInt(document.getElementById('pad-ano').value)||2026;const atendente=document.getElementById('pad-atend').value;const nome=document.getElementById('pad-nome').value.trim();
   if(!dia){toast('Informe o dia!');return;}if(!mes){toast('Informe o mês!');return;}if(!atendente){toast('Selecione o atendente!');return;}if(!nome){toast('Informe o nome do cliente!');return;}if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
-  pads[gi]={...pads[gi],dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),cep:document.getElementById('pad-cep').value,endereco:document.getElementById('pad-endereco').value,numero:document.getElementById('pad-numero').value,bairro:document.getElementById('pad-bairro').value,complemento:document.getElementById('pad-complemento').value,cidade:document.getElementById('pad-cidade').value,estado:document.getElementById('pad-estado').value,negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0};
+  pads[gi]={...pads[gi],dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0};
   if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);
   closePadModal();renderPad();toast('PAD atualizado!');
 }
