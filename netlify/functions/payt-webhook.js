@@ -3,9 +3,13 @@
 // usando o Firebase Admin SDK — funciona de forma autônoma, 24/7, sem depender de
 // nenhum atendente estar com o MATRIX aberto no navegador no momento do evento.
 //
-// Eventos tratados:
-//   status === "paid"  -> cria um lançamento de venda em "dados"
-//   shipping.status     -> atualiza o rastreamento/status de entrega do pedido já existente
+// Responsabilidade deste webhook (e SÓ isso):
+//   status === "paid"        -> cria o lançamento de venda em "dados"
+//   shipping.tracking_code   -> grava/atualiza o código de rastreio no pedido já existente
+//
+// O status de entrega (aguardando retirada, entregue, devolvido, etc.) NÃO é lido
+// daqui — isso fica inteiramente por conta do próprio MATRIX, que consulta os
+// Correios diretamente a partir do código de rastreio salvo aqui.
 //
 // Variáveis de ambiente necessárias:
 //   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
@@ -57,11 +61,14 @@ exports.handler = async (event) => {
     });
 
     const cartId = payload.cart_id || payload.transaction_id || '';
+    if (!cartId) {
+      return resposta(400, { erro: 'Postback sem cart_id/transaction_id — não dá pra identificar o pedido.' });
+    }
     const fbId = 'payt_' + cartId;
 
     if (payload.status === 'paid') {
       const dataPagamento = payload['transaction.paid_at'] || payload.updated_at || payload.started_at;
-      const dt = dataPagamento ? new Date(dataPagamento.replace(' ', 'T')) : new Date();
+      const dt = dataPagamento ? new Date(String(dataPagamento).replace(' ', 'T')) : new Date();
 
       const ofertaId = mapearOfertaPorNomeProduto(payload['product.name'] || '');
       const brutoCentavos = payload['transaction.total_price'] ?? payload['product.price'] ?? 0;
@@ -79,7 +86,7 @@ exports.handler = async (event) => {
         recuperacao: false,
         origemPayt: true,
         paytCartId: cartId,
-        paytStatus: payload['shipping.status'] || '',
+        rastreamento: payload['shipping.tracking_code'] || '',
         fbId,
       };
 
@@ -87,17 +94,15 @@ exports.handler = async (event) => {
       return resposta(200, { ok: true, acao: 'venda_criada', fbId });
     }
 
-    // Atualização de status de entrega/rastreio: encontra o registro já existente
-    // pelo mesmo fbId (criado quando a venda foi aprovada) e atualiza só o status.
-    if (payload['shipping.status']) {
+    // Atualização de rastreio: só grava o código. O status de entrega (aguardando
+    // retirada, entregue, devolvido...) é descoberto pelo próprio MATRIX a partir
+    // daqui — não é lido do postback da Payt.
+    if (payload['shipping.tracking_code']) {
       const docRef = db.collection('dados').doc(fbId);
       const docSnap = await docRef.get();
       if (docSnap.exists) {
-        await docRef.set({
-          paytStatus: payload['shipping.status'],
-          rastreamento: payload['shipping.tracking_code'] || docSnap.data().rastreamento || '',
-        }, { merge: true });
-        return resposta(200, { ok: true, acao: 'rastreio_atualizado', fbId });
+        await docRef.set({ rastreamento: payload['shipping.tracking_code'] }, { merge: true });
+        return resposta(200, { ok: true, acao: 'codigo_rastreio_atualizado', fbId });
       }
       return resposta(200, { ok: true, acao: 'pedido_nao_encontrado_ainda', fbId });
     }
