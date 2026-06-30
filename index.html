@@ -3600,7 +3600,7 @@ function mudarStatusPad(gi,novoStatus){
 }
 function editarRastPad(gi){document.getElementById('prview-'+gi).style.display='none';document.getElementById('predit-'+gi).style.display='flex';document.getElementById('prinp-'+gi).focus();}
 function cancelarRastPad(gi){document.getElementById('prview-'+gi).style.display='flex';document.getElementById('predit-'+gi).style.display='none';}
-function salvarRastPad(gi){pads[gi].rastreamento=document.getElementById('prinp-'+gi).value.trim();if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);renderPad();toast('Código salvo!');}
+function salvarRastPad(gi){const codigo=document.getElementById('prinp-'+gi).value.trim();pads[gi].rastreamento=codigo;if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);renderPad();toast('Código salvo!');if(codigo)buscarRastreio(gi,'pad');}
 function editarPad(gi){
   const p=pads[gi];
   document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
@@ -3708,6 +3708,7 @@ function salvarRastreio(gi){
   dados[gi].rastreamento=codigo;
   if(window.fbSave&&dados[gi].fbId)window.fbSave('dados',dados[gi].fbId,dados[gi]);
   renderRastreamento();toast('Código salvo!');
+  if(codigo) buscarRastreio(gi,'rast');
 }
 
 async function buscarRastreio(gi,tipo){
@@ -3757,12 +3758,7 @@ async function atualizarTodosRastreios(silencioso){
   if(!silencioso) toast(`${total} rastreamentos atualizados!`);
 }
 
-const RASTREIO_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000;
 function autoSyncRastreamento(){
-  const ultima = parseInt(sessionStorage.getItem('rastreioAutoSyncTs') || '0', 10);
-  const agora = Date.now();
-  if(agora - ultima < RASTREIO_AUTOSYNC_COOLDOWN_MS) return;
-  sessionStorage.setItem('rastreioAutoSyncTs', String(agora));
   atualizarTodosRastreios(true);
 }
 
