@@ -3112,6 +3112,14 @@ function criarCaixaPedidoGlobo(cor){
         grupo.add(malha);
       });
 
+      // O globe.gl orienta objectThreeObject com o eixo Y local apontando para fora
+      // do centro da Terra (radialmente) — como construímos a logo "deitada" no
+      // plano XY (texto normal de frente), sem ajuste ela fica voltada para cima
+      // em vez de "em pé" sobre a superfície. Rotacionar -90° no eixo X corrige
+      // isso, deixando a logo sempre reta/vertical, independente de onde o ponto
+      // esteja no globo ou de como a câmera está girada.
+      grupo.rotation.x = -Math.PI/2;
+
       if(!grupo || grupo.isObject3D !== true) return null;
 
       // Pino triangular (cone apontando para baixo) embaixo da logo — funciona como
