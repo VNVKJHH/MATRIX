@@ -672,7 +672,7 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card">
     <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Detalhamento diário</p></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Envio</th><th>Imp.PJ</th><th>%Atend</th><th>Investido</th><th>Leads</th><th>Lucro</th><th>Margem</th></tr></thead>
+      <thead><tr><th>Dia</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Frascos+Envio</th><th>Imp.PJ</th><th>%Atend</th><th>Investido</th><th>Leads</th><th>Lucro</th><th>Margem</th></tr></thead>
       <tbody id="pan-tbody"></tbody>
     </table></div>
   </div>
@@ -884,7 +884,7 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card">
     <div class="table-header"><p style="font-size:12px;color:var(--t2)" id="dados-count"></p></div>
     <div class="tw"><table>
-      <thead><tr><th>Mês</th><th>Ano</th><th>Atendente</th><th>Dia</th><th>Oferta</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Envio</th><th>Lucro</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Mês</th><th>Ano</th><th>Atendente</th><th>Dia</th><th>Oferta</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Frascos+Envio</th><th>Lucro</th><th>Ações</th></tr></thead>
       <tbody id="dados-tbody"></tbody>
     </table></div>
   </div>
@@ -1283,6 +1283,13 @@ function fazerLogin(){
     document.getElementById('login-senha').focus();
     return;
   }
+  try{ localStorage.setItem('matrixSessaoEmail', user.email.toLowerCase()); }catch(e){}
+  entrarComoUsuario(user);
+}
+
+// Faz o usuário entrar de fato no sistema (usado tanto pelo login manual quanto
+// pela sessão salva automaticamente ao abrir a página).
+function entrarComoUsuario(user){
   usuarioLogado=user;
   document.getElementById('login-screen').style.display='none';
   const fAtend=document.getElementById('f-atend');
@@ -1322,6 +1329,17 @@ function fazerLogin(){
   toast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
 }
 
+// Ao carregar a página, verifica se já existe uma sessão salva e entra
+// automaticamente, sem pedir e-mail/senha de novo.
+function tentarSessaoSalva(){
+  try{
+    const emailSalvo = localStorage.getItem('matrixSessaoEmail');
+    if(!emailSalvo) return;
+    const user = USUARIOS.find(u=>u.email.toLowerCase()===emailSalvo);
+    if(user) entrarComoUsuario(user);
+  }catch(e){}
+}
+
 function fazerLogout(){
   usuarioLogado=null;
   adminLogado=false;
@@ -1332,6 +1350,7 @@ function fazerLogout(){
   document.getElementById('login-erro').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('sidebar-user').innerHTML='';
+  try{ localStorage.removeItem('matrixSessaoEmail'); }catch(e){}
 }
 const CUSTO_FRASCO=10;
 const PERCENTUAL_IMPOSTO_META_ADS_GLOBAL=0.1383;
@@ -1689,7 +1708,7 @@ function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atend
   let bruto=0, vendas=0, frascos=0, custoEnvio=0, impPJ=0, pctAtend=0;
   rowsVendas.filter(r=>!r.isPad).forEach(r=>{
     const c=calcRow(r);
-    bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnvTotal; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
+    bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnv; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
   });
   let investidoBruto=0, leads=0;
   admRowsPeriodo.filter(a=>atendente?a.atendente===atendente:!(a.origemMeta&&a.atendente)).forEach(a=>{ investidoBruto+=a.investido||0; leads+=a.leads||0; });
@@ -3328,12 +3347,12 @@ function renderDashAdm(){
     return !(a.origemMeta && a.atendente);
   });
   let tFrascos=0,tEnvio=0,tImpPJ=0,tPctAtend=0;
-  rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
+  rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tFrascos+=c.frascos;tEnvio+=c.custoEnv;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
   let tMetaAdsBruto=0;
   admFil.forEach(a=>{tMetaAdsBruto+=a.investido||0;});
   const tMetaAds=R(tMetaAdsBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
   const padC=calcPadCustos({dia:filDia,mes:filMes,ano:filAno,atendente:atend||null});
-  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;
+  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;
   const tLucro = calcLucroDia(filDia, filMes, filAno, atend);
 
   renderCardGatewayDashAdm(atend, tLucro);
@@ -3972,7 +3991,7 @@ async function migrarParaFirebase(){
 }
 
 function exportarCSV(){
-  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoEnvio,Imp_PJ,Pct_Atend,Lucro';
+  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoFrascosEnvio,Imp_PJ,Pct_Atend,Lucro';
   const rows=dados.map(r=>{const c=calcRow(r);return[r.mes,r.ano,r.atendente,r.dia,getNomeOferta(r.ofertaId),c.frascos,r.bruto,r.qtd_vendas||0,c.custoFrascos,c.custoEnvTotal,c.impPJ,c.pctAtend,c.subtotal].join(',');});
   const csv=[header,...rows].join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
@@ -4016,6 +4035,7 @@ if(!document.body.classList.contains('tema-claro')){if(window.matrixStart)window
 
 initAllSelects();
 buildOfertasGrid();
+tentarSessaoSalva();
 </script>
 </body>
 </html>
