@@ -3237,31 +3237,8 @@ function criarCaixaPedidoGlobo(cor){
 }
 
 // ===== ROTA (SETA) AO CLICAR NUM PEDIDO DO GLOBO =====
-// Os Correios não fornecem um campo "destino final" pronto — só o histórico de
-// onde o pacote JÁ esteve. Por isso, tentamos primeiro identificar uma menção
-// explícita de destino no próprio texto dos eventos (ex: "encaminhado para São
-// Paulo/SP"). Quando não há essa menção, mostramos o trajeto já percorrido
-// (origem → local atual) como alternativa, deixando isso claro na legenda.
-function extrairDestinoTrajeto(historico){
-  if(!historico || historico.length===0) return null;
-  const regexDestino = /(?:para|destino a|encaminhado para|seguirá para|segue para|a caminho de)\s+([A-ZÀ-Üa-zà-ü][A-ZÀ-Üa-zà-ü\s]+\/[A-Z]{2})/i;
-  for(const e of historico){
-    if(!e.descricao) continue;
-    const m = e.descricao.match(regexDestino);
-    if(m) return m[1].trim();
-  }
-  return null;
-}
-function extrairOrigemTrajeto(historico){
-  if(!historico || historico.length===0) return null;
-  // O histórico vem do evento mais recente para o mais antigo — o último item
-  // com local preenchido é, portanto, a origem (postagem).
-  for(let i=historico.length-1;i>=0;i--){
-    const e=historico[i];
-    if(e.local && e.local.includes('/')) return e.local.trim();
-  }
-  return null;
-}
+// A origem (onde o pacote foi postado) já é calculada junto com os pontos, em
+// atualizarPontosDashGlobo() — aqui só desenhamos o arco com o que já está pronto.
 
 function mostrarLegendaRotaGlobo(texto){
   const box=document.getElementById('dash-globo-rota-info');
@@ -3275,35 +3252,19 @@ function limparRotaGlobo(){
   if(box)box.style.display='none';
 }
 
-async function selecionarPontoGlobo(d){
-  if(!dashGloboInstance || !d || d.lat==null) return;
-  console.log('[MATRIX rota] Pedido selecionado:',d.nome,d.cod,'| histórico:',d.historico?.length||0,'eventos');
-  const destinoTexto = extrairDestinoTrajeto(d.historico);
-  console.log('[MATRIX rota] Destino detectado no texto:',destinoTexto||'(nenhum)');
-  if(destinoTexto){
-    const destinoCoords = await geocodDash(destinoTexto);
-    if(destinoCoords){
-      dashGloboInstance.arcsData([{ startLat:d.lat, startLng:d.lng, endLat:destinoCoords.lat, endLng:destinoCoords.lng, cor:d.cor }]);
-      mostrarLegendaRotaGlobo('📦 '+(d.nome||'Pedido')+' — seguindo para '+destinoTexto);
-      console.log('[MATRIX rota] Arco desenhado até',destinoTexto,destinoCoords);
-      return;
-    }
-    console.warn('[MATRIX rota] Achei o texto de destino mas não consegui geolocalizar:',destinoTexto);
+function selecionarPontoGlobo(d){
+  if(!dashGloboInstance || !d || d.lat==null){
+    console.warn('[MATRIX rota] Ponto inválido ou globo não carregado.');
+    return;
   }
-  const origemTexto = extrairOrigemTrajeto(d.historico);
-  console.log('[MATRIX rota] Origem detectada no histórico:',origemTexto||'(nenhuma)','| local atual:',d.local);
-  if(origemTexto && origemTexto.toLowerCase()!==(d.local||'').toLowerCase()){
-    const origemCoords = await geocodDash(origemTexto);
-    if(origemCoords){
-      dashGloboInstance.arcsData([{ startLat:origemCoords.lat, startLng:origemCoords.lng, endLat:d.lat, endLng:d.lng, cor:d.cor }]);
-      mostrarLegendaRotaGlobo('📦 '+(d.nome||'Pedido')+' — trajeto percorrido: '+origemTexto+' → '+(d.local||'local atual'));
-      console.log('[MATRIX rota] Arco desenhado (trajeto) de',origemTexto,'até',d.local);
-      return;
-    }
-    console.warn('[MATRIX rota] Achei a origem mas não consegui geolocalizar:',origemTexto);
+  console.log('[MATRIX rota] Pedido selecionado:',d.nome,d.cod,'| origem calculada:',d.origemNome||'(nenhuma)');
+  if(d.origemLat==null || d.origemLng==null){
+    toast('Este pedido só tem uma localização registrada até agora — sem rota pra mostrar ainda.');
+    return;
   }
-  toast('Este pedido só tem uma localização registrada até agora — sem rota pra mostrar ainda.');
-  console.log('[MATRIX rota] Histórico completo deste pedido:',JSON.stringify(d.historico,null,2));
+  dashGloboInstance.arcsData([{ startLat:d.origemLat, startLng:d.origemLng, endLat:d.lat, endLng:d.lng, cor:d.cor }]);
+  mostrarLegendaRotaGlobo('📦 '+(d.nome||'Pedido')+' — trajeto: '+d.origemNome+' → '+(d.local||'local atual'));
+  console.log('[MATRIX rota] Arco desenhado de',d.origemNome,'até',d.local);
 }
 
 // Chamada pelo seletor <select> no topo do globo — muito mais confiável do que
@@ -3320,10 +3281,14 @@ function popularSeletorPedidosGlobo(pontos){
   const sel=document.getElementById('dash-globo-selecionar-pedido');
   if(!sel) return;
   const valorAtual=sel.value;
-  sel.innerHTML='<option value="">Ver rota de um pedido...</option>'+pontos.map(p=>
+  const comRota = pontos.filter(p=>p.origemLat!=null);
+  const placeholder = pontos.length===0
+    ? 'Nenhum pedido no mapa ainda'
+    : (comRota.length===0 ? 'Nenhum pedido com rota disponível ainda' : 'Ver rota de um pedido...');
+  sel.innerHTML='<option value="">'+placeholder+'</option>'+comRota.map(p=>
     `<option value="${p.cod}">${(p.nome||'Cliente')} — ${p.cod}</option>`
   ).join('');
-  if(valorAtual && pontos.some(p=>p.cod===valorAtual)) sel.value=valorAtual;
+  if(valorAtual && comRota.some(p=>p.cod===valorAtual)) sel.value=valorAtual;
 }
 
 async function atualizarPontosDashGlobo(){
@@ -3346,9 +3311,34 @@ async function atualizarPontosDashGlobo(){
     const jaEmCache = !!geoCacheDash[local];
     const coords=await geocodDash(local);
     if(!coords)continue;
-    const st=getStatusCorreios(r);
-    todosPontos.push({lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,local,cod:r.rastreamento,atend:r.atendente.split(' ')[0],origem:r._origemGlobo,historico:r.trackHistorico||[]});
     if(!jaEmCache) await new Promise(res=>setTimeout(res,200));
+
+    // Ponto de origem (onde o pacote foi postado) — calculado aqui, junto com o
+    // ponto atual, reaproveitando o mesmo cache e limite de requisições. Assim,
+    // ao clicar no pedido depois, a rota já está pronta na hora, sem precisar
+    // fazer nenhuma busca nova (nem depender de texto de "destino" nos Correios,
+    // que nem sempre existe).
+    let origemCoords=null, origemNome=null;
+    if(r.trackHistorico&&r.trackHistorico.length>1){
+      for(let i=r.trackHistorico.length-1;i>=0;i--){
+        const e=r.trackHistorico[i];
+        if(e.local&&e.local.includes('/')&&e.local.trim().toLowerCase()!==local.toLowerCase()){
+          origemNome=e.local.trim();
+          const jaEmCacheOrigem = !!geoCacheDash[origemNome];
+          origemCoords=await geocodDash(origemNome);
+          if(!jaEmCacheOrigem) await new Promise(res=>setTimeout(res,200));
+          break;
+        }
+      }
+    }
+
+    const st=getStatusCorreios(r);
+    todosPontos.push({
+      lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,
+      cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,
+      local,cod:r.rastreamento,atend:r.atendente.split(' ')[0],origem:r._origemGlobo,
+      origemLat:origemCoords?origemCoords.lat:null,origemLng:origemCoords?origemCoords.lng:null,origemNome
+    });
   }
 
   _pontosGloboTodos = todosPontos;
