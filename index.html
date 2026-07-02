@@ -957,9 +957,14 @@ tr:hover td{background:var(--neon-glow)}
 
   <div id="dash-globo-container"></div>
 
-  <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)">
-    <div style="font-size:20px;font-weight:800;color:var(--neon);letter-spacing:.5px">MATRIX</div>
-    <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
+  <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:var(--neon);letter-spacing:.5px">MATRIX</div>
+      <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
+    </div>
+    <select id="dash-globo-selecionar-pedido" onchange="selecionarPontoGloboPorCodigo(this.value)" style="font-size:12px;padding:7px 10px;background:rgba(10,10,10,.85);border:1px solid rgba(255,255,255,.15);color:#ddd;border-radius:8px;max-width:240px;cursor:pointer">
+      <option value="">Ver rota de um pedido...</option>
+    </select>
   </div>
 
   <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;z-index:10;width:300px;max-height:calc(100vh - 100px);overflow-y:auto;background:rgba(10,10,10,.92);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.25rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.45)">
@@ -3115,10 +3120,12 @@ const geoCacheDash = carregarGeoCacheDash();
 async function geocodDash(local){
   if(!local)return null;
   if(geoCacheDash[local])return geoCacheDash[local];
-  const match=local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
+  const match=local.match(/([A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s]*)\/\s*([A-Za-z]{2})\b/);
   if(!match)return null;
+  const cidade=match[1].trim();
+  const uf=match[2].trim().toUpperCase();
   try{
-    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(match[1].trim()+', '+match[2]+', Brasil')+'&limit=1&countrycodes=br';
+    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(cidade+', '+uf+', Brasil')+'&limit=1&countrycodes=br';
     const res=await fetch(url);
     const data=await res.json();
     if(data&&data[0]){const coords={lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};geoCacheDash[local]=coords;salvarGeoCacheDash();return coords;}
@@ -3286,7 +3293,27 @@ async function selecionarPontoGlobo(d){
       return;
     }
   }
-  toast('Não foi possível identificar a rota deste pedido.');
+  toast('Este pedido só tem uma localização registrada até agora — sem rota pra mostrar ainda.');
+}
+
+// Chamada pelo seletor <select> no topo do globo — muito mais confiável do que
+// tentar detectar clique em cima do objeto 3D (que fica girando e pulsando,
+// dificultando a detecção de clique precisa).
+function selecionarPontoGloboPorCodigo(cod){
+  if(!cod) { limparRotaGlobo(); return; }
+  const d = _pontosGloboTodos.find(p=>p.cod===cod);
+  if(d) selecionarPontoGlobo(d);
+  else toast('Pedido não encontrado no mapa (pode ter saído do filtro atual).');
+}
+
+function popularSeletorPedidosGlobo(pontos){
+  const sel=document.getElementById('dash-globo-selecionar-pedido');
+  if(!sel) return;
+  const valorAtual=sel.value;
+  sel.innerHTML='<option value="">Ver rota de um pedido...</option>'+pontos.map(p=>
+    `<option value="${p.cod}">${(p.nome||'Cliente')} — ${p.cod}</option>`
+  ).join('');
+  if(valorAtual && pontos.some(p=>p.cod===valorAtual)) sel.value=valorAtual;
 }
 
 async function atualizarPontosDashGlobo(){
@@ -3372,6 +3399,7 @@ function aplicarFiltroStatusEDesenharPontos(){
 
   const sub=document.getElementById('dash-globo-subtitle');
   if(sub)sub.textContent=pontos.length+' envio'+(pontos.length!==1?'s':'')+' no mapa';
+  popularSeletorPedidosGlobo(pontos);
   dashGloboInstance
     .objectsData(pontos).objectLat('lat').objectLng('lng').objectAltitude(0.02)
     .objectThreeObject(d=>criarCaixaPedidoGlobo(d.cor))
