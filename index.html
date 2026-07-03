@@ -673,7 +673,7 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card">
     <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Detalhamento diário</p></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Frascos+Envio</th><th>Imp.PJ</th><th>%Atend</th><th>Investido</th><th>Leads</th><th>Lucro</th><th>Margem</th></tr></thead>
+      <thead><tr><th>Dia</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Frascos+Envio</th><th>DAS</th><th>%Atend</th><th>Investido</th><th>Leads</th><th>Lucro</th><th>Margem</th></tr></thead>
       <tbody id="pan-tbody"></tbody>
     </table></div>
   </div>
@@ -978,24 +978,27 @@ tr:hover td{background:var(--neon-glow)}
     </div>
     <div id="gw-agendamentos-texto" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#7DD3FC;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);padding:4px 10px;border-radius:20px;margin-bottom:16px"><i class="ti ti-calendar-event" style="font-size:12px"></i> <span id="gw-agendamentos-valor-texto">0 agendamentos (PAD) — R$ 0,00</span></div>
 
-    <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Seu nível</div>
-            <button onclick="abrirModalNiveis()" title="Ver todos os níveis" style="background:rgba(255,255,255,.15);border:none;border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><i class="ti ti-info-circle" style="font-size:10px;color:#fff"></i></button>
-          </div>
-          <div id="gw-nivel-nome" style="font-size:17px;font-weight:800;color:#fff">Starter</div>
-          <div id="gw-nivel-receita" style="font-size:11px;color:rgba(255,255,255,.9)">R$ 0</div>
+    <div id="gw-metas-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
+      <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Metas do mês</div>
+      <div id="gw-meta1-bloco" style="display:none;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span> Meta 1</span>
+          <span id="gw-meta1-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
         </div>
-        <div style="text-align:right">
-          <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Próximo</div>
-          <div id="gw-nivel-proximo-nome" style="font-size:13px;font-weight:700;color:#fff">—</div>
-          <div id="gw-nivel-falta" style="font-size:11px;color:rgba(255,255,255,.9)">—</div>
+        <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
+          <div id="gw-meta1-progress" style="height:100%;background:#00FF80;width:0%;border-radius:4px;transition:width .4s"></div>
         </div>
+        <div id="gw-meta1-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
       </div>
-      <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden;margin-top:11px">
-        <div id="gw-nivel-progress" style="height:100%;background:#00FF80;width:0%;border-radius:3px;transition:width .4s;box-shadow:0 0 8px rgba(0,255,128,.6)"></div>
+      <div id="gw-meta2-bloco" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span> Meta 2</span>
+          <span id="gw-meta2-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
+        </div>
+        <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
+          <div id="gw-meta2-progress" style="height:100%;background:#0EA5E9;width:0%;border-radius:4px;transition:width .4s"></div>
+        </div>
+        <div id="gw-meta2-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
       </div>
     </div>
 
@@ -1280,21 +1283,11 @@ tr:hover td{background:var(--neon-glow)}
 
 <div id="status-pad-dropdown" style="display:none;position:fixed;z-index:500;background:#0d0d0d;border:1px solid var(--border2);border-radius:12px;padding:6px;box-shadow:0 12px 40px rgba(0,0,0,.6);min-width:190px"></div>
 
-<div class="modal-overlay" id="modal-niveis" onclick="if(event.target===this)fecharModalNiveis()">
-  <div class="modal" style="width:420px">
-    <p class="modal-title" style="display:flex;align-items:center;gap:8px"><i class="ti ti-trophy"></i> Níveis de atendente</p>
-    <div id="niveis-lista" style="display:flex;flex-direction:column;gap:8px"></div>
-    <div class="modal-footer">
-      <button class="btn" onclick="fecharModalNiveis()">Fechar</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const TAX_PJ=0.10;
+const TAX_PJ=0.055;
 
 let adminLogado=false;
 
@@ -1480,54 +1473,6 @@ function calcPadCustos(filtro){
     return true;
   });
   return calcPadCustosPorLista(padsFil);
-}
-const NIVEIS_ATENDENTE = [
-  { nome:'Starter', min:0, cor:'#9CA3AF' },
-  { nome:'Closer', min:10000, cor:'#0EA5E9' },
-  { nome:'Top Performer', min:70000, cor:'#A855F7' },
-  { nome:'Master', min:150000, cor:'#F59E0B' },
-  { nome:'Legend', min:500000, cor:'#00FF80' },
-];
-
-function abrirModalNiveis(){
-  const cont=document.getElementById('niveis-lista');
-  const nomeAtual=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:(document.getElementById('adm-dash-atend')?.value||'');
-  const receitaAtual=nomeAtual?getReceitaAcumuladaAtendente(nomeAtual):null;
-  cont.innerHTML=NIVEIS_ATENDENTE.map((n,i)=>{
-    const proximo=NIVEIS_ATENDENTE[i+1];
-    const ativo=receitaAtual!=null&&receitaAtual>=n.min&&(!proximo||receitaAtual<proximo.min);
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r-md);border:1.5px solid ${ativo?n.cor:'var(--border2)'};background:${ativo?n.cor+'22':'var(--bg2)'}">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="width:10px;height:10px;border-radius:50%;background:${n.cor}"></span>
-        <span style="font-weight:700;font-size:14px;color:${ativo?n.cor:'var(--t1)'}">${n.nome}</span>
-        ${ativo?'<span class="badge b-green" style="font-size:9px">Você está aqui</span>':''}
-      </div>
-      <span style="font-size:13px;font-weight:600;color:var(--t2)">a partir de ${fmt(n.min)}</span>
-    </div>`;
-  }).join('');
-  document.getElementById('modal-niveis').classList.add('open');
-}
-function fecharModalNiveis(){
-  document.getElementById('modal-niveis').classList.remove('open');
-}
-
-function getReceitaAcumuladaAtendente(nome){
-  return dados.filter(d=>d.atendente===nome && !d.isPad).reduce((s,d)=>s+(d.bruto||0),0);
-}
-
-function getNivelAtendente(nome){
-  const receita = getReceitaAcumuladaAtendente(nome);
-  let nivelAtual = NIVEIS_ATENDENTE[0];
-  let proximoNivel = null;
-  for(let i=0;i<NIVEIS_ATENDENTE.length;i++){
-    if(receita >= NIVEIS_ATENDENTE[i].min){
-      nivelAtual = NIVEIS_ATENDENTE[i];
-      proximoNivel = NIVEIS_ATENDENTE[i+1] || null;
-    }
-  }
-  const faltam = proximoNivel ? R(proximoNivel.min - receita,2) : 0;
-  const pctProgresso = proximoNivel ? Math.min(100, R((receita - nivelAtual.min) / (proximoNivel.min - nivelAtual.min) * 100, 1)) : 100;
-  return { nome: nivelAtual.nome, cor: nivelAtual.cor, receita, proximoNome: proximoNivel?proximoNivel.nome:null, faltam, pctProgresso };
 }
 
 // Receita (e imposto/comissão proporcional) de PAD reconhecida no dia em que o
@@ -1972,7 +1917,7 @@ function abrirCalfinDiaModal(atend){
     ${linha('ROI', r.roi!=null ? r.roi+'%' : '— (sem investimento)', r.roi!=null ? (r.roi>=0?'var(--green)':'var(--red)') : 'var(--t3)')}
     ${linha('Custo de frascos', fmt(r.custoFrascos), 'var(--red-t)')}
     ${linha('Custo de envio', fmt(r.custoEnvio), 'var(--red-t)')}
-    ${linha('Imposto PJ', fmt(r.impPJ))}
+    ${linha('DAS', fmt(r.impPJ))}
     ${linha('% Atendentes', fmt(r.pctAtend))}
     ${linha('Vendas', r.vendas)}
     ${linha('Frascos', r.frascos)}
@@ -2023,7 +1968,7 @@ function renderPanorama(){
     <div class="metric-card"><div class="metric-label">Frascos</div><div class="metric-value">${tFrascos}</div></div>
     <div class="metric-card"><div class="metric-label">Custo frascos</div><div class="metric-value mv-red">${fmt(tFrascos*CUSTO_FRASCO)}</div></div>
     <div class="metric-card"><div class="metric-label">Custo envio</div><div class="metric-value mv-red">${fmt(tEnvio)}</div></div>
-    <div class="metric-card"><div class="metric-label">Imp. PJ</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
+    <div class="metric-card"><div class="metric-label">DAS</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
     <div class="metric-card"><div class="metric-label">% Atendentes</div><div class="metric-value">${fmt(tPct)}</div></div>
   `;
   const chaves = Object.keys(byD).sort((a,b)=>{
@@ -3419,7 +3364,7 @@ function renderDashAdm(){
       linhaDesp('Custo de frascos', custoFrascos)
       + linhaDesp('Custo de envios', tEnvio)
       + linhaDesp('Meta Ads', tMetaAds)
-      + linhaDesp('Imposto PJ', tImpPJ)
+      + linhaDesp('DAS', tImpPJ)
       + linhaDesp('% Atendentes', tPctAtend)
       + '<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;margin-top:4px;border-top:1px solid rgba(239,68,68,.25)"><span style="font-weight:700;color:#fff">Total</span><span style="font-weight:800;color:#FCA5A5">'+fmt(totalDespesas)+'</span></div>';
     aplicarEstadoDespesasDashAdm();
@@ -3499,18 +3444,25 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   document.getElementById('gw-mes-valor').textContent = fmt(vMes.bruto).replace('R$ ','R$');
   document.getElementById('gw-mes-vendas').textContent = vMes.vendas+' ped.';
 
-  const nivelBloco = document.getElementById('gw-nivel-bloco');
-  if(atendFiltro){
-    const nivel = getNivelAtendente(atendFiltro);
-    nivelBloco.style.display = 'block';
-    document.getElementById('gw-nivel-nome').textContent = nivel.nome;
-    document.getElementById('gw-nivel-receita').textContent = fmt(nivel.receita)+' acumulado';
-    document.getElementById('gw-nivel-proximo-nome').textContent = nivel.proximoNome || 'Nível máximo!';
-    document.getElementById('gw-nivel-falta').textContent = nivel.proximoNome ? ('faltam '+fmt(nivel.faltam)) : '🏆';
-    document.getElementById('gw-nivel-progress').style.width = nivel.pctProgresso+'%';
-  } else {
-    nivelBloco.style.display = 'none';
+  const metasBloco = document.getElementById('gw-metas-bloco');
+  const hojeMeta=new Date();
+  const mesAtualMeta=MESES[hojeMeta.getMonth()];
+  const anoAtualMeta=hojeMeta.getFullYear();
+  const metaDoMes = metas.find(m=>m.mes===mesAtualMeta && String(m.ano)===String(anoAtualMeta) && (atendFiltro?m.atendente===atendFiltro:!m.atendente));
+  function preencherMeta(num, valorMeta, cor){
+    const bloco=document.getElementById('gw-meta'+num+'-bloco');
+    if(!valorMeta||valorMeta<=0){ if(bloco)bloco.style.display='none'; return false; }
+    if(bloco)bloco.style.display='block';
+    const pct=Math.min(R(vMes.bruto/valorMeta*100,1),100);
+    document.getElementById('gw-meta'+num+'-pct').textContent=pct+'%';
+    document.getElementById('gw-meta'+num+'-progress').style.width=pct+'%';
+    document.getElementById('gw-meta'+num+'-progress').style.background=cor;
+    document.getElementById('gw-meta'+num+'-valores').textContent=fmt(vMes.bruto)+' de '+fmt(valorMeta);
+    return true;
   }
+  const temMeta1 = metaDoMes ? preencherMeta(1, metaDoMes.receita, '#00FF80') : (document.getElementById('gw-meta1-bloco').style.display='none', false);
+  const temMeta2 = metaDoMes ? preencherMeta(2, metaDoMes.receita2, '#0EA5E9') : (document.getElementById('gw-meta2-bloco').style.display='none', false);
+  if(metasBloco) metasBloco.style.display = (temMeta1||temMeta2) ? 'block' : 'none';
 }
 
 function renderRankingPublico(){
@@ -4185,7 +4137,7 @@ async function migrarParaFirebase(){
 }
 
 function exportarCSV(){
-  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoFrascosEnvio,Imp_PJ,Pct_Atend,Lucro';
+  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoFrascosEnvio,DAS,Pct_Atend,Lucro';
   const rows=dados.map(r=>{const c=calcRow(r);return[r.mes,r.ano,r.atendente,r.dia,getNomeOferta(r.ofertaId),c.frascos,r.bruto,r.qtd_vendas||0,c.custoFrascos,c.custoEnvTotal,c.impPJ,c.pctAtend,c.subtotal].join(',');});
   const csv=[header,...rows].join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
