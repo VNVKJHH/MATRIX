@@ -117,6 +117,13 @@ body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI'
 .filters{display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;align-items:flex-end}
 .filters label{font-size:10px;color:var(--t3);display:block;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
 select,input[type=text],input[type=number],input[type=password]{font-size:13px;padding:7px 10px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);color:var(--t1);outline:none;transition:all .2s}
+input[type=date]{font-size:14px;padding:10px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg2);color:var(--t1);outline:none;transition:all .2s;font-weight:600;color-scheme:dark;cursor:pointer}
+input[type=date]:hover{border-color:var(--neon-dim)}
+input[type=date]:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(0,255,128,.08)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(1.3);cursor:pointer;padding:4px;border-radius:4px;transition:background .15s}
+input[type=date]::-webkit-calendar-picker-indicator:hover{background:rgba(0,255,128,.15)}
+body.tema-claro input[type=date]{color-scheme:light;border-color:rgba(0,0,0,.20);background:#FFFFFF;color:#09090B}
+body.tema-claro input[type=date]::-webkit-calendar-picker-indicator{filter:none}
 select:focus,input:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(0,255,128,.08)}
 .btn{font-size:12px;padding:7px 14px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);color:var(--t2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .2s;white-space:nowrap;letter-spacing:.2px}
 .btn:hover{border-color:var(--neon-dim);color:var(--t1);background:var(--bg-hover)}.btn:active{transform:scale(.97)}
