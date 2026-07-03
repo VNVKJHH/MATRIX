@@ -3649,9 +3649,15 @@ function renderPad(){
     const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${p.trackInvalido?`<div style="font-weight:600;font-size:11px;color:var(--red);margin-bottom:3px">⚠️ Código inválido</div>`:p.trackStatus?`<div style="font-weight:600;font-size:11px;color:var(--neon);margin-bottom:2px">${p.trackStatus}</div><div style="font-size:9px;color:var(--t3);margin-bottom:3px">${p.trackData||''}</div>`:`<div style="font-size:10px;color:var(--t3);margin-bottom:3px;font-style:italic">Aguardando busca</div>`}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
     const pagamentos = p.pagamentos||[];
     const totalPago = pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
-    const pagamentoCol = `<td style="min-width:150px">
+    const pagamentoCol = `<td style="min-width:170px">
       <div style="font-size:12px;font-weight:700;color:${totalPago>0?'var(--green)':'var(--t3)'}">${fmt(totalPago)} <span style="font-weight:400;color:var(--t3)">/ ${fmt(p.bruto)}</span></div>
-      ${pagamentos.length>0?`<div style="font-size:9px;color:var(--t3);margin-top:2px;max-width:150px">${pagamentos.map(pg=>(pg.tipo==='integral'?'✅':'🔸')+' '+fmt(pg.valor)+' em '+formatarDataBR(pg.data)).join('<br>')}</div>`:''}
+      ${pagamentos.length>0?`<div style="font-size:9px;color:var(--t3);margin-top:3px;max-width:170px;display:flex;flex-direction:column;gap:2px">${pagamentos.map((pg,pgi)=>`<div style="display:flex;align-items:center;gap:4px;justify-content:space-between">
+        <span>${(pg.tipo==='integral'?'✅':'🔸')} ${fmt(pg.valor)} em ${formatarDataBR(pg.data)}</span>
+        <span style="display:flex;gap:2px;flex-shrink:0">
+          <button onclick="openPadPagamentoModal(${gi},${pgi})" title="Editar pagamento" style="background:none;border:none;color:var(--t3);cursor:pointer;padding:1px;font-size:11px"><i class="ti ti-edit"></i></button>
+          <button onclick="excluirPagamentoPad(${gi},${pgi})" title="Excluir pagamento" style="background:none;border:none;color:var(--red-t);cursor:pointer;padding:1px;font-size:11px"><i class="ti ti-trash"></i></button>
+        </span>
+      </div>`).join('')}</div>`:''}
       <button class="btn btn-sm" onclick="openPadPagamentoModal(${gi})" style="margin-top:4px;padding:2px 8px;font-size:10px"><i class="ti ti-plus"></i> Pagamento</button>
     </td>`;
     const podeEditar = adminLogado || (usuarioLogado && p.atendente===usuarioLogado.nome);
@@ -3745,20 +3751,37 @@ function salvarEdicaoPad(gi){
 function deletarPad(gi){if(confirm('Remover este PAD?')){if(window.fbDelete&&pads[gi].fbId)window.fbDelete('pads',pads[gi].fbId);pads.splice(gi,1);renderPad();toast('PAD removido.');}}
 
 let _padPagamentoGi=-1;
-function openPadPagamentoModal(gi){
+let _padPagamentoIdx=-1;
+function openPadPagamentoModal(gi, idx){
   _padPagamentoGi=gi;
+  _padPagamentoIdx=(idx!=null?idx:-1);
   const p=pads[gi];
-  const totalPago=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
-  const restante=R(p.bruto-totalPago,2);
-  document.getElementById('pp-tipo').value='parcial';
-  document.getElementById('pp-valor').value=restante>0?restante:'';
-  document.getElementById('pp-data').value=isoHojeMatrix();
-  document.getElementById('pp-resumo').textContent='Já pago: '+fmt(totalPago)+' de '+fmt(p.bruto)+' — restam '+fmt(restante>0?restante:0);
+  const pagamentos=p.pagamentos||[];
+  const totalPago=pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
+  const editando=_padPagamentoIdx>=0;
+  const pgAtual=editando?pagamentos[_padPagamentoIdx]:null;
+  document.querySelector('#modal-pad-pagamento .modal-title').textContent=editando?'Editar pagamento':'Registrar pagamento';
+  if(editando){
+    document.getElementById('pp-tipo').value=pgAtual.tipo;
+    document.getElementById('pp-valor').value=pgAtual.valor;
+    document.getElementById('pp-data').value=pgAtual.data;
+    const restanteSemEste=R(p.bruto-(totalPago-pgAtual.valor),2);
+    document.getElementById('pp-resumo').textContent='Editando este pagamento. Sem ele, restariam '+fmt(restanteSemEste>0?restanteSemEste:0)+' de '+fmt(p.bruto);
+  }else{
+    const restante=R(p.bruto-totalPago,2);
+    document.getElementById('pp-tipo').value='parcial';
+    document.getElementById('pp-valor').value=restante>0?restante:'';
+    document.getElementById('pp-data').value=isoHojeMatrix();
+    document.getElementById('pp-resumo').textContent='Já pago: '+fmt(totalPago)+' de '+fmt(p.bruto)+' — restam '+fmt(restante>0?restante:0);
+  }
+  const saveBtn=document.querySelector('#modal-pad-pagamento .btn-primary');
+  saveBtn.innerHTML=editando?'<i class="ti ti-device-floppy"></i> Salvar alterações':'<i class="ti ti-device-floppy"></i> Registrar';
   document.getElementById('modal-pad-pagamento').classList.add('open');
 }
 function closePadPagamentoModal(){
   document.getElementById('modal-pad-pagamento').classList.remove('open');
   _padPagamentoGi=-1;
+  _padPagamentoIdx=-1;
 }
 function salvarPagamentoPad(){
   if(_padPagamentoGi<0)return;
@@ -3768,12 +3791,27 @@ function salvarPagamentoPad(){
   if(valor<=0){toast('Informe um valor válido!');return;}
   const p=pads[_padPagamentoGi];
   if(!p.pagamentos)p.pagamentos=[];
-  p.pagamentos.push({valor,data,tipo});
+  if(_padPagamentoIdx>=0){
+    p.pagamentos[_padPagamentoIdx]={valor,data,tipo};
+  }else{
+    p.pagamentos.push({valor,data,tipo});
+  }
   if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
+  const eraEdicao=_padPagamentoIdx>=0;
   closePadPagamentoModal();
   renderPad();
   if(typeof gerarNotificacoes==='function')gerarNotificacoes();
-  toast(tipo==='integral'?'Pagamento integral registrado!':'Pagamento parcial registrado!');
+  toast(eraEdicao?'Pagamento atualizado!':(tipo==='integral'?'Pagamento integral registrado!':'Pagamento parcial registrado!'));
+}
+function excluirPagamentoPad(gi, idx){
+  if(!confirm('Remover este pagamento?'))return;
+  const p=pads[gi];
+  if(!p.pagamentos)return;
+  p.pagamentos.splice(idx,1);
+  if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
+  renderPad();
+  if(typeof gerarNotificacoes==='function')gerarNotificacoes();
+  toast('Pagamento removido.');
 }
 
 let _statusRastreamentoSelecionados = new Set();
