@@ -623,12 +623,6 @@ tr:hover td{background:var(--neon-glow)}
             <div id="prev-envio" style="display:none"></div>
           </div>
         </div>
-        <div style="margin-bottom:12px">
-          <button type="button" id="btn-recuperacao" onclick="toggleRecuperacao()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-md);border:2px solid var(--border2);background:var(--bg1);color:var(--t2);cursor:pointer;font-size:13px;font-weight:600;width:100%;transition:all .18s">
-            <span id="icon-recuperacao" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s"></span>
-            <span>Venda Recuperada</span>
-          </button>
-        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="salvarLancamento()"><i class="ti ti-device-floppy"></i> Registrar venda</button>
           <button class="btn" onclick="limparForm()"><i class="ti ti-eraser"></i> Limpar</button>
@@ -987,7 +981,10 @@ tr:hover td{background:var(--neon-glow)}
     <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Seu nível</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Seu nível</div>
+            <button onclick="abrirModalNiveis()" title="Ver todos os níveis" style="background:rgba(255,255,255,.15);border:none;border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><i class="ti ti-info-circle" style="font-size:10px;color:#fff"></i></button>
+          </div>
           <div id="gw-nivel-nome" style="font-size:17px;font-weight:800;color:#fff">Starter</div>
           <div id="gw-nivel-receita" style="font-size:11px;color:rgba(255,255,255,.9)">R$ 0</div>
         </div>
@@ -1098,15 +1095,8 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Mês</label><select id="mm-mes"></select></div>
       <div class="form-group"><label>Ano</label><input type="number" id="mm-ano" value="2026"></div>
       <div class="form-group full"><label>Atendente</label><select id="mm-atend"><option value="">Todos</option></select></div>
-      <div class="form-group full"><label>Meta de receita (R$)</label><input type="number" id="mm-receita" step="0.01" placeholder="0.00"></div>
-      <div class="form-group full">
-        <label>Meta de recuperação de vendas <span style="font-size:11px;color:var(--t2)">— quantidade de vendas</span></label>
-        <input type="number" id="mm-recuperacao" min="0" placeholder="Ex: 10">
-      </div>
-      <div class="form-group full" style="background:var(--blue-l);padding:10px;border-radius:var(--r-md)">
-        <label style="color:var(--blue-t)">Conversão de PAD <span style="font-size:11px">— meta fixa: +70%</span></label>
-        <div style="font-size:13px;color:var(--blue-t);margin-top:4px">Calculado automaticamente sobre as vendas do período</div>
-      </div>
+      <div class="form-group full"><label>Meta 1 de receita (R$)</label><input type="number" id="mm-receita" step="0.01" placeholder="0.00"></div>
+      <div class="form-group full"><label>Meta 2 de receita (R$) <span style="font-size:11px;color:var(--t2)">— opcional</span></label><input type="number" id="mm-receita2" step="0.01" placeholder="0.00"></div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeMetaModal()">Cancelar</button>
@@ -1289,6 +1279,16 @@ tr:hover td{background:var(--neon-glow)}
 </div>
 
 <div id="status-pad-dropdown" style="display:none;position:fixed;z-index:500;background:#0d0d0d;border:1px solid var(--border2);border-radius:12px;padding:6px;box-shadow:0 12px 40px rgba(0,0,0,.6);min-width:190px"></div>
+
+<div class="modal-overlay" id="modal-niveis" onclick="if(event.target===this)fecharModalNiveis()">
+  <div class="modal" style="width:420px">
+    <p class="modal-title" style="display:flex;align-items:center;gap:8px"><i class="ti ti-trophy"></i> Níveis de atendente</p>
+    <div id="niveis-lista" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModalNiveis()">Fechar</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -1488,6 +1488,28 @@ const NIVEIS_ATENDENTE = [
   { nome:'Master', min:150000, cor:'#F59E0B' },
   { nome:'Legend', min:500000, cor:'#00FF80' },
 ];
+
+function abrirModalNiveis(){
+  const cont=document.getElementById('niveis-lista');
+  const nomeAtual=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:(document.getElementById('adm-dash-atend')?.value||'');
+  const receitaAtual=nomeAtual?getReceitaAcumuladaAtendente(nomeAtual):null;
+  cont.innerHTML=NIVEIS_ATENDENTE.map((n,i)=>{
+    const proximo=NIVEIS_ATENDENTE[i+1];
+    const ativo=receitaAtual!=null&&receitaAtual>=n.min&&(!proximo||receitaAtual<proximo.min);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r-md);border:1.5px solid ${ativo?n.cor:'var(--border2)'};background:${ativo?n.cor+'22':'var(--bg2)'}">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${n.cor}"></span>
+        <span style="font-weight:700;font-size:14px;color:${ativo?n.cor:'var(--t1)'}">${n.nome}</span>
+        ${ativo?'<span class="badge b-green" style="font-size:9px">Você está aqui</span>':''}
+      </div>
+      <span style="font-size:13px;font-weight:600;color:var(--t2)">a partir de ${fmt(n.min)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-niveis').classList.add('open');
+}
+function fecharModalNiveis(){
+  document.getElementById('modal-niveis').classList.remove('open');
+}
 
 function getReceitaAcumuladaAtendente(nome){
   return dados.filter(d=>d.atendente===nome && !d.isPad).reduce((s,d)=>s+(d.bruto||0),0);
@@ -2070,29 +2092,14 @@ function renderMetas(){
     const rows=filtrar(meta.atendente||'',mes,ano);
     let bruto=0,vendas=0;
     rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
-    const admRows=adminLancs.filter(a=>a.mes===mes&&String(a.ano)===String(ano));
-    let leads=0;admRows.forEach(a=>leads+=a.leads||0);
-    const padPeriodo=pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano)&&(!meta.atendente||p.atendente===meta.atendente));
-    const padPagos=padPeriodo.filter(p=>p.status==='Pago').length;
-    const padFrustrados=padPeriodo.filter(p=>p.status==='Frustrado').length;
-    const padTotal=padPagos+padFrustrados;
-    const convPAD=padTotal>0?R(padPagos/padTotal*100,1):0;
-    const META_PAD=70;
-    const recup=meta.recuperacao||0;
-    function bar(real,metaV,lbl,isPerc){
+    function bar(real,metaV,lbl){
       if(!metaV||metaV<=0)return'';
       const p=Math.min(R(real/metaV*100,1),100);
       const cor=p>=100?'var(--green)':p>=60?'var(--amber)':'var(--red)';
       const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';
-      const realLabel=isPerc?real+'%':fmt(real);
-      const metaLabel=isPerc?metaV+'%':fmt(metaV);
-      return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">${lbl}</span><span style="font-weight:700">${p}% — ${status}</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p}%;background:${cor}"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">${realLabel}</strong></span><span>Meta: <strong style="color:var(--t1)">${metaLabel}</strong></span></div></div>`;
+      return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">${lbl}</span><span style="font-weight:700">${p}% — ${status}</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p}%;background:${cor}"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">${fmt(real)}</strong></span><span>Meta: <strong style="color:var(--t1)">${fmt(metaV)}</strong></span></div></div>`;
     }
-    const pPAD=Math.min(R(convPAD/META_PAD*100,1),100);
-    const corPAD=convPAD>=META_PAD?'var(--green)':convPAD>=META_PAD*0.5?'var(--amber)':'var(--red)';
-    const statusPAD=convPAD>=META_PAD?'✅ Atingida':convPAD>=META_PAD*0.5?'⚠️ Em andamento':'❌ Abaixo';
-    const padBlock=`<div style="margin-bottom:14px;background:var(--blue-l);padding:12px;border-radius:var(--r-md)"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--blue-t);font-weight:700">Conversão de PAD <span style="font-weight:400;font-size:11px">(meta fixa: ${META_PAD}%)</span></span><span style="font-weight:700;color:var(--blue-t)">${convPAD}% — ${statusPAD}</span></div><div class="progress-bar" style="height:10px;background:rgba(24,95,165,.15)"><div class="progress-fill" style="width:${pPAD}%;background:var(--blue)"></div></div><div style="font-size:11px;color:var(--blue-t);margin-top:4px">${padTotal>0?padPagos+' pagos de '+padTotal+' definidos ('+padFrustrados+' frustrado'+(padFrustrados!==1?'s':'')+')':'Sem PADs finalizados neste período'}</div></div>`;
-    html+=`<div class="table-card" style="margin-bottom:14px"><div class="table-header"><div><p style="font-size:14px;font-weight:700">${meta.atendente||'Todos os atendentes'}</p><p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano}</p></div><button class="btn btn-danger btn-sm" onclick="deleteMeta(${mi})"><i class="ti ti-trash"></i></button></div><div style="padding:1rem">${bar(bruto,meta.receita,'Meta de receita (R$)',false)}${(()=>{if(!recup||recup<=0)return'';const qtdRecup=rows.filter(r=>r.recuperacao).length;const p=Math.min(R(qtdRecup/recup*100,1),100);const cor=p>=100?'var(--green)':p>=60?'var(--amber)':'var(--red)';const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';return'<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">Recuperação de vendas</span><span style="font-weight:700">'+p+'% — '+status+'</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:'+p+'%;background:'+cor+'"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">'+qtdRecup+' vendas</strong></span><span>Meta: <strong style="color:var(--t1)">'+recup+' vendas</strong></span></div></div>';})()}${padBlock}</div></div>`;
+    html+=`<div class="table-card" style="margin-bottom:14px"><div class="table-header"><div><p style="font-size:14px;font-weight:700">${meta.atendente||'Todos os atendentes'}</p><p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano}</p></div><button class="btn btn-danger btn-sm" onclick="deleteMeta(${mi})"><i class="ti ti-trash"></i></button></div><div style="padding:1rem">${bar(bruto,meta.receita,'Meta 1 de receita (R$)')}${bar(bruto,meta.receita2,'Meta 2 de receita (R$)')}</div></div>`;
   });
   document.getElementById('metas-container').innerHTML=html;
 }
@@ -2109,7 +2116,7 @@ function renderDados(){
   const atend=document.getElementById('dados-atend').value;
   const periodo=getPeriodoSalvo('dadosPeriodo','Máximo');
   const search=(document.getElementById('search-inp').value||'').toLowerCase();
-  let rows=filtrarPorPeriodo(dados, periodo, atend);
+  let rows=filtrarPorPeriodo(dados.filter(r=>!r.isPad), periodo, atend);
   if(search)rows=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(search));
   document.getElementById('dados-count').textContent=`${rows.length} registro${rows.length!==1?'s':''}`;
   let tb='';
@@ -2635,7 +2642,7 @@ async function sincronizarMetaAds(silencioso){
 }
 
 function isoHojeMatrix(){
-  return new Date().toISOString().split('T')[0];
+  return isoDate(hojeDate());
 }
 function dataInicioPermitida(){
   const d = new Date();
@@ -2862,15 +2869,10 @@ function salvarLancamento(){
   const bruto=valorEditado||0;
   const nomeCliente=document.getElementById('f-nome-cliente').value.trim();
   const telefone=document.getElementById('f-telefone').value.trim();
-  const rec={mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone,recuperacao:isRecuperacao};
+  const rec={mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone};
   rec.fbId='dado_'+Date.now();
   dados.push(rec);
   if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
-  isRecuperacao=false;
-  const btnR=document.getElementById('btn-recuperacao');
-  const iconR=document.getElementById('icon-recuperacao');
-  if(btnR){btnR.style.borderColor='';btnR.style.background='';btnR.style.color='';}
-  if(iconR){iconR.style.borderColor='';iconR.style.background='';iconR.innerHTML='';}
   limparOferta();initAllSelects();renderRegistrosDia();toast('Venda registrada!');
 }
 function limparOferta(){
@@ -2937,16 +2939,6 @@ function renderRegistrosDia(){
   if(tbody)tbody.innerHTML=tb;
   if(totalBruto)totalBruto.textContent=fmt(tBruto);
 }
-let isRecuperacao=false;
-
-function toggleRecuperacao(){
-  isRecuperacao=!isRecuperacao;
-  const btn=document.getElementById('btn-recuperacao');
-  const icon=document.getElementById('icon-recuperacao');
-  if(isRecuperacao){btn.style.borderColor='var(--amber)';btn.style.background='var(--amber-l)';btn.style.color='var(--amber-t)';icon.style.borderColor='var(--amber)';icon.style.background='var(--amber)';icon.innerHTML='<i class="ti ti-check" style="font-size:11px;color:#fff"></i>';}
-  else{btn.style.borderColor='var(--border2)';btn.style.background='var(--bg1)';btn.style.color='var(--t2)';icon.style.borderColor='var(--border2)';icon.style.background='transparent';icon.innerHTML='';}
-}
-
 function deletarVendaDia(idx){
   if(confirm('Remover esta venda?')){
     const item=dados[idx];
@@ -3005,11 +2997,11 @@ function deleteRow(idx){
   }
 }
 
-function openMetaModal(){['mm-receita','mm-recuperacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('modal-meta').classList.add('open');}
+function openMetaModal(){['mm-receita','mm-receita2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('modal-meta').classList.add('open');}
 function closeMetaModal(){document.getElementById('modal-meta').classList.remove('open');}
 function salvarMeta(){
   const mes=document.getElementById('mm-mes').value,ano=parseInt(document.getElementById('mm-ano').value)||2026,atendente=document.getElementById('mm-atend').value;
-  const rec={mes,ano,atendente,receita:parseFloat(document.getElementById('mm-receita').value)||0,recuperacao:parseFloat(document.getElementById('mm-recuperacao').value)||0};
+  const rec={mes,ano,atendente,receita:parseFloat(document.getElementById('mm-receita').value)||0,receita2:parseFloat(document.getElementById('mm-receita2').value)||0};
   rec.fbId='meta_'+Date.now();
   metas.push(rec);
   if(window.fbSave)window.fbSave('metas',rec.fbId,rec);
@@ -3662,7 +3654,7 @@ function renderPad(){
     </td>`;
     const podeEditar = adminLogado || (usuarioLogado && p.atendente===usuarioLogado.nome);
     const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':(podeEditar?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px" title="Editar meu lançamento"><i class="ti ti-edit"></i></button></td>':'<td></td>');
-    const neg=p.negociacao?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
+    const neg=(p.negociacao&&p.status!=='Pago')?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
     const cidade=p.cidade?'<div style="font-size:10px;color:var(--t3)">'+p.cidade+(p.estado?' - '+p.estado:'')+'</div>':'';
     tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
   });
@@ -3854,7 +3846,7 @@ function renderRastreamento(){
   const atendFiltro=adminLogado?(document.getElementById('rast-atend')?.value||''):(usuarioLogado?.nome||'');
   const periodoFiltro=adminLogado?getPeriodoSalvo('rastreamentoPeriodo','Máximo'):null;
   const busca=(document.getElementById('rast-busca')?.value||'').toLowerCase();
-  let rows=[...dados];
+  let rows=dados.filter(r=>!r.isPad);
   if(atendFiltro)rows=rows.filter(r=>r.atendente===atendFiltro);
   if(periodoFiltro)rows=rows.filter(r=>dataNoPeriodo(r.dia,r.mes,r.ano,periodoFiltro));
   if(busca)rows=rows.filter(r=>{const s=((r.nomeCliente||'')+(r.telefone||'')+(r.rastreamento||'')+(r.atendente||'')).toLowerCase();return s.includes(busca);});
