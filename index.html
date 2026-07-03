@@ -1692,7 +1692,22 @@ function renderDashboard(){
     return !(a.origemMeta && a.atendente);
   });
   rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;});
-  const diasUnicos=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
+  const diasUnicos=new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano));
+  // Receita de PAD: soma pela data real do pagamento (parcial ou integral),
+  // respeitando os mesmos filtros de mês/ano/modo já aplicados nas vendas normais.
+  const hojeDash=new Date();
+  pads.forEach(p=>{
+    if(atend && p.atendente!==atend) return;
+    (p.pagamentos||[]).forEach(pg=>{
+      const dObj=new Date(pg.data+'T00:00:00');
+      const pgMes=MESES[dObj.getMonth()], pgAno=String(dObj.getFullYear());
+      if(mes && pgMes!==mes) return;
+      if(ano && pgAno!==ano) return;
+      if(modo==='hoje' && !(dObj.getDate()===hojeDash.getDate()&&dObj.getMonth()===hojeDash.getMonth()&&dObj.getFullYear()===hojeDash.getFullYear())) return;
+      tBruto+=pg.valor||0;
+      diasUnicos.add(dObj.getDate()+'|'+pgMes+'|'+pgAno);
+    });
+  });
   diasUnicos.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
   document.getElementById('db-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
@@ -1729,20 +1744,48 @@ let _calfinAnoAtual = new Date().getFullYear();
 let _calfinMesAtual = null;
 let _calfinDiaAtual = null;
 
-function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atendente){
+function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atendente, periodo){
   let bruto=0, vendas=0, frascos=0, custoEnvio=0, impPJ=0, pctAtend=0;
   rowsVendas.filter(r=>!r.isPad).forEach(r=>{
     const c=calcRow(r);
     bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnv; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
   });
+  // Receita de PAD: soma pelos pagamentos (parciais/integrais) cuja data cai
+  // dentro do período visualizado — não pela data de lançamento do PAD.
+  if(periodo){
+    pads.forEach(p=>{
+      if(atendente && p.atendente!==atendente) return;
+      (p.pagamentos||[]).forEach(pg=>{
+        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
+        const v=pg.valor||0;
+        bruto+=v;
+        impPJ+=R(v*TAX_PJ,2);
+        pctAtend+=R(v*getComissao(p.atendente),2);
+      });
+    });
+  }
   let investidoBruto=0, leads=0;
   admRowsPeriodo.filter(a=>atendente?a.atendente===atendente:!(a.origemMeta&&a.atendente)).forEach(a=>{ investidoBruto+=a.investido||0; leads+=a.leads||0; });
   const investido = R(investidoBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
 
-  const custoFrascos = frascos*CUSTO_FRASCO;
+  // Custo de frascos/envio do PAD: reconhecido no dia do lançamento (é quando o
+  // produto sai fisicamente), independente de já ter sido pago ou não.
+  const padCustoFrascosEnvio = calcPadCustosPorLista(padsPeriodo||[]);
+  const custoFrascos = frascos*CUSTO_FRASCO + padCustoFrascosEnvio.custoFrascos;
+  custoEnvio += padCustoFrascosEnvio.custoEnvio;
   const custoTotal = custoFrascos + custoEnvio + impPJ + pctAtend + investido;
 
-  const diasUnicos = [...new Set(rowsVendas.filter(r=>!r.isPad).map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
+  const diasUnicos = new Set(rowsVendas.filter(r=>!r.isPad).map(r=>r.dia+'|'+r.mes+'|'+r.ano));
+  if(periodo){
+    pads.forEach(p=>{
+      if(atendente && p.atendente!==atendente) return;
+      (p.pagamentos||[]).forEach(pg=>{
+        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
+        const dObj=new Date(pg.data+'T00:00:00');
+        diasUnicos.add(dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear());
+      });
+    });
+  }
   let lucro=0;
   diasUnicos.forEach(k=>{ const[dd,mm,aa]=k.split('|'); lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendente||''); });
 
@@ -1806,7 +1849,8 @@ function renderCalfinNivelAnos(atend, cont){
     const rowsVendas = dados.filter(d=>String(d.ano)===String(ano) && (!atend||d.atendente===atend));
     const admRows = adminLancs.filter(a=>String(a.ano)===String(ano));
     const padsRows = pads.filter(p=>String(p.ano)===String(ano));
-    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+    const periodoAno={inicio:diaToISO(1,'Janeiro',ano),fim:diaToISO(31,'Dezembro',ano)};
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoAno);
     const temDados = r.bruto>0 || r.custoTotal>0;
     html += `
       <div onclick="calfinAbrirAno(${ano})" style="cursor:pointer;background:var(--bg-card);border:1px solid var(--border2);border-radius:var(--r-lg);padding:1.1rem;transition:all .2s;${!temDados?'opacity:.45':''}" onmouseover="this.style.borderColor='var(--neon-dim)'" onmouseout="this.style.borderColor='var(--border2)'">
@@ -1833,7 +1877,9 @@ function renderCalfinNivelAno(atend, cont){
     const rowsVendas = dados.filter(d=>d.mes===mes && String(d.ano)===String(_calfinAnoAtual) && (!atend||d.atendente===atend));
     const admRows = adminLancs.filter(a=>a.mes===mes && String(a.ano)===String(_calfinAnoAtual));
     const padsRows = pads.filter(p=>p.mes===mes && String(p.ano)===String(_calfinAnoAtual));
-    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+    const totalDiasMes=new Date(_calfinAnoAtual,MESES.indexOf(mes)+1,0).getDate();
+    const periodoMes={inicio:diaToISO(1,mes,_calfinAnoAtual),fim:diaToISO(totalDiasMes,mes,_calfinAnoAtual)};
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoMes);
     anoTotal.bruto+=r.bruto; anoTotal.lucro+=r.lucro; anoTotal.custoTotal+=r.custoTotal;
     const temDados = r.bruto>0 || r.custoTotal>0;
     html += `
@@ -1865,7 +1911,8 @@ function renderCalfinNivelMes(atend, cont){
     const rowsVendas = dados.filter(x=>x.dia===d && x.mes===_calfinMesAtual && String(x.ano)===String(_calfinAnoAtual) && (!atend||x.atendente===atend));
     const admRows = adminLancs.filter(a=>a.dia===d && a.mes===_calfinMesAtual && String(a.ano)===String(_calfinAnoAtual));
     const padsRows = pads.filter(p=>p.dia===d && p.mes===_calfinMesAtual && String(p.ano)===String(_calfinAnoAtual));
-    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+    const periodoDia={inicio:diaToISO(d,_calfinMesAtual,_calfinAnoAtual),fim:diaToISO(d,_calfinMesAtual,_calfinAnoAtual)};
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoDia);
     porDia[d]=r;
     mesTotal.bruto+=r.bruto; mesTotal.lucro+=r.lucro; mesTotal.custoTotal+=r.custoTotal;
   }
@@ -1907,7 +1954,8 @@ function abrirCalfinDiaModal(atend){
   const rowsVendas = dados.filter(x=>x.dia===dia && x.mes===mes && String(x.ano)===String(ano) && (!atend||x.atendente===atend));
   const admRows = adminLancs.filter(a=>a.dia===dia && a.mes===mes && String(a.ano)===String(ano));
   const padsRows = pads.filter(p=>p.dia===dia && p.mes===mes && String(p.ano)===String(ano));
-  const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
+  const periodoDiaModal={inicio:diaToISO(dia,mes,ano),fim:diaToISO(dia,mes,ano)};
+  const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoDiaModal);
 
   document.getElementById('calfin-dia-titulo').textContent = `${dia} de ${mes} de ${ano}${atend?' — '+atend.split(' ')[0]:''}`;
   const linha=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid var(--border)"><span style="color:var(--t2);font-size:13px">${label}</span><span style="font-weight:700;font-size:13px;${cor?'color:'+cor:''}">${valor}</span></div>`;
@@ -1959,6 +2007,19 @@ function renderPanorama(){
     return !(a.origemMeta && a.atendente);
   });
   admFilPanorama.forEach(a=>{const chaveDia=a.dia+'|'+a.mes+'|'+a.ano;if(byD[chaveDia]){byD[chaveDia].investido+=R((a.investido||0)*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);byD[chaveDia].leads+=(a.leads||0);}});
+  // Receita de PAD: soma no dia real em que o pagamento (parcial ou integral) foi
+  // registrado, pra "Receita bruta" bater com o mesmo critério usado no lucro.
+  pads.forEach(p=>{
+    if(atend && p.atendente!==atend) return;
+    (p.pagamentos||[]).forEach(pg=>{
+      if(pg.data<periodo.inicio || pg.data>periodo.fim) return;
+      const dObj=new Date(pg.data+'T00:00:00');
+      const chaveDia=dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear();
+      if(!byD[chaveDia])byD[chaveDia]={dia:dObj.getDate(),mes:MESES[dObj.getMonth()],ano:dObj.getFullYear(),bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
+      byD[chaveDia].bruto+=pg.valor||0;
+      tBruto+=pg.valor||0;
+    });
+  });
   Object.keys(byD).forEach(k=>{const dd=byD[k];dd.lucro=calcLucroDia(dd.dia,dd.mes,dd.ano,atend);tLucro+=dd.lucro;});
   document.getElementById('pan-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
@@ -1991,10 +2052,18 @@ function renderComparativo(){
   const atA=document.getElementById('cmp-atend-a').value;
   const atB=document.getElementById('cmp-atend-b').value;
   function resumo(rows, periodo, atendenteFiltro){
-    let bruto=0,vendas=0,lucro=0;
-    rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
-    const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
-    diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendenteFiltro||'');});
+    const { bruto, vendas } = getReceitaTotalPeriodo(periodo, atendenteFiltro);
+    let lucro=0;
+    const diasSet=new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano));
+    pads.forEach(p=>{
+      if(atendenteFiltro && p.atendente!==atendenteFiltro) return;
+      (p.pagamentos||[]).forEach(pg=>{
+        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
+        const dObj=new Date(pg.data+'T00:00:00');
+        diasSet.add(dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear());
+      });
+    });
+    diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendenteFiltro||'');});
     const { investido: inv, leads } = getInvestimentoMetaAds(periodo, atendenteFiltro);
     const ticket=vendas>0?R(bruto/vendas,2):0;
     const conv=leads>0?R(vendas/leads*100,1):0;
@@ -2031,10 +2100,19 @@ function renderRanking(){
   const nomes=getNomes();
   const resumos=nomes.map(nome=>{
     const rows=filtrarPorPeriodo(dados, periodo, nome);
-    let bruto=0,vendas=0,lucro=0,frascos=0;
-    rows.forEach(r=>{const c=calcRow(r);bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;frascos+=c.frascos;});
-    const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
-    diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),nome);});
+    const { bruto, vendas } = getReceitaTotalPeriodo(periodo, nome);
+    let lucro=0,frascos=0;
+    rows.forEach(r=>{const c=calcRow(r);frascos+=c.frascos;});
+    const diasSet=new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano));
+    pads.forEach(p=>{
+      if(p.atendente!==nome) return;
+      (p.pagamentos||[]).forEach(pg=>{
+        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
+        const dObj=new Date(pg.data+'T00:00:00');
+        diasSet.add(dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear());
+      });
+    });
+    diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),nome);});
     const { investido, leads } = getInvestimentoMetaAds(periodo, nome);
     const ticket=vendas>0?R(bruto/vendas,2):0;
     const conv=leads>0?R(vendas/leads*100,1):0;
@@ -2154,6 +2232,27 @@ function filtrarPorPeriodo(lista, periodo, atendente){
     if(atendente && r.atendente!==atendente) return false;
     return dataNoPeriodo(r.dia, r.mes, r.ano, periodo);
   });
+}
+
+// Receita total de um período = vendas normais (dados, sem contar a cópia
+// financeira de PAD pago) + pagamentos de PAD (parciais ou integrais) recebidos
+// dentro do período, pela data real de cada pagamento. Usada em todo lugar que
+// mostra "Receita bruta/total", pra manter o mesmo critério em todas as telas.
+function getReceitaTotalPeriodo(periodo, atendente){
+  let bruto=0, vendas=0;
+  dados.filter(d=>!d.isPad).forEach(d=>{
+    if(atendente && d.atendente!==atendente) return;
+    if(!dataNoPeriodo(d.dia,d.mes,d.ano,periodo)) return;
+    bruto+=d.bruto||0;
+    vendas+=d.qtd_vendas||0;
+  });
+  pads.forEach(p=>{
+    if(atendente && p.atendente!==atendente) return;
+    (p.pagamentos||[]).forEach(pg=>{
+      if(pg.data>=periodo.inicio && pg.data<=periodo.fim) bruto+=pg.valor||0;
+    });
+  });
+  return { bruto:R(bruto,2), vendas };
 }
 
 // Função única usada em TODO o sistema (Dashboard, Panorama, Comparativo, Ranking,
@@ -3472,10 +3571,9 @@ function renderRankingPublico(){
   const periodoEl=document.getElementById('rank-pub-periodo');
   if(periodoEl)periodoEl.textContent=mes+' de '+ano;
   const nomes=getNomes();
+  const periodoMesAtual={inicio:isoDate(inicioMes(hojeDate())),fim:isoDate(hojeDate())};
   const resumos=nomes.map(nome=>{
-    const rows=filtrar(nome,mes,String(ano));
-    let bruto=0,vendas=0;
-    rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
+    const { bruto, vendas } = getReceitaTotalPeriodo(periodoMesAtual, nome);
     return{nome,bruto,vendas};
   });
   resumos.sort((a,b)=>b.vendas-a.vendas);
