@@ -922,6 +922,10 @@ tr:hover td{background:var(--neon-glow)}
         <span id="meta-conta-card-id" style="font-size:10px;color:var(--t3)"></span>
       </div>
     </div>
+    <div>
+      <label>Atendente</label>
+      <select id="adm-atend-fil" onchange="renderAdmin()"><option value="">Todos</option></select>
+    </div>
     <div style="margin-top:18px;display:flex;gap:6px">
       <button class="btn btn-primary" id="btn-sync-meta" onclick="sincronizarMetaAds()"><i class="ti ti-refresh"></i> Atualizar dados do Meta Ads</button>
       <button class="btn" onclick="abrirGerenciarContasMeta()" title="Adicionar ou gerenciar contas"><i class="ti ti-list-search"></i> Contas de anúncios</button>
@@ -945,10 +949,10 @@ tr:hover td{background:var(--neon-glow)}
     </table></div>
   </div>
   <div class="table-card">
-    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">CPA — Custo por Aquisição <span style="font-size:10px;color:var(--t3);font-weight:400">(investimento com imposto ÷ vendas normais + PAD pagos)</span></p></div>
+    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">CPA — Custo por Aquisição <span style="font-size:10px;color:var(--t3);font-weight:400">(investimento com imposto ÷ vendas normais + PAD não frustrados)</span></p></div>
     <div style="padding:1rem;position:relative;height:260px"><canvas id="ch-adm-cpa"></canvas></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Investimento (c/ imposto)</th><th>Vendas normais</th><th>PAD pagos</th><th>Total aquisições</th><th>CPA</th></tr></thead>
+      <thead><tr><th>Dia</th><th>Investimento (c/ imposto)</th><th>Vendas normais</th><th>PAD válidos</th><th>Total aquisições</th><th>CPA</th></tr></thead>
       <tbody id="adm-cpa-tbody"></tbody>
     </table></div>
   </div>
@@ -976,7 +980,14 @@ tr:hover td{background:var(--neon-glow)}
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
       <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
     </div>
-    <div id="gw-agendamentos-texto" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#7DD3FC;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);padding:4px 10px;border-radius:20px;margin-bottom:16px"><i class="ti ti-calendar-event" style="font-size:12px"></i> <span id="gw-agendamentos-valor-texto">0 agendamentos (PAD) — R$ 0,00</span></div>
+    <div id="gw-agendamentos-bloco" style="display:flex;align-items:center;justify-content:space-between;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:9px 12px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <i class="ti ti-calendar-event" style="font-size:14px;color:#7DD3FC"></i>
+        <span style="font-size:11px;font-weight:700;color:#7DD3FC">Agendamentos (PAD)</span>
+        <span id="gw-agendamentos-qtd" style="font-size:10px;font-weight:800;color:#fff;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:10px">0</span>
+      </div>
+      <span id="gw-agendamentos-valor" style="font-size:14px;font-weight:800;color:#7DD3FC">R$ 0,00</span>
+    </div>
 
     <div id="gw-metas-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
       <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Metas do mês</div>
@@ -1484,12 +1495,23 @@ function calcPadReceitaPorDia(dia, mes, ano, atendente){
   let bruto=0, impPJ=0, pctAtend=0;
   pads.forEach(p=>{
     if(atendente && p.atendente!==atendente) return;
-    (p.pagamentos||[]).forEach(pg=>{
-      if(pg.data===alvo){
-        const v=pg.valor||0;
-        bruto+=v;
-        impPJ+=R(v*TAX_PJ,2);
-        pctAtend+=R(v*getComissao(p.atendente),2);
+    // Ordena os pagamentos por data pra saber exatamente qual pagamento é o que
+    // completa o valor total do pedido (independente da ordem em que foram
+    // cadastrados no sistema).
+    const pagamentosOrdenados = [...(p.pagamentos||[])].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+    let acumulado=0;
+    pagamentosOrdenados.forEach(pg=>{
+      const v=pg.valor||0;
+      const acumuladoAntes=acumulado;
+      acumulado+=v;
+      if(pg.data!==alvo) return;
+      bruto+=v;
+      pctAtend+=R(v*getComissao(p.atendente),2);
+      // DAS só é cobrado quando o pedido é EFETIVAMENTE concluído por completo
+      // (esse pagamento faz a soma bater ou passar o valor total) — e nesse caso
+      // é cobrado sobre o valor CHEIO do pedido, não sobre a parcela isolada.
+      if(acumuladoAntes<p.bruto && acumulado>=p.bruto){
+        impPJ+=R(p.bruto*TAX_PJ,2);
       }
     });
   });
@@ -1534,7 +1556,7 @@ function addOpt(sel,val,label){const o=document.createElement('option');o.value=
 
 function initAllSelects(){
   const nomes=getNomes(),anos=getAnos().map(String);
-  ['dados-atend','pan-atend','cmp-atend-a','cmp-atend-b','adm-dash-atend','rast-atend','pad-atend-fil','calfin-atend'].forEach(id=>{
+  ['dados-atend','pan-atend','cmp-atend-a','cmp-atend-b','adm-dash-atend','rast-atend','pad-atend-fil','calfin-atend','adm-atend-fil'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     nomes.forEach(n=>addOpt(el,n,n));if(v)el.value=v;
@@ -1751,16 +1773,26 @@ function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atend
     bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnv; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
   });
   // Receita de PAD: soma pelos pagamentos (parciais/integrais) cuja data cai
-  // dentro do período visualizado — não pela data de lançamento do PAD.
+  // dentro do período visualizado — não pela data de lançamento do PAD. O DAS só
+  // é cobrado quando o pedido é concluído por completo dentro do período, sobre
+  // o valor cheio — igual ao critério usado em todo o resto do sistema.
   if(periodo){
     pads.forEach(p=>{
       if(atendente && p.atendente!==atendente) return;
-      (p.pagamentos||[]).forEach(pg=>{
-        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
+      const pagamentosOrdenados = [...(p.pagamentos||[])].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+      let acumulado=0;
+      pagamentosOrdenados.forEach(pg=>{
         const v=pg.valor||0;
-        bruto+=v;
-        impPJ+=R(v*TAX_PJ,2);
-        pctAtend+=R(v*getComissao(p.atendente),2);
+        const acumuladoAntes=acumulado;
+        acumulado+=v;
+        const dentroPeriodo = pg.data>=periodo.inicio && pg.data<=periodo.fim;
+        if(dentroPeriodo){
+          bruto+=v;
+          pctAtend+=R(v*getComissao(p.atendente),2);
+        }
+        if(dentroPeriodo && acumuladoAntes<p.bruto && acumulado>=p.bruto){
+          impPJ+=R(p.bruto*TAX_PJ,2);
+        }
       });
     });
   }
@@ -2008,16 +2040,31 @@ function renderPanorama(){
   });
   admFilPanorama.forEach(a=>{const chaveDia=a.dia+'|'+a.mes+'|'+a.ano;if(byD[chaveDia]){byD[chaveDia].investido+=R((a.investido||0)*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);byD[chaveDia].leads+=(a.leads||0);}});
   // Receita de PAD: soma no dia real em que o pagamento (parcial ou integral) foi
-  // registrado, pra "Receita bruta" bater com o mesmo critério usado no lucro.
+  // registrado, pra "Receita bruta" bater com o mesmo critério usado no lucro. O
+  // DAS só é cobrado quando o pedido é concluído por completo, sobre o valor cheio.
   pads.forEach(p=>{
     if(atend && p.atendente!==atend) return;
-    (p.pagamentos||[]).forEach(pg=>{
-      if(pg.data<periodo.inicio || pg.data>periodo.fim) return;
+    const pagamentosOrdenados=[...(p.pagamentos||[])].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+    let acumulado=0;
+    pagamentosOrdenados.forEach(pg=>{
+      const v=pg.valor||0;
+      const acumuladoAntes=acumulado;
+      acumulado+=v;
+      const dentroPeriodo = pg.data>=periodo.inicio && pg.data<=periodo.fim;
+      if(!dentroPeriodo) return;
       const dObj=new Date(pg.data+'T00:00:00');
       const chaveDia=dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear();
       if(!byD[chaveDia])byD[chaveDia]={dia:dObj.getDate(),mes:MESES[dObj.getMonth()],ano:dObj.getFullYear(),bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
-      byD[chaveDia].bruto+=pg.valor||0;
-      tBruto+=pg.valor||0;
+      byD[chaveDia].bruto+=v;
+      tBruto+=v;
+      const comissaoPad=R(v*getComissao(p.atendente),2);
+      byD[chaveDia].pct+=comissaoPad;
+      tPct+=comissaoPad;
+      if(acumuladoAntes<p.bruto && acumulado>=p.bruto){
+        const dasPad=R(p.bruto*TAX_PJ,2);
+        byD[chaveDia].impPJ+=dasPad;
+        tImpPJ+=dasPad;
+      }
     });
   });
   Object.keys(byD).forEach(k=>{const dd=byD[k];dd.lucro=calcLucroDia(dd.dia,dd.mes,dd.ano,atend);tLucro+=dd.lucro;});
@@ -2275,21 +2322,27 @@ function getInvestimentoMetaAds(periodo, atendente){
 function renderAdmin(){
   const { inicio, fim } = getPeriodoMetaAtual();
   const contasFiltro = getContasSelecionadasMeta();
+  const atendFiltroAdm = document.getElementById('adm-atend-fil')?.value||'';
 
   const admFil = adminLancs.filter(a => {
-    if(a.origemMeta && a.atendente) return false;
     if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
     if(a.origemMeta && contasFiltro.length>0 && !contasFiltro.includes(a.contaMeta)) return false;
-    return true;
+    if(atendFiltroAdm){
+      // Atendente específico: conta só o que foi atribuído a ele.
+      return a.atendente===atendFiltroAdm;
+    }
+    // Todos: conta o investimento uma única vez, ignorando o detalhamento por
+    // atendente (que é só um recorte do mesmo gasto já somado no "Geral").
+    return !(a.origemMeta && a.atendente);
   });
   let tInv=0,tLeads=0;
   admFil.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
 
-  const rows = dados.filter(r => !r.isPad && dataNoPeriodo(r.dia, r.mes, r.ano));
+  const rows = dados.filter(r => !r.isPad && dataNoPeriodo(r.dia, r.mes, r.ano) && (!atendFiltroAdm||r.atendente===atendFiltroAdm));
   let tBruto=0,tFrascos=0,tEnvio=0,tVendas=0;
   rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tVendas+=r.qtd_vendas||0;});
 
-  const padsNoPeriodo = pads.filter(p => dataNoPeriodo(p.dia, p.mes, p.ano));
+  const padsNoPeriodo = pads.filter(p => dataNoPeriodo(p.dia, p.mes, p.ano) && (!atendFiltroAdm||p.atendente===atendFiltroAdm));
   const padCAdm = calcPadCustosPorLista(padsNoPeriodo);
   tFrascos+=padCAdm.frascos;tBruto+=padCAdm.bruto;
 
@@ -2298,7 +2351,7 @@ function renderAdmin(){
   admFil.forEach(a=>diasSet.add(a.dia+'|'+a.mes+'|'+a.ano));
   padsNoPeriodo.forEach(p=>diasSet.add(p.dia+'|'+p.mes+'|'+p.ano));
   let tLucro=0;
-  diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
+  diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendFiltroAdm);});
 
   const PERCENTUAL_IMPOSTO_META_ADS = 0.1383;
   const impostoMetaAds = tInv * PERCENTUAL_IMPOSTO_META_ADS;
@@ -2313,8 +2366,7 @@ function renderAdmin(){
   const valorVendasPad = padsValidos.reduce((s,p)=>s+(p.bruto||0),0);
   const valorVendasTotal = valorVendasFront + valorVendasPad;
 
-  const padPagosTotal = padsNoPeriodo.filter(p => p.status === 'Pago').length;
-  const totalAquisicoesCpa = qtdVendasFront + padPagosTotal;
+  const totalAquisicoesCpa = qtdVendasFront + padsValidos.length;
   const cpaMetaAds = totalAquisicoesCpa>0 ? investimentoComImposto/totalAquisicoesCpa : null;
 
   document.getElementById('adm-metrics').innerHTML=`
@@ -2383,14 +2435,14 @@ function renderAdmin(){
   diasUnicosCpa.forEach(diaIso=>{
     const investidoDia = admFil.filter(a=>diaToISO(a.dia,a.mes,a.ano)===diaIso).reduce((s,a)=>s+(a.investido||0),0) * (1+PERCENTUAL_IMPOSTO_META_ADS_2);
     const vendasNormaisDia = rows.filter(r=>diaToISO(r.dia,r.mes,r.ano)===diaIso).reduce((s,r)=>s+(r.qtd_vendas||0),0);
-    const padPagosDia = padsNoPeriodo.filter(p=>diaToISO(p.dia,p.mes,p.ano)===diaIso && p.status==='Pago').length;
-    const totalAquisicoes = vendasNormaisDia + padPagosDia;
+    const padValidosDia = padsNoPeriodo.filter(p=>diaToISO(p.dia,p.mes,p.ano)===diaIso && p.status!=='Frustrado').length;
+    const totalAquisicoes = vendasNormaisDia + padValidosDia;
     const cpa = totalAquisicoes>0 ? investidoDia/totalAquisicoes : null;
     const [aa,mm,dd] = diaIso.split('-');
     cpaLabels.push(dd+'/'+mm);
     cpaValores.push(cpa!=null?R(cpa,2):null);
     if(investidoDia>0 || totalAquisicoes>0){
-      tbCpa+=`<tr><td style="font-weight:700">${dd}/${mm}</td><td>${fmt(investidoDia)}</td><td>${vendasNormaisDia}</td><td>${padPagosDia}</td><td>${totalAquisicoes}</td><td style="font-weight:600;${cpa!=null?'':'color:var(--t3)'}">${cpa!=null?fmt(cpa):'—'}</td></tr>`;
+      tbCpa+=`<tr><td style="font-weight:700">${dd}/${mm}</td><td>${fmt(investidoDia)}</td><td>${vendasNormaisDia}</td><td>${padValidosDia}</td><td>${totalAquisicoes}</td><td style="font-weight:600;${cpa!=null?'':'color:var(--t3)'}">${cpa!=null?fmt(cpa):'—'}</td></tr>`;
     }
   });
   if(!tbCpa)tbCpa='<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum dado no período</td></tr>';
@@ -3496,8 +3548,10 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
     return diaToISO(p.dia,p.mes,p.ano)===isoDate(hoje);
   });
   const padHojeValor = padHoje.reduce((s,p)=>s+(p.bruto||0),0);
-  const agendamentosTextoEl=document.getElementById('gw-agendamentos-valor-texto');
-  if(agendamentosTextoEl)agendamentosTextoEl.textContent=padHoje.length+' agendamento'+(padHoje.length!==1?'s':'')+' (PAD) — '+fmt(padHojeValor);
+  const agendamentosQtdEl=document.getElementById('gw-agendamentos-qtd');
+  const agendamentosValorEl=document.getElementById('gw-agendamentos-valor');
+  if(agendamentosQtdEl)agendamentosQtdEl.textContent=padHoje.length;
+  if(agendamentosValorEl)agendamentosValorEl.textContent=fmt(padHojeValor);
 
   const pagamentosHoje = [];
   pads.filter(p=>!atendFiltro||p.atendente===atendFiltro).forEach(p=>{
