@@ -976,7 +976,7 @@ tr:hover td{background:var(--neon-glow)}
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
       <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
     </div>
-    <div id="gw-agendamentos-texto" style="font-size:11px;color:var(--t3);margin-bottom:16px">0 agendamentos (PAD)</div>
+    <div id="gw-agendamentos-texto" style="font-size:11px;color:var(--t3);margin-bottom:16px">0 agendamentos (PAD) — R$ 0,00</div>
 
     <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -3424,8 +3424,9 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
     if(p.status==='Frustrado') return false;
     return diaToISO(p.dia,p.mes,p.ano)===isoDate(hoje);
   });
+  const padHojeValor = padHoje.reduce((s,p)=>s+(p.bruto||0),0);
   const agendamentosTextoEl=document.getElementById('gw-agendamentos-texto');
-  if(agendamentosTextoEl)agendamentosTextoEl.textContent=padHoje.length+' agendamento'+(padHoje.length!==1?'s':'')+' (PAD)';
+  if(agendamentosTextoEl)agendamentosTextoEl.textContent=padHoje.length+' agendamento'+(padHoje.length!==1?'s':'')+' (PAD) — '+fmt(padHojeValor);
 
   const pagamentosHoje = [];
   pads.filter(p=>!atendFiltro||p.atendente===atendFiltro).forEach(p=>{
