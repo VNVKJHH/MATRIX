@@ -976,7 +976,7 @@ tr:hover td{background:var(--neon-glow)}
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
       <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
     </div>
-    <div id="gw-agendamentos-texto" style="font-size:11px;color:var(--t3);margin-bottom:16px">0 agendamentos (PAD) — R$ 0,00</div>
+    <div id="gw-agendamentos-texto" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#7DD3FC;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);padding:4px 10px;border-radius:20px;margin-bottom:16px"><i class="ti ti-calendar-event" style="font-size:12px"></i> <span id="gw-agendamentos-valor-texto">0 agendamentos (PAD) — R$ 0,00</span></div>
 
     <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -1530,6 +1530,27 @@ function getNivelAtendente(nome){
   return { nome: nivelAtual.nome, cor: nivelAtual.cor, receita, proximoNome: proximoNivel?proximoNivel.nome:null, faltam, pctProgresso };
 }
 
+// Receita (e imposto/comissão proporcional) de PAD reconhecida no dia em que o
+// dinheiro realmente ENTROU — usando as datas registradas em cada pagamento
+// (parcial ou integral), não a data em que o PAD foi lançado nem depender do
+// status atual estar "Pago" (um pagamento parcial já conta a parte recebida).
+function calcPadReceitaPorDia(dia, mes, ano, atendente){
+  const alvo = diaToISO(dia, mes, ano);
+  let bruto=0, impPJ=0, pctAtend=0;
+  pads.forEach(p=>{
+    if(atendente && p.atendente!==atendente) return;
+    (p.pagamentos||[]).forEach(pg=>{
+      if(pg.data===alvo){
+        const v=pg.valor||0;
+        bruto+=v;
+        impPJ+=R(v*TAX_PJ,2);
+        pctAtend+=R(v*getComissao(p.atendente),2);
+      }
+    });
+  });
+  return { bruto:R(bruto,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2) };
+}
+
 function calcLucroDia(dia,mes,ano,atendente){
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&(!atendente||d.atendente===atendente)&&!d.isPad);
   let totalSub=0;
@@ -1551,8 +1572,13 @@ function calcLucroDia(dia,mes,ano,atendente){
   let metaAdsBruto=0;
   admFil.forEach(a=>metaAdsBruto+=a.investido||0);
   const metaAds=R(metaAdsBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
-  const padC=calcPadCustos({dia,mes,ano,atendente:atendente||null});
-  const padLucro=padC.bruto-padC.totalCustos;
+  // Custo de frascos e envio: reconhecido no dia do LANÇAMENTO do PAD (é quando o
+  // produto sai fisicamente, independente de já ter sido pago ou não).
+  const padCusto=calcPadCustos({dia,mes,ano,atendente:atendente||null});
+  // Receita, imposto e comissão: reconhecidos no dia real do PAGAMENTO (parcial
+  // ou integral), usando os registros de pagamento — não a data de lançamento.
+  const padReceita=calcPadReceitaPorDia(dia,mes,ano,atendente);
+  const padLucro=padReceita.bruto-(padCusto.custoFrascos+padCusto.custoEnvio+padReceita.impPJ+padReceita.pctAtend);
   return R(totalSub+padLucro-metaAds);
 }
 
@@ -3377,7 +3403,8 @@ function renderDashAdm(){
   admFil.forEach(a=>{tMetaAdsBruto+=a.investido||0;});
   const tMetaAds=R(tMetaAdsBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
   const padC=calcPadCustos({dia:filDia,mes:filMes,ano:filAno,atendente:atend||null});
-  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;
+  const padReceitaHoje=calcPadReceitaPorDia(filDia,filMes,filAno,atend);
+  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio;tImpPJ+=padReceitaHoje.impPJ;tPctAtend+=padReceitaHoje.pctAtend;
   const tLucro = calcLucroDia(filDia, filMes, filAno, atend);
 
   renderCardGatewayDashAdm(atend, tLucro);
@@ -3425,7 +3452,7 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
     return diaToISO(p.dia,p.mes,p.ano)===isoDate(hoje);
   });
   const padHojeValor = padHoje.reduce((s,p)=>s+(p.bruto||0),0);
-  const agendamentosTextoEl=document.getElementById('gw-agendamentos-texto');
+  const agendamentosTextoEl=document.getElementById('gw-agendamentos-valor-texto');
   if(agendamentosTextoEl)agendamentosTextoEl.textContent=padHoje.length+' agendamento'+(padHoje.length!==1?'s':'')+' (PAD) — '+fmt(padHojeValor);
 
   const pagamentosHoje = [];
