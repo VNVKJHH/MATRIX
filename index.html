@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg1:#0D0D0D;--bg2:#141414;--bg3:#0A0A0A;
@@ -100,7 +100,7 @@ body.tema-claro .filters label{color:#52525B}
 body.tema-claro .form-group label{color:#52525B}
 body.tema-claro .empty{color:#71717A}
 body.tema-claro .toast{background:#059652;color:#fff}
-body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--t1);font-size:14px;line-height:1.5}
+body{font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--t1);font-size:14px;line-height:1.5}
 .sidebar{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--bg1);border-right:1px solid var(--border2);padding:1.25rem 1rem;display:flex;flex-direction:column;gap:3px;z-index:100;overflow-y:auto;justify-content:flex-start}
 .logo{font-size:15px;font-weight:800;padding:0 .5rem 1rem;border-bottom:1px solid var(--border2);margin-bottom:.5rem;color:var(--neon);letter-spacing:.5px;text-transform:uppercase}
 .logo span{color:var(--t2);font-weight:400;font-size:10px;display:block;margin-top:2px;text-transform:none;letter-spacing:0;color:var(--t3)}
@@ -773,7 +773,12 @@ tr:hover td{background:var(--neon-glow)}
         <span id="rast-periodo-label" style="font-size:13px;font-weight:600">Máximo</span>
       </div>
     </div>
-    <div><label>Buscar</label><input type="text" id="rast-busca" placeholder="Nome, telefone..." oninput="renderRastreamento()" style="width:180px"></div>
+    <div><label>Buscar</label>
+      <div style="position:relative;width:200px">
+        <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--t3);pointer-events:none"></i>
+        <input type="text" id="rast-busca" placeholder="Nome, telefone..." oninput="renderRastreamento()" style="width:100%;padding-left:30px">
+      </div>
+    </div>
   </div>
   <div id="rast-status-filtros" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem"></div>
   <div class="table-card">
@@ -805,6 +810,13 @@ tr:hover td{background:var(--neon-glow)}
   <div id="pad-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
     <div><label style="font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Atendente</label>
       <select id="pad-atend-fil" onchange="renderPad()"><option value="">Todos</option></select>
+    </div>
+  </div>
+  <div style="margin-bottom:1rem">
+    <label style="font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Buscar</label>
+    <div style="position:relative;width:220px">
+      <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--t3);pointer-events:none"></i>
+      <input type="text" id="pad-busca" placeholder="Nome, telefone, código..." oninput="renderPad()" style="width:100%;padding-left:30px">
     </div>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
@@ -996,8 +1008,11 @@ tr:hover td{background:var(--neon-glow)}
           <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span> Meta 1</span>
           <span id="gw-meta1-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
         </div>
-        <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
-          <div id="gw-meta1-progress" style="height:100%;background:#00FF80;width:0%;border-radius:4px;transition:width .4s"></div>
+        <div style="position:relative;padding-right:14px">
+          <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
+            <div id="gw-meta1-progress" style="height:100%;background:#00FF80;width:0%;border-radius:4px;transition:width .4s"></div>
+          </div>
+          <i class="ti ti-flag-filled" style="position:absolute;right:-2px;top:50%;transform:translateY(-50%);font-size:13px;color:#fff" title="Linha de chegada"></i>
         </div>
         <div id="gw-meta1-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
       </div>
@@ -1006,8 +1021,11 @@ tr:hover td{background:var(--neon-glow)}
           <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span> Meta 2</span>
           <span id="gw-meta2-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
         </div>
-        <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
-          <div id="gw-meta2-progress" style="height:100%;background:#0EA5E9;width:0%;border-radius:4px;transition:width .4s"></div>
+        <div style="position:relative;padding-right:14px">
+          <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
+            <div id="gw-meta2-progress" style="height:100%;background:#0EA5E9;width:0%;border-radius:4px;transition:width .4s"></div>
+          </div>
+          <i class="ti ti-flag-filled" style="position:absolute;right:-2px;top:50%;transform:translateY(-50%);font-size:13px;color:#fff" title="Linha de chegada"></i>
         </div>
         <div id="gw-meta2-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
       </div>
@@ -1357,7 +1375,11 @@ function entrarComoUsuario(user){
   }
   setTimeout(()=>{
     const fA=document.getElementById('f-atend');
-    if(fA){const opt=[...fA.options].find(o=>o.value===user.nome);if(opt)fA.value=user.nome;}
+    if(fA){
+      const opt=[...fA.options].find(o=>o.value===user.nome);
+      if(opt)fA.value=user.nome;
+      fA.disabled=!user.adm;
+    }
     renderRegistrosDia();
     if(typeof gerarNotificacoes==='function')gerarNotificacoes();
     if(typeof atualizarBadgeNotificacoes==='function')atualizarBadgeNotificacoes();
@@ -3613,9 +3635,21 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
     document.getElementById('gw-meta'+num+'-valores').textContent=fmt(vMes.bruto)+' de '+fmt(valorMeta);
     return true;
   }
-  const temMeta1 = metaDoMes ? preencherMeta(1, metaDoMes.receita, '#00FF80') : (document.getElementById('gw-meta1-bloco').style.display='none', false);
-  const temMeta2 = metaDoMes ? preencherMeta(2, metaDoMes.receita2, '#0EA5E9') : (document.getElementById('gw-meta2-bloco').style.display='none', false);
-  if(metasBloco) metasBloco.style.display = (temMeta1||temMeta2) ? 'block' : 'none';
+  document.getElementById('gw-meta1-bloco').style.display='none';
+  document.getElementById('gw-meta2-bloco').style.display='none';
+  let temMetaAtiva=false;
+  if(metaDoMes){
+    const meta1=metaDoMes.receita||0, meta2=metaDoMes.receita2||0;
+    const meta1Batida = meta1>0 && vMes.bruto>=meta1;
+    if(meta1>0 && !meta1Batida){
+      temMetaAtiva=preencherMeta(1, meta1, '#00FF80');
+    } else if(meta2>0){
+      temMetaAtiva=preencherMeta(2, meta2, '#0EA5E9');
+    } else if(meta1>0){
+      temMetaAtiva=preencherMeta(1, meta1, '#00FF80');
+    }
+  }
+  if(metasBloco) metasBloco.style.display = temMetaAtiva ? 'block' : 'none';
 }
 
 function renderRankingPublico(){
@@ -3746,8 +3780,10 @@ function renderPad(){
   const filtrosAdm=document.getElementById('pad-filters-adm');
   if(filtrosAdm)filtrosAdm.style.display=adminLogado?'flex':'none';
   const atendFil=adminLogado?(document.getElementById('pad-atend-fil')?.value||''):(usuarioLogado?.nome||'');
+  const buscaPad=(document.getElementById('pad-busca')?.value||'').toLowerCase();
   let rows=[...pads];
   if(atendFil)rows=rows.filter(p=>p.atendente===atendFil);
+  if(buscaPad)rows=rows.filter(p=>{const s=((p.nomeCliente||'')+(p.telefone||'')+(p.rastreamento||'')).toLowerCase();return s.includes(buscaPad);});
   rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const abertos=rows.filter(p=>['Aguardando postagem','Em rota','Aguardando pagamento'].includes(p.status));
   const pagos=rows.filter(p=>p.status==='Pago');
