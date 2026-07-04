@@ -842,6 +842,7 @@ tr:hover td{background:var(--neon-glow)}
     </div>
     <button class="btn btn-primary" onclick="openPadModal()"><i class="ti ti-plus"></i> Lançar PAD</button>
   </div>
+  <div class="metrics" id="pad-receber-resumo" style="margin-bottom:1rem"></div>
   <div class="table-card" id="pad-tabela-container">
     <div class="tw">
       <table>
@@ -3786,6 +3787,20 @@ function renderPad(){
   if(buscaPad)rows=rows.filter(p=>{const s=((p.nomeCliente||'')+(p.telefone||'')+(p.rastreamento||'')).toLowerCase();return s.includes(buscaPad);});
   rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const abertos=rows.filter(p=>['Aguardando postagem','Em rota','Aguardando pagamento'].includes(p.status));
+  const pendentesReceber=rows.filter(p=>{
+    if(p.status==='Frustrado')return false;
+    const totalPago=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
+    return totalPago<p.bruto;
+  });
+  const totalAReceber=pendentesReceber.reduce((s,p)=>{
+    const totalPago=(p.pagamentos||[]).reduce((s2,pg)=>s2+(pg.valor||0),0);
+    return s+R(p.bruto-totalPago,2);
+  },0);
+  const resumoEl=document.getElementById('pad-receber-resumo');
+  if(resumoEl)resumoEl.innerHTML=`
+    <div class="metric-card"><div class="metric-label">Total a receber</div><div class="metric-value mv-amber">${fmt(totalAReceber)}</div></div>
+    <div class="metric-card"><div class="metric-label">Pedidos pendentes</div><div class="metric-value">${pendentesReceber.length}</div></div>
+  `;
   const pagos=rows.filter(p=>p.status==='Pago');
   const frustrados=rows.filter(p=>p.status==='Frustrado');
   const setN=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
