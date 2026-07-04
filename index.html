@@ -839,15 +839,36 @@ tr:hover td{background:var(--neon-glow)}
         Frustrados
         <span id="pad-n-frustrado" style="font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.08);min-width:24px;text-align:center">0</span>
       </button>
+      <button id="pad-tab-receber" onclick="setPadTab('receber')"
+        style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:50px;border:2px solid #F59E0B;background:linear-gradient(135deg,#4a3300,#F59E0B);color:#fff;cursor:pointer;font-size:15px;font-weight:700;font-family:inherit;letter-spacing:.3px;transition:all .25s;opacity:.6">
+        <i class="ti ti-calendar-dollar" style="font-size:17px"></i>
+        A Receber
+        <span id="pad-n-receber" style="font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.08);min-width:24px;text-align:center">0</span>
+      </button>
     </div>
     <button class="btn btn-primary" onclick="openPadModal()"><i class="ti ti-plus"></i> Lançar PAD</button>
   </div>
-  <div class="table-card">
+  <div class="table-card" id="pad-tabela-container">
     <div class="tw">
       <table>
         <thead><tr><th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Oferta / Valor</th><th>Pagamento</th><th>Rastreamento</th><th>Acompanhamento</th><th>Status</th><th></th></tr></thead>
         <tbody id="pad-tbody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <div id="pad-receber-container" style="display:none">
+    <div class="metrics" id="pad-receber-metrics"></div>
+    <div class="table-card">
+      <div class="table-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-sm" onclick="mudarMesReceberPad(-1)"><i class="ti ti-chevron-left"></i></button>
+          <p style="font-size:14px;font-weight:700" id="pad-receber-mes-titulo">Mês</p>
+          <button class="btn btn-sm" onclick="mudarMesReceberPad(1)"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <p style="font-size:11px;color:var(--t2)">Previsão de entrega dos pedidos em aberto</p>
+      </div>
+      <div style="padding:1rem" id="pad-receber-calendario"></div>
     </div>
   </div>
 </div>
@@ -3688,9 +3709,9 @@ let padTab='aberto';
 
 function setPadTab(tab){
   padTab=tab;
-  const cfg={aberto:{bg:'linear-gradient(135deg,#0369A1,#0EA5E9)',color:'#fff',border:'#0EA5E9',shadow:'0 4px 20px rgba(14,165,233,.4)',nbg:'rgba(0,0,0,.25)'},pago:{bg:'linear-gradient(135deg,#00994D,#00FF80)',color:'#000',border:'#00FF80',shadow:'0 4px 20px rgba(0,255,128,.4)',nbg:'rgba(0,0,0,.2)'},frustrado:{bg:'linear-gradient(135deg,#991B1B,#EF4444)',color:'#fff',border:'#EF4444',shadow:'0 4px 20px rgba(239,68,68,.4)',nbg:'rgba(0,0,0,.25)'}};
-  const dimcfg={aberto:{bg:'linear-gradient(135deg,#1a4a6b,#2980B9)',color:'#fff',border:'#2980B9',shadow:'none',nbg:'rgba(0,0,0,.2)'},pago:{bg:'linear-gradient(135deg,#1a4a2a,#2E8B57)',color:'#fff',border:'#2E8B57',shadow:'none',nbg:'rgba(0,0,0,.2)'},frustrado:{bg:'linear-gradient(135deg,#4a1a1a,#C0392B)',color:'#fff',border:'#C0392B',shadow:'none',nbg:'rgba(0,0,0,.2)'}};
-  ['aberto','pago','frustrado'].forEach(t=>{
+  const cfg={aberto:{bg:'linear-gradient(135deg,#0369A1,#0EA5E9)',color:'#fff',border:'#0EA5E9',shadow:'0 4px 20px rgba(14,165,233,.4)',nbg:'rgba(0,0,0,.25)'},pago:{bg:'linear-gradient(135deg,#00994D,#00FF80)',color:'#000',border:'#00FF80',shadow:'0 4px 20px rgba(0,255,128,.4)',nbg:'rgba(0,0,0,.2)'},frustrado:{bg:'linear-gradient(135deg,#991B1B,#EF4444)',color:'#fff',border:'#EF4444',shadow:'0 4px 20px rgba(239,68,68,.4)',nbg:'rgba(0,0,0,.25)'},receber:{bg:'linear-gradient(135deg,#7a5200,#F59E0B)',color:'#fff',border:'#F59E0B',shadow:'0 4px 20px rgba(245,158,11,.4)',nbg:'rgba(0,0,0,.25)'}};
+  const dimcfg={aberto:{bg:'linear-gradient(135deg,#1a4a6b,#2980B9)',color:'#fff',border:'#2980B9',shadow:'none',nbg:'rgba(0,0,0,.2)'},pago:{bg:'linear-gradient(135deg,#1a4a2a,#2E8B57)',color:'#fff',border:'#2E8B57',shadow:'none',nbg:'rgba(0,0,0,.2)'},frustrado:{bg:'linear-gradient(135deg,#4a1a1a,#C0392B)',color:'#fff',border:'#C0392B',shadow:'none',nbg:'rgba(0,0,0,.2)'},receber:{bg:'linear-gradient(135deg,#4a3300,#B45309)',color:'#fff',border:'#B45309',shadow:'none',nbg:'rgba(0,0,0,.2)'}};
+  ['aberto','pago','frustrado','receber'].forEach(t=>{
     const btn=document.getElementById('pad-tab-'+t);
     const nbadge=document.getElementById('pad-n-'+t);
     if(!btn)return;
@@ -3698,7 +3719,85 @@ function setPadTab(tab){
     btn.style.background=c.bg;btn.style.color=c.color;btn.style.borderColor=c.border;btn.style.boxShadow=c.shadow;btn.style.opacity=t===tab?'1':'0.6';
     if(nbadge)nbadge.style.background=c.nbg;
   });
+  const tabelaCont=document.getElementById('pad-tabela-container');
+  const receberCont=document.getElementById('pad-receber-container');
+  if(tab==='receber'){
+    if(tabelaCont)tabelaCont.style.display='none';
+    if(receberCont)receberCont.style.display='block';
+    renderPadReceberCalendario();
+  }else{
+    if(tabelaCont)tabelaCont.style.display='block';
+    if(receberCont)receberCont.style.display='none';
+  }
   renderPad();
+}
+
+let _padReceberMesBase=new Date();
+function mudarMesReceberPad(delta){
+  _padReceberMesBase=new Date(_padReceberMesBase.getFullYear(),_padReceberMesBase.getMonth()+delta,1);
+  renderPadReceberCalendario();
+}
+
+function renderPadReceberCalendario(){
+  const atendFil=adminLogado?(document.getElementById('pad-atend-fil')?.value||''):(usuarioLogado?.nome||'');
+  // Pedidos ainda não quitados por completo (exclui Frustrado e quem já pagou tudo).
+  const pendentes=pads.filter(p=>{
+    if(p.status==='Frustrado')return false;
+    if(atendFil && p.atendente!==atendFil)return false;
+    const totalPago=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
+    return totalPago < p.bruto;
+  });
+  const totalReceber=pendentes.reduce((s,p)=>{
+    const totalPago=(p.pagamentos||[]).reduce((s2,pg)=>s2+(pg.valor||0),0);
+    return s+R(p.bruto-totalPago,2);
+  },0);
+
+  document.getElementById('pad-receber-metrics').innerHTML=`
+    <div class="metric-card"><div class="metric-label">Total a receber</div><div class="metric-value mv-amber">${fmt(totalReceber)}</div></div>
+    <div class="metric-card"><div class="metric-label">Pedidos em aberto</div><div class="metric-value">${pendentes.length}</div></div>
+  `;
+
+  const ano=_padReceberMesBase.getFullYear(), mesIdx=_padReceberMesBase.getMonth();
+  document.getElementById('pad-receber-mes-titulo').textContent=NOMES_MESES_CAL[mesIdx]+' de '+ano;
+  const totalDias=new Date(ano,mesIdx+1,0).getDate();
+  const primeiroDiaSemana=(new Date(ano,mesIdx,1).getDay()+6)%7;
+
+  // Agrupa os pedidos pendentes por dia de previsão de entrega dentro deste mês.
+  const porDia={};
+  pendentes.forEach(p=>{
+    if(!p.previsaoEntrega)return;
+    const dPrev=new Date(p.previsaoEntrega);
+    if(dPrev.getFullYear()!==ano||dPrev.getMonth()!==mesIdx)return;
+    const dia=dPrev.getDate();
+    if(!porDia[dia])porDia[dia]=[];
+    const totalPago=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
+    porDia[dia].push({nome:p.nomeCliente||'—',restante:R(p.bruto-totalPago,2)});
+  });
+  const semPrevisao=pendentes.filter(p=>!p.previsaoEntrega);
+
+  let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;font-size:11px;color:var(--t3);text-align:center;margin-bottom:6px;font-weight:700;text-transform:uppercase">
+    <div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div><div>Dom</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">`;
+  for(let i=0;i<primeiroDiaSemana;i++) html+='<div></div>';
+  for(let d=1; d<=totalDias; d++){
+    const pedidosDia=porDia[d]||[];
+    const temPedidos=pedidosDia.length>0;
+    html+=`<div style="background:var(--bg-card);border:1px solid ${temPedidos?'var(--amber)':'var(--border2)'};border-radius:var(--r-md);padding:.5rem;min-height:80px;${!temPedidos?'opacity:.5':''}">
+      <p style="font-size:12px;font-weight:800;color:var(--t1);margin-bottom:4px">${d}</p>
+      ${pedidosDia.map(pd=>`<div style="font-size:9px;color:var(--amber-t);background:var(--amber-l);border-radius:4px;padding:2px 4px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${pd.nome} — ${fmt(pd.restante)}">${pd.nome.split(' ')[0]} · ${fmt(pd.restante)}</div>`).join('')}
+    </div>`;
+  }
+  html+='</div>';
+  if(semPrevisao.length>0){
+    html+=`<div style="margin-top:1rem;padding:.75rem;background:var(--bg2);border-radius:var(--r-md)">
+      <p style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:6px">Sem previsão de entrega ainda (${semPrevisao.length})</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${semPrevisao.map(p=>{const totalPago=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);return`<span class="badge b-amber" style="font-size:10px">${(p.nomeCliente||'—').split(' ')[0]} · ${fmt(R(p.bruto-totalPago,2))}</span>`;}).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('pad-receber-calendario').innerHTML=html;
 }
 
 let padOfertaSelecionada=null;
@@ -3788,8 +3887,14 @@ function renderPad(){
   const abertos=rows.filter(p=>['Aguardando postagem','Em rota','Aguardando pagamento'].includes(p.status));
   const pagos=rows.filter(p=>p.status==='Pago');
   const frustrados=rows.filter(p=>p.status==='Frustrado');
+  const aReceber=rows.filter(p=>{
+    if(p.status==='Frustrado')return false;
+    const totalPago=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
+    return totalPago<p.bruto;
+  });
   const setN=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  setN('pad-n-aberto',abertos.length);setN('pad-n-pago',pagos.length);setN('pad-n-frustrado',frustrados.length);
+  setN('pad-n-aberto',abertos.length);setN('pad-n-pago',pagos.length);setN('pad-n-frustrado',frustrados.length);setN('pad-n-receber',aReceber.length);
+  if(padTab==='receber'){ renderPadReceberCalendario(); return; }
   const lista=padTab==='pago'?pagos:padTab==='frustrado'?frustrados:abertos;
   let tb='';
   lista.forEach((p,i)=>{
