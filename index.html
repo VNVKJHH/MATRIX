@@ -846,7 +846,7 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card" id="pad-tabela-container">
     <div class="tw">
       <table>
-        <thead><tr><th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Oferta / Valor</th><th>Pagamento</th><th>Rastreamento</th><th>Acompanhamento</th><th>Previsão</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Oferta / Valor</th><th>Pagamento</th><th>Rastreamento</th><th>Acompanhamento</th><th>Previsão</th><th>Apurado</th><th>Status</th><th></th></tr></thead>
         <tbody id="pad-tbody"></tbody>
       </table>
     </div>
@@ -3840,9 +3840,11 @@ function renderPad(){
     const neg=(p.negociacao&&p.status!=='Pago')?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
     const cidade=p.cidade?'<div style="font-size:10px;color:var(--t3)">'+p.cidade+(p.estado?' - '+p.estado:'')+'</div>':'';
     const previsaoCol = '<td style="font-size:11px;white-space:nowrap">'+(p.previsaoEntrega?'<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> '+new Date(p.previsaoEntrega).toLocaleDateString('pt-BR')+'</span>':'<span style="color:var(--t3)">—</span>')+'</td>';
-    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+previsaoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
+    const marcadoHoje = p.apuradoData===isoHojeMatrix();
+    const apuradoCol = '<td style="text-align:center"><button onclick="toggleApuradoPad('+gi+')" title="'+(marcadoHoje?'Já apurado hoje — clique pra desmarcar':'Marcar como apurado hoje')+'" style="width:26px;height:26px;border-radius:50%;border:2px solid '+(marcadoHoje?'var(--neon)':'var(--border2)')+';background:'+(marcadoHoje?'var(--neon)':'transparent')+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s"><i class="ti ti-check" style="font-size:14px;color:'+(marcadoHoje?'#000':'transparent')+'"></i></button></td>';
+    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+previsaoCol+apuradoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
   });
-  if(!tb)tb='<tr><td colspan="11" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
+  if(!tb)tb='<tr><td colspan="12" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
   const tbody=document.getElementById('pad-tbody');
   if(tbody)tbody.innerHTML=tb;
 }
@@ -3988,6 +3990,24 @@ function excluirPagamentoPad(gi, idx){
   renderPad();
   if(typeof gerarNotificacoes==='function')gerarNotificacoes();
   toast('Pagamento removido.');
+}
+
+// Marca o pedido como "apurado" no dia de hoje — só guarda a data da última vez
+// que foi marcado. Como a exibição sempre compara com a data de HOJE, o marcador
+// "reseta" sozinho a cada novo dia, sem precisar de nenhuma rotina automática.
+function toggleApuradoPad(gi){
+  const p=pads[gi];
+  if(!p)return;
+  const hojeIso=isoHojeMatrix();
+  if(p.apuradoData===hojeIso){
+    p.apuradoData='';
+    toast('Marcação removida.');
+  }else{
+    p.apuradoData=hojeIso;
+    toast('Marcado como apurado hoje!');
+  }
+  if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
+  renderPad();
 }
 
 let _statusRastreamentoSelecionados = new Set();
