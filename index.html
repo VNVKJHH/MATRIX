@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg1:#0D0D0D;--bg2:#141414;--bg3:#0A0A0A;
@@ -100,7 +100,7 @@ body.tema-claro .filters label{color:#52525B}
 body.tema-claro .form-group label{color:#52525B}
 body.tema-claro .empty{color:#71717A}
 body.tema-claro .toast{background:#059652;color:#fff}
-body{font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--t1);font-size:14px;line-height:1.5}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--t1);font-size:14px;line-height:1.5}
 .sidebar{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--bg1);border-right:1px solid var(--border2);padding:1.25rem 1rem;display:flex;flex-direction:column;gap:3px;z-index:100;overflow-y:auto;justify-content:flex-start}
 .logo{font-size:15px;font-weight:800;padding:0 .5rem 1rem;border-bottom:1px solid var(--border2);margin-bottom:.5rem;color:var(--neon);letter-spacing:.5px;text-transform:uppercase}
 .logo span{color:var(--t2);font-weight:400;font-size:10px;display:block;margin-top:2px;text-transform:none;letter-spacing:0;color:var(--t3)}
@@ -109,7 +109,9 @@ body{font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .nav-item.active{background:var(--neon-glow);color:var(--neon);font-weight:600;border-left:2px solid var(--neon)}
 .nav-item i{font-size:16px}
 .nav-section{font-size:9px;color:var(--neon-dim);font-weight:700;letter-spacing:1.5px;padding:12px 12px 4px;text-transform:uppercase;opacity:.7}
+/* FIX: main area - dashboard-adm page takes full viewport */
 .main{margin-left:230px;padding:2rem;min-height:100vh;background:transparent;position:relative;z-index:1}
+/* FIX: dashboard-adm page gets special treatment - no padding, full height */
 #page-dashboard-adm.active ~ * { display: none; }
 .main:has(#page-dashboard-adm.active) { padding: 0 !important; }
 .page{display:none}.page.active{display:block}
@@ -117,13 +119,6 @@ body{font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-seri
 .filters{display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;align-items:flex-end}
 .filters label{font-size:10px;color:var(--t3);display:block;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
 select,input[type=text],input[type=number],input[type=password]{font-size:13px;padding:7px 10px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);color:var(--t1);outline:none;transition:all .2s}
-input[type=date]{font-size:14px;padding:10px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg2);color:var(--t1);outline:none;transition:all .2s;font-weight:600;color-scheme:dark;cursor:pointer}
-input[type=date]:hover{border-color:var(--neon-dim)}
-input[type=date]:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(0,255,128,.08)}
-input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(1.3);cursor:pointer;padding:4px;border-radius:4px;transition:background .15s}
-input[type=date]::-webkit-calendar-picker-indicator:hover{background:rgba(0,255,128,.15)}
-body.tema-claro input[type=date]{color-scheme:light;border-color:rgba(0,0,0,.20);background:#FFFFFF;color:#09090B}
-body.tema-claro input[type=date]::-webkit-calendar-picker-indicator{filter:none}
 select:focus,input:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(0,255,128,.08)}
 .btn{font-size:12px;padding:7px 14px;border-radius:var(--r-md);border:1px solid var(--border2);background:var(--bg2);color:var(--t2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .2s;white-space:nowrap;letter-spacing:.2px}
 .btn:hover{border-color:var(--neon-dim);color:var(--t1);background:var(--bg-hover)}.btn:active{transform:scale(.97)}
@@ -177,6 +172,8 @@ tr:hover td{background:var(--neon-glow)}
 .toast.show{opacity:1;transform:translateY(0)}
 .divider{height:1px;background:var(--border2);margin:8px 0;opacity:.5}
 .progress-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-top:6px}
+
+/* LOGIN */
 .login-screen{position:fixed;inset:0;background:rgba(8,8,8,0.92);z-index:500;display:flex;align-items:center;justify-content:center}
 .login-box{background:rgba(13,13,13,0.92);border-radius:var(--r-lg);padding:2.5rem 2rem;width:380px;max-width:95vw;box-shadow:0 0 60px rgba(0,255,128,.15),0 20px 60px rgba(0,0,0,.8);border:1px solid rgba(0,255,128,.2);backdrop-filter:blur(8px)}
 .login-logo{text-align:center;margin-bottom:2rem}
@@ -206,6 +203,8 @@ tr:hover td{background:var(--neon-glow)}
 .comp-label{color:var(--t2)}
 .comp-val{font-weight:600}
 .winner{color:var(--neon);font-weight:700}
+
+/* OFERTAS */
 .ofertas-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
 .oferta-item{position:relative;border:1px solid var(--border2);border-radius:var(--r-md);padding:12px 14px;cursor:pointer;transition:all .2s;background:var(--bg2);user-select:none}
 .oferta-item:hover{border-color:var(--neon-dim);background:var(--neon-glow)}
@@ -220,6 +219,8 @@ tr:hover td{background:var(--neon-glow)}
 .oferta-item.selected .oferta-valor-edit{display:flex;align-items:center;gap:6px}
 .oferta-valor-edit input{width:100px;font-size:13px;font-weight:700;padding:4px 8px;border-radius:var(--r-sm);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1)}
 .oferta-confirm{font-size:11px;color:var(--blue-t);font-weight:600;margin-top:4px}
+
+/* ===== FIX DASHBOARD ADM - GLOBO FULL SCREEN ===== */
 #page-dashboard-adm {
   position: fixed !important;
   top: 0 !important;
@@ -250,6 +251,7 @@ tr:hover td{background:var(--neon-glow)}
   width: 100% !important;
   height: 100% !important;
 }
+
 @media(max-width:768px){
   .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;padding:.75rem}
   .logo{width:100%;padding-bottom:.5rem;margin-bottom:0;border-bottom:none}
@@ -261,6 +263,7 @@ tr:hover td{background:var(--neon-glow)}
   #page-dashboard-adm{left:0!important;width:100vw!important}
 }
 @media print{.sidebar,.filters,.btn,.modal-overlay,.senha-overlay{display:none!important}.main{margin:0;padding:0}}
+/* Elementos mobile: escondidos por padrão (desktop), aparecem só em telas pequenas */
 .mobile-header,.mobile-bottom-nav,.sidebar-overlay{display:none}
 @media (max-width:880px){
   .mobile-header{
@@ -292,9 +295,10 @@ tr:hover td{background:var(--neon-glow)}
   .main{padding-top:56px!important;padding-bottom:60px!important;margin-left:0!important}
 }
 </style>
+<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyAPwURZrZGNjZr2IV8Ba0vcp2-b4XkKZ_w",
@@ -345,9 +349,14 @@ tr:hover td{background:var(--neon-glow)}
     onSnapshot(collection(db, 'dados'), snap => {
       const fbDados = [];
       snap.forEach(d => fbDados.push(d.data()));
-      firstLoad.dados = false;
-      dados = fbDados;
-      scheduleRender();
+      if(firstLoad.dados && fbDados.length === 0){
+        firstLoad.dados = false;
+        autoMigrate();
+      } else {
+        firstLoad.dados = false;
+        dados = fbDados;
+        scheduleRender();
+      }
     });
 
     onSnapshot(collection(db, 'pads'), snap => {
@@ -394,55 +403,8 @@ tr:hover td{background:var(--neon-glow)}
       if(typeof renderContasSalvasLista === 'function') renderContasSalvasLista();
     });
 
-    let primeiraVezAtendentes = true;
-    onSnapshot(collection(db, 'atendentes'), snap => {
-      const fbAtend = [];
-      snap.forEach(d => fbAtend.push(d.data()));
-      if(primeiraVezAtendentes && fbAtend.length === 0){
-        primeiraVezAtendentes = false;
-        seedAtendentesUmaVez();
-      } else {
-        primeiraVezAtendentes = false;
-        atendentes = fbAtend;
-        scheduleRender();
-      }
-    });
-
-    onSnapshot(collection(db, 'notificacoesRastreamento'), snap => {
-      const arr = [];
-      snap.forEach(d => arr.push(d.data()));
-      notificacoesRast = arr;
-      if(typeof atualizarBadgeNotificacoes==='function') atualizarBadgeNotificacoes();
-      if(typeof renderNotificacoes==='function') renderNotificacoes();
-    });
-
-    onSnapshot(collection(db, 'notificacoesPad'), snap => {
-      const arr = [];
-      snap.forEach(d => arr.push(d.data()));
-      notificacoesPad = arr;
-      if(typeof atualizarBadgeNotificacoes==='function') atualizarBadgeNotificacoes();
-      if(typeof renderNotificacoes==='function') renderNotificacoes();
-    });
-
     console.log('Firebase real-time listeners ativos!');
     window.fbReady = true;
-  }
-
-  // Migra a lista padrão de atendentes para o Firebase apenas UMA VEZ na vida do
-  // projeto (controlado por uma flag salva no próprio Firestore, não por "coleção
-  // vazia"). Isso evita o bug de repor atendentes excluídos de propósito.
-  async function seedAtendentesUmaVez(){
-    try{
-      const flagRef = doc(db, 'config', 'flags');
-      const flagSnap = await getDoc(flagRef);
-      if(flagSnap.exists() && flagSnap.data().atendentesSeeded) return;
-      for(let i=0;i<atendentes.length;i++){
-        const a=atendentes[i];
-        if(!a.fbId) a.fbId='atend_'+Date.now()+'_'+i;
-        await window.fbSave('atendentes', a.fbId, a);
-      }
-      await setDoc(flagRef, { atendentesSeeded: true }, { merge: true });
-    }catch(e){ console.error('seedAtendentesUmaVez error:', e); }
   }
 
   async function autoMigrate(){
@@ -484,6 +446,7 @@ tr:hover td{background:var(--neon-glow)}
 </head>
 <body>
 
+<!-- Mobile header -->
 <div class="mobile-header" id="mobile-header">
   <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
     <i class="ti ti-menu-2" id="menu-icon"></i>
@@ -569,6 +532,7 @@ tr:hover td{background:var(--neon-glow)}
 
 <main class="main">
 
+<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <p class="page-title" id="db-titulo">Dashboard</p>
   <div class="filters" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
@@ -598,6 +562,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- LANÇAMENTO -->
 <div class="page" id="page-lancamentos">
   <p class="page-title">Novo lançamento</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
@@ -622,6 +587,12 @@ tr:hover td{background:var(--neon-glow)}
             <div><div class="pi-label">Qtd. frascos</div><div class="pi-value" id="prev-frascos">0</div></div>
             <div id="prev-envio" style="display:none"></div>
           </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <button type="button" id="btn-recuperacao" onclick="toggleRecuperacao()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-md);border:2px solid var(--border2);background:var(--bg1);color:var(--t2);cursor:pointer;font-size:13px;font-weight:600;width:100%;transition:all .18s">
+            <span id="icon-recuperacao" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s"></span>
+            <span>Venda Recuperada</span>
+          </button>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="salvarLancamento()"><i class="ti ti-device-floppy"></i> Registrar venda</button>
@@ -656,6 +627,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- PANORAMA -->
 <div class="page" id="page-panorama">
   <p class="page-title">Panorama mensal</p>
   <div class="filters">
@@ -673,12 +645,13 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card">
     <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Detalhamento diário</p></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Frascos+Envio</th><th>DAS</th><th>%Atend</th><th>Investido</th><th>Leads</th><th>Lucro</th><th>Margem</th></tr></thead>
+      <thead><tr><th>Dia</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Envio</th><th>Imp.PJ</th><th>%Atend</th><th>Investido</th><th>Leads</th><th>Lucro</th><th>Margem</th></tr></thead>
       <tbody id="pan-tbody"></tbody>
     </table></div>
   </div>
 </div>
 
+<!-- CALENDÁRIO FINANCEIRO -->
 <div class="page" id="page-calendario-fin">
   <p class="page-title">Calendário Financeiro</p>
   <div class="filters">
@@ -687,6 +660,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
   <div id="calfin-conteudo"></div>
 
+  <!-- Modal detalhe do dia -->
   <div class="modal-overlay" id="modal-calfin-dia" onclick="if(event.target===this)closeCalfinDiaModal()">
     <div class="modal" style="width:480px">
       <p class="modal-title" id="calfin-dia-titulo">Detalhe do dia</p>
@@ -698,6 +672,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- COMPARATIVO -->
 <div class="page" id="page-comparativo">
   <p class="page-title">Comparativo de períodos</p>
   <div class="filters">
@@ -723,6 +698,7 @@ tr:hover td{background:var(--neon-glow)}
   <div class="chart-card" style="margin-bottom:1.5rem"><p class="chart-title">Comparativo visual</p><div style="position:relative;height:240px"><canvas id="ch-comp"></canvas></div></div>
 </div>
 
+<!-- RANKING -->
 <div class="page" id="page-ranking">
   <p class="page-title">Ranking de atendentes</p>
   <div class="filters">
@@ -753,14 +729,9 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- RASTREAMENTO -->
 <div class="page" id="page-rastreamento">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
-    <p class="page-title" style="margin-bottom:0">Rastreamento</p>
-    <button onclick="abrirNotificacoesModal('rastreamento')" style="position:relative;background:var(--bg2);border:1px solid var(--border2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)" title="Notificações de Rastreamento">
-      <i class="ti ti-bell" style="font-size:18px"></i>
-      <span id="notif-badge-rastreamento" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:20px;min-width:16px;text-align:center;border:2px solid var(--bg1)">0</span>
-    </button>
-  </div>
+  <p class="page-title">Rastreamento</p>
   <div style="display:flex;gap:12px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
     <span id="rast-update-status" style="font-size:12px;color:var(--t3)"></span>
   </div>
@@ -773,12 +744,7 @@ tr:hover td{background:var(--neon-glow)}
         <span id="rast-periodo-label" style="font-size:13px;font-weight:600">Máximo</span>
       </div>
     </div>
-    <div><label>Buscar</label>
-      <div style="position:relative;width:200px">
-        <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--t3);pointer-events:none"></i>
-        <input type="text" id="rast-busca" placeholder="Nome, telefone..." oninput="renderRastreamento()" style="width:100%;padding-left:30px">
-      </div>
-    </div>
+    <div><label>Buscar</label><input type="text" id="rast-busca" placeholder="Nome, telefone..." oninput="renderRastreamento()" style="width:180px"></div>
   </div>
   <div id="rast-status-filtros" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem"></div>
   <div class="table-card">
@@ -799,24 +765,12 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- PAD -->
 <div class="page" id="page-pad">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-    <p class="page-title" style="margin-bottom:0">Pay After Delivery</p>
-    <button onclick="abrirNotificacoesModal('pad')" style="position:relative;background:var(--bg2);border:1px solid var(--border2);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2)" title="Notificações de PAD">
-      <i class="ti ti-bell" style="font-size:18px"></i>
-      <span id="notif-badge-pad" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 5px;border-radius:20px;min-width:16px;text-align:center;border:2px solid var(--bg1)">0</span>
-    </button>
-  </div>
+  <p class="page-title">Pay After Delivery</p>
   <div id="pad-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
     <div><label style="font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Atendente</label>
       <select id="pad-atend-fil" onchange="renderPad()"><option value="">Todos</option></select>
-    </div>
-  </div>
-  <div style="margin-bottom:1rem">
-    <label style="font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Buscar</label>
-    <div style="position:relative;width:220px">
-      <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--t3);pointer-events:none"></i>
-      <input type="text" id="pad-busca" placeholder="Nome, telefone, código..." oninput="renderPad()" style="width:100%;padding-left:30px">
     </div>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
@@ -842,17 +796,17 @@ tr:hover td{background:var(--neon-glow)}
     </div>
     <button class="btn btn-primary" onclick="openPadModal()"><i class="ti ti-plus"></i> Lançar PAD</button>
   </div>
-  <div class="metrics" id="pad-receber-resumo" style="margin-bottom:1rem"></div>
-  <div class="table-card" id="pad-tabela-container">
+  <div class="table-card">
     <div class="tw">
       <table>
-        <thead><tr><th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Oferta / Valor</th><th>Pagamento</th><th>Rastreamento</th><th>Acompanhamento</th><th>Previsão</th><th>Apurado</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Oferta / Valor</th><th>Rastreamento</th><th>Acompanhamento</th><th>Status</th><th></th></tr></thead>
         <tbody id="pad-tbody"></tbody>
       </table>
     </div>
   </div>
 </div>
 
+<!-- RANKING PÚBLICO -->
 <div class="page" id="page-ranking-publico">
   <p class="page-title">Ranking do mês</p>
   <div style="font-size:13px;color:var(--t2);margin-bottom:1.25rem;display:flex;align-items:center;gap:6px">
@@ -868,6 +822,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- METAS -->
 <div class="page" id="page-metas">
   <p class="page-title">Metas mensais</p>
   <div class="filters">
@@ -878,6 +833,7 @@ tr:hover td{background:var(--neon-glow)}
   <div id="metas-container"></div>
 </div>
 
+<!-- DADOS -->
 <div class="page" id="page-dados">
   <p class="page-title">Todos os registros</p>
   <div class="filters">
@@ -898,12 +854,13 @@ tr:hover td{background:var(--neon-glow)}
   <div class="table-card">
     <div class="table-header"><p style="font-size:12px;color:var(--t2)" id="dados-count"></p></div>
     <div class="tw"><table>
-      <thead><tr><th>Mês</th><th>Ano</th><th>Atendente</th><th>Dia</th><th>Oferta</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Frascos+Envio</th><th>Lucro</th><th>Ações</th></tr></thead>
+      <thead><tr><th>Mês</th><th>Ano</th><th>Atendente</th><th>Dia</th><th>Oferta</th><th>Bruto</th><th>Vendas</th><th>Frascos</th><th>Custo Envio</th><th>Lucro</th><th>Ações</th></tr></thead>
       <tbody id="dados-tbody"></tbody>
     </table></div>
   </div>
 </div>
 
+<!-- ATENDENTES -->
 <div class="page" id="page-atendentes">
   <p class="page-title">Gerenciar atendentes</p>
   <div class="table-card">
@@ -918,6 +875,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- ADMINISTRAÇÃO -->
 <div class="page" id="page-admin">
   <p class="page-title">Administração</p>
   <div class="filters">
@@ -934,10 +892,6 @@ tr:hover td{background:var(--neon-glow)}
         <span id="meta-conta-card-nome" style="font-size:13px;font-weight:700;color:var(--t1)">Nenhuma conta adicionada</span>
         <span id="meta-conta-card-id" style="font-size:10px;color:var(--t3)"></span>
       </div>
-    </div>
-    <div>
-      <label>Atendente</label>
-      <select id="adm-atend-fil" onchange="renderAdmin()"><option value="">Todos</option></select>
     </div>
     <div style="margin-top:18px;display:flex;gap:6px">
       <button class="btn btn-primary" id="btn-sync-meta" onclick="sincronizarMetaAds()"><i class="ti ti-refresh"></i> Atualizar dados do Meta Ads</button>
@@ -962,24 +916,28 @@ tr:hover td{background:var(--neon-glow)}
     </table></div>
   </div>
   <div class="table-card">
-    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">CPA — Custo por Aquisição <span style="font-size:10px;color:var(--t3);font-weight:400">(investimento com imposto ÷ vendas normais + PAD não frustrados)</span></p></div>
+    <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">CPA — Custo por Aquisição <span style="font-size:10px;color:var(--t3);font-weight:400">(investimento com imposto ÷ vendas normais + PAD pagos)</span></p></div>
     <div style="padding:1rem;position:relative;height:260px"><canvas id="ch-adm-cpa"></canvas></div>
     <div class="tw"><table>
-      <thead><tr><th>Dia</th><th>Investimento (c/ imposto)</th><th>Vendas normais</th><th>PAD válidos</th><th>Total aquisições</th><th>CPA</th></tr></thead>
+      <thead><tr><th>Dia</th><th>Investimento (c/ imposto)</th><th>Vendas normais</th><th>PAD pagos</th><th>Total aquisições</th><th>CPA</th></tr></thead>
       <tbody id="adm-cpa-tbody"></tbody>
     </table></div>
   </div>
 </div>
 
+<!-- DASHBOARD ADM - GLOBO FULL SCREEN (SEM BLOCO DUPLICADO) -->
 <div class="page" id="page-dashboard-adm">
 
+  <!-- Globo ocupa tudo -->
   <div id="dash-globo-container"></div>
 
+  <!-- Header flutuante -->
   <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:1rem 1.5rem;background:linear-gradient(to bottom,rgba(0,0,0,.7) 0%,transparent 100%)">
     <div style="font-size:20px;font-weight:800;color:var(--neon);letter-spacing:.5px">MATRIX</div>
     <div style="font-size:11px;color:var(--t3)" id="dash-globo-subtitle">Mapa de envios em tempo real</div>
   </div>
 
+  <!-- Coluna lateral esquerda: Vendas hoje + filtro de atendente + Nível + métricas do dia -->
   <div id="adm-dash-gateway" style="position:absolute;top:70px;left:1.5rem;z-index:10;width:300px;max-height:calc(100vh - 100px);overflow-y:auto;background:rgba(10,10,10,.92);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.25rem;backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.45)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Vendas hoje</div>
@@ -989,46 +947,26 @@ tr:hover td{background:var(--neon-glow)}
       <div id="gw-vendas-hoje-valor" style="font-size:28px;font-weight:800;color:#fff">R$ 0,00</div>
       <div id="gw-lucro-hoje" style="display:none;font-size:13px;font-weight:700"></div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
       <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
     </div>
-    <div id="gw-agendamentos-bloco" style="display:flex;align-items:center;justify-content:space-between;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:9px 12px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:6px">
-        <i class="ti ti-calendar-event" style="font-size:14px;color:#7DD3FC"></i>
-        <span style="font-size:11px;font-weight:700;color:#7DD3FC">Agendamentos (PAD)</span>
-        <span id="gw-agendamentos-qtd" style="font-size:10px;font-weight:800;color:#fff;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:10px">0</span>
-      </div>
-      <span id="gw-agendamentos-valor" style="font-size:14px;font-weight:800;color:#7DD3FC">R$ 0,00</span>
-    </div>
 
-    <div id="gw-metas-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
-      <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Metas do mês</div>
-      <div id="gw-meta1-bloco" style="display:none;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span> Meta 1</span>
-          <span id="gw-meta1-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
+    <div id="gw-nivel-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Seu nível</div>
+          <div id="gw-nivel-nome" style="font-size:17px;font-weight:800;color:#fff">Starter</div>
+          <div id="gw-nivel-receita" style="font-size:11px;color:rgba(255,255,255,.9)">R$ 0</div>
         </div>
-        <div style="position:relative;padding-right:14px">
-          <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
-            <div id="gw-meta1-progress" style="height:100%;background:#00FF80;width:0%;border-radius:4px;transition:width .4s"></div>
-          </div>
-          <i class="ti ti-flag-filled" style="position:absolute;right:-2px;top:50%;transform:translateY(-50%);font-size:13px;color:#fff" title="Linha de chegada"></i>
+        <div style="text-align:right">
+          <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Próximo</div>
+          <div id="gw-nivel-proximo-nome" style="font-size:13px;font-weight:700;color:#fff">—</div>
+          <div id="gw-nivel-falta" style="font-size:11px;color:rgba(255,255,255,.9)">—</div>
         </div>
-        <div id="gw-meta1-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
       </div>
-      <div id="gw-meta2-bloco" style="display:none">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span> Meta 2</span>
-          <span id="gw-meta2-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
-        </div>
-        <div style="position:relative;padding-right:14px">
-          <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
-            <div id="gw-meta2-progress" style="height:100%;background:#0EA5E9;width:0%;border-radius:4px;transition:width .4s"></div>
-          </div>
-          <i class="ti ti-flag-filled" style="position:absolute;right:-2px;top:50%;transform:translateY(-50%);font-size:13px;color:#fff" title="Linha de chegada"></i>
-        </div>
-        <div id="gw-meta2-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
+      <div style="height:6px;background:rgba(0,0,0,.3);border-radius:3px;overflow:hidden;margin-top:11px">
+        <div id="gw-nivel-progress" style="height:100%;background:#00FF80;width:0%;border-radius:3px;transition:width .4s;box-shadow:0 0 8px rgba(0,255,128,.6)"></div>
       </div>
     </div>
 
@@ -1060,14 +998,18 @@ tr:hover td{background:var(--neon-glow)}
     </div>
   </div>
 
+  <!-- Filtros de status dos pedidos -->
   <div id="adm-dash-status-filtros" style="position:absolute;bottom:1.5rem;left:0;right:0;z-index:10;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 1rem"></div>
 
+  <!-- Loading overlay -->
   <div id="dash-globo-loading" style="position:absolute;inset:0;z-index:20;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
     <div style="font-size:60px">🌍</div>
     <div style="color:var(--t2);font-size:14px" id="dash-globo-loading-text">Carregando globo...</div>
   </div>
 
+  <!-- Painel por atendente (oculto) -->
   <div id="adm-dash-atendentes" style="display:none"></div>
+  <!-- Gráficos (ocultos) -->
   <div style="display:none">
     <canvas id="adm-ch-financeiro"></canvas>
     <canvas id="adm-ch-atend"></canvas>
@@ -1075,9 +1017,11 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 
 </div>
+<!-- FIM page-dashboard-adm - SEM BLOCO DUPLICADO -->
 
 </main>
 
+<!-- Modal registro -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <p class="modal-title" id="modal-title">Novo registro</p>
@@ -1097,6 +1041,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal atendente -->
 <div class="modal-overlay" id="modal-atend" onclick="if(event.target===this)closeAtendModal()">
   <div class="modal" style="width:420px">
     <p class="modal-title" id="atend-modal-title">Novo atendente</p>
@@ -1105,12 +1050,12 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Comissão (%)</label><input type="number" id="ma-comissao" value="5" step="0.1" min="0" max="100"></div>
       <div class="form-group full">
         <label>Identificador no Meta Ads <span style="font-size:11px;color:var(--t2)">— opcional</span></label>
-        <input type="text" id="ma-meta-id" placeholder="Ex: IDENTIFICADOR01">
+        <input type="text" id="ma-meta-id" placeholder="Ex: ALEX01">
         <p style="font-size:11px;color:var(--t3);margin-top:6px">Use esse texto no nome do conjunto de anúncios ao criar campanhas para este atendente. O MATRIX vai atribuir o investimento automaticamente quando encontrar esse identificador no nome do conjunto.</p>
       </div>
       <div class="form-group full">
         <label>Identificador na Payt <span style="font-size:11px;color:var(--t2)">— opcional</span></label>
-        <input type="text" id="ma-payt-id" placeholder="Ex: IDENTIFICADOR01">
+        <input type="text" id="ma-payt-id" placeholder="Ex: ALEX01">
         <p style="font-size:11px;color:var(--t3);margin-top:6px">Adicione <code>?utm_content=SEU-IDENTIFICADOR</code> ao final do link de checkout que este atendente usar. O MATRIX vai atribuir a venda automaticamente a ele quando o postback chegar com esse identificador.</p>
       </div>
     </div>
@@ -1121,6 +1066,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal meta -->
 <div class="modal-overlay" id="modal-meta" onclick="if(event.target===this)closeMetaModal()">
   <div class="modal" style="width:440px">
     <p class="modal-title">Nova meta</p>
@@ -1128,8 +1074,15 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Mês</label><select id="mm-mes"></select></div>
       <div class="form-group"><label>Ano</label><input type="number" id="mm-ano" value="2026"></div>
       <div class="form-group full"><label>Atendente</label><select id="mm-atend"><option value="">Todos</option></select></div>
-      <div class="form-group full"><label>Meta 1 de receita (R$)</label><input type="number" id="mm-receita" step="0.01" placeholder="0.00"></div>
-      <div class="form-group full"><label>Meta 2 de receita (R$) <span style="font-size:11px;color:var(--t2)">— opcional</span></label><input type="number" id="mm-receita2" step="0.01" placeholder="0.00"></div>
+      <div class="form-group full"><label>Meta de receita (R$)</label><input type="number" id="mm-receita" step="0.01" placeholder="0.00"></div>
+      <div class="form-group full">
+        <label>Meta de recuperação de vendas <span style="font-size:11px;color:var(--t2)">— quantidade de vendas</span></label>
+        <input type="number" id="mm-recuperacao" min="0" placeholder="Ex: 10">
+      </div>
+      <div class="form-group full" style="background:var(--blue-l);padding:10px;border-radius:var(--r-md)">
+        <label style="color:var(--blue-t)">Conversão de PAD <span style="font-size:11px">— meta fixa: +70%</span></label>
+        <div style="font-size:13px;color:var(--blue-t);margin-top:4px">Calculado automaticamente sobre as vendas do período</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeMetaModal()">Cancelar</button>
@@ -1138,6 +1091,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal gerenciar contas Meta Ads -->
 <div class="modal-overlay" id="modal-meta-contas" onclick="if(event.target===this)closeMetaContasModal()">
   <div class="modal" style="width:520px;max-height:85vh;overflow-y:auto">
     <p class="modal-title">Contas de anúncios</p>
@@ -1158,11 +1112,13 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal período estilo Facebook (calendário visual com arraste) -->
 <div class="modal-overlay" id="modal-meta-periodo" onclick="if(event.target===this)closeMetaPeriodoModal()">
   <div class="modal" style="width:700px;max-width:95vw">
     <p class="modal-title">Período</p>
     <div style="display:flex;gap:1rem;align-items:flex-start">
       <div id="meta-periodo-atalhos" style="display:flex;flex-direction:column;gap:2px;width:160px;flex-shrink:0;max-height:380px;overflow-y:auto;border-right:1px solid var(--border2);padding-right:10px">
+        <!-- preenchido via JS -->
       </div>
       <div style="flex:1">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -1187,6 +1143,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal inserir token de uma nova conta -->
 <div class="modal-overlay" id="modal-meta-token" onclick="if(event.target===this)closeMetaTokenModal()">
   <div class="modal" style="width:460px">
     <p class="modal-title">Adicionar conta de anúncios</p>
@@ -1203,6 +1160,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal nomear conta Meta Ads -->
 <div class="modal-overlay" id="modal-meta-nome" onclick="if(event.target===this)closeMetaNomeModal()">
   <div class="modal" style="width:380px">
     <p class="modal-title">Nome da conta</p>
@@ -1218,6 +1176,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
   <div class="login-box">
     <div class="login-logo">
@@ -1238,6 +1197,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal PAD -->
 <div class="modal-overlay" id="modal-pad" onclick="if(event.target===this)closePadModal()">
   <div class="modal" style="width:560px;max-height:90vh;overflow-y:auto">
     <p class="modal-title">Lançar PAD</p>
@@ -1264,28 +1224,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-pad-pagamento" onclick="if(event.target===this)closePadPagamentoModal()">
-  <div class="modal" style="width:420px">
-    <p class="modal-title">Registrar pagamento</p>
-    <div class="form-grid">
-      <div class="form-group full">
-        <label>Tipo</label>
-        <select id="pp-tipo">
-          <option value="parcial">Pagamento parcial</option>
-          <option value="integral">Pagamento integral (quitou)</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Valor pago (R$)</label><input type="number" id="pp-valor" step="0.01" placeholder="0.00"></div>
-      <div class="form-group"><label>Data do pagamento</label><input type="date" id="pp-data"></div>
-    </div>
-    <div id="pp-resumo" style="font-size:11px;color:var(--t2);margin-top:6px"></div>
-    <div class="modal-footer">
-      <button class="btn" onclick="closePadPagamentoModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarPagamentoPad()"><i class="ti ti-device-floppy"></i> Registrar</button>
-    </div>
-  </div>
-</div>
-
+<!-- Modal histórico rastreamento -->
 <div class="modal-overlay" id="modal-track" onclick="if(event.target===this)document.getElementById('modal-track').classList.remove('open')">
   <div class="modal" style="width:560px;max-height:85vh;overflow-y:auto">
     <p class="modal-title" id="track-modal-title">Histórico de rastreamento</p>
@@ -1296,28 +1235,11 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-notificacoes" onclick="if(event.target===this)fecharNotificacoesModal()">
-  <div class="modal" style="width:480px;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column">
-    <p class="modal-title" id="notif-modal-titulo" style="display:flex;align-items:center;gap:8px"><i class="ti ti-bell"></i> Notificações</p>
-    <div style="display:flex;gap:14px;margin-bottom:10px;border-bottom:1px solid var(--border2)">
-      <button onclick="trocarSubabaNotif('naolidos')" id="notif-sub-naolidos" style="background:none;border:none;cursor:pointer;padding:6px 2px;font-size:12px;font-weight:700;color:var(--t2);border-bottom:2px solid transparent">Não lidas</button>
-      <button onclick="trocarSubabaNotif('lidos')" id="notif-sub-lidos" style="background:none;border:none;cursor:pointer;padding:6px 2px;font-size:12px;font-weight:700;color:var(--t2);border-bottom:2px solid transparent">Lidas</button>
-      <button onclick="marcarTodasNotifComoLidas()" style="margin-left:auto;background:none;border:none;cursor:pointer;padding:6px 2px;font-size:11px;font-weight:600;color:var(--blue-t)"><i class="ti ti-checks"></i> Marcar todas como lidas</button>
-    </div>
-    <div id="notif-lista" style="display:flex;flex-direction:column;gap:8px;min-height:120px"></div>
-    <div class="modal-footer">
-      <button class="btn" onclick="fecharNotificacoesModal()">Fechar</button>
-    </div>
-  </div>
-</div>
-
-<div id="status-pad-dropdown" style="display:none;position:fixed;z-index:500;background:#0d0d0d;border:1px solid var(--border2);border-radius:12px;padding:6px;box-shadow:0 12px 40px rgba(0,0,0,.6);min-width:190px"></div>
-
 <div class="toast" id="toast"></div>
 
 <script>
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const TAX_PJ=0.055;
+const TAX_PJ=0.10;
 
 let adminLogado=false;
 
@@ -1338,13 +1260,6 @@ function fazerLogin(){
     document.getElementById('login-senha').focus();
     return;
   }
-  try{ localStorage.setItem('matrixSessaoEmail', user.email.toLowerCase()); }catch(e){}
-  entrarComoUsuario(user);
-}
-
-// Faz o usuário entrar de fato no sistema (usado tanto pelo login manual quanto
-// pela sessão salva automaticamente ao abrir a página).
-function entrarComoUsuario(user){
   usuarioLogado=user;
   document.getElementById('login-screen').style.display='none';
   const fAtend=document.getElementById('f-atend');
@@ -1376,27 +1291,10 @@ function entrarComoUsuario(user){
   }
   setTimeout(()=>{
     const fA=document.getElementById('f-atend');
-    if(fA){
-      const opt=[...fA.options].find(o=>o.value===user.nome);
-      if(opt)fA.value=user.nome;
-      fA.disabled=!user.adm;
-    }
+    if(fA){const opt=[...fA.options].find(o=>o.value===user.nome);if(opt)fA.value=user.nome;}
     renderRegistrosDia();
-    if(typeof gerarNotificacoes==='function')gerarNotificacoes();
-    if(typeof atualizarBadgeNotificacoes==='function')atualizarBadgeNotificacoes();
   },100);
   toast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
-}
-
-// Ao carregar a página, verifica se já existe uma sessão salva e entra
-// automaticamente, sem pedir e-mail/senha de novo.
-function tentarSessaoSalva(){
-  try{
-    const emailSalvo = localStorage.getItem('matrixSessaoEmail');
-    if(!emailSalvo) return;
-    const user = USUARIOS.find(u=>u.email.toLowerCase()===emailSalvo);
-    if(user) entrarComoUsuario(user);
-  }catch(e){}
 }
 
 function fazerLogout(){
@@ -1409,10 +1307,8 @@ function fazerLogout(){
   document.getElementById('login-erro').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('sidebar-user').innerHTML='';
-  try{ localStorage.removeItem('matrixSessaoEmail'); }catch(e){}
 }
 const CUSTO_FRASCO=10;
-const PERCENTUAL_IMPOSTO_META_ADS_GLOBAL=0.1383;
 const CUSTO_ENVIO=32;
 
 const OFERTAS=[
@@ -1452,6 +1348,29 @@ let ofertaSelecionada=null;
 let valorEditado=null;
 
 function R(v,d=2){return isNaN(v)||!isFinite(v)?0:parseFloat(v.toFixed(d))}
+
+// Som de "dinheiro/pling" tocado ao registrar uma venda ou marcar um PAD como Pago.
+// Usa a Web Audio API nativa do navegador — sem arquivos externos, sem dependências.
+function tocarSomVenda(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const tocar = (freq, inicio, duracao, volume=0.4) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime+inicio);
+      gain.gain.setValueAtTime(volume, ctx.currentTime+inicio);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+inicio+duracao);
+      osc.start(ctx.currentTime+inicio);
+      osc.stop(ctx.currentTime+inicio+duracao);
+    };
+    // Sequência de 3 notas ascendentes tipo "pling pling pling" de caixa registradora
+    tocar(880, 0,    0.12);  // Lá5
+    tocar(1108,0.10, 0.12);  // Dó#6
+    tocar(1318,0.20, 0.22);  // Mi6 (nota mais longa no final)
+  }catch(e){ /* navegador não suporta Web Audio, silencia sem quebrar nada */ }
+}
 function fmt(v){return'R$ '+R(v,2).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
 
 function getComissao(nome){
@@ -1508,67 +1427,43 @@ function calcPadCustos(filtro){
   });
   return calcPadCustosPorLista(padsFil);
 }
+// ===== NÍVEIS DE ATENDENTE (gamificação por receita acumulada vitalícia) =====
+const NIVEIS_ATENDENTE = [
+  { nome:'Starter', min:0, cor:'#9CA3AF' },
+  { nome:'Closer', min:10000, cor:'#0EA5E9' },
+  { nome:'Top Performer', min:70000, cor:'#A855F7' },
+  { nome:'Master', min:150000, cor:'#F59E0B' },
+  { nome:'Legend', min:500000, cor:'#00FF80' },
+];
 
-// Receita (e imposto/comissão proporcional) de PAD reconhecida no dia em que o
-// dinheiro realmente ENTROU — usando as datas registradas em cada pagamento
-// (parcial ou integral), não a data em que o PAD foi lançado nem depender do
-// status atual estar "Pago" (um pagamento parcial já conta a parte recebida).
-function calcPadReceitaPorDia(dia, mes, ano, atendente){
-  const alvo = diaToISO(dia, mes, ano);
-  let bruto=0, impPJ=0, pctAtend=0;
-  pads.forEach(p=>{
-    if(atendente && p.atendente!==atendente) return;
-    // Ordena os pagamentos por data pra saber exatamente qual pagamento é o que
-    // completa o valor total do pedido (independente da ordem em que foram
-    // cadastrados no sistema).
-    const pagamentosOrdenados = [...(p.pagamentos||[])].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
-    let acumulado=0;
-    pagamentosOrdenados.forEach(pg=>{
-      const v=pg.valor||0;
-      const acumuladoAntes=acumulado;
-      acumulado+=v;
-      if(pg.data!==alvo) return;
-      bruto+=v;
-      pctAtend+=R(v*getComissao(p.atendente),2);
-      // DAS só é cobrado quando o pedido é EFETIVAMENTE concluído por completo
-      // (esse pagamento faz a soma bater ou passar o valor total) — e nesse caso
-      // é cobrado sobre o valor CHEIO do pedido, não sobre a parcela isolada.
-      if(acumuladoAntes<p.bruto && acumulado>=p.bruto){
-        impPJ+=R(p.bruto*TAX_PJ,2);
-      }
-    });
-  });
-  return { bruto:R(bruto,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2) };
+function getReceitaAcumuladaAtendente(nome){
+  return dados.filter(d=>d.atendente===nome && !d.isPad).reduce((s,d)=>s+(d.bruto||0),0);
+}
+
+function getNivelAtendente(nome){
+  const receita = getReceitaAcumuladaAtendente(nome);
+  let nivelAtual = NIVEIS_ATENDENTE[0];
+  let proximoNivel = null;
+  for(let i=0;i<NIVEIS_ATENDENTE.length;i++){
+    if(receita >= NIVEIS_ATENDENTE[i].min){
+      nivelAtual = NIVEIS_ATENDENTE[i];
+      proximoNivel = NIVEIS_ATENDENTE[i+1] || null;
+    }
+  }
+  const faltam = proximoNivel ? R(proximoNivel.min - receita,2) : 0;
+  const pctProgresso = proximoNivel ? Math.min(100, R((receita - nivelAtual.min) / (proximoNivel.min - nivelAtual.min) * 100, 1)) : 100;
+  return { nome: nivelAtual.nome, cor: nivelAtual.cor, receita, proximoNome: proximoNivel?proximoNivel.nome:null, faltam, pctProgresso };
 }
 
 function calcLucroDia(dia,mes,ano,atendente){
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&(!atendente||d.atendente===atendente)&&!d.isPad);
   let totalSub=0;
   rows.forEach(r=>{const c=calcRow(r);totalSub+=c.subtotal;});
-  const admFil=adminLancs.filter(a=>{
-    if(a.dia!==dia||a.mes!==mes||a.ano!==ano) return false;
-    if(atendente){
-      // Atendente específico: conta só o investimento atribuído a ele (seja via
-      // identificador no conjunto de anúncios, seja lançamento manual antigo) —
-      // nunca o total "Geral" de todos.
-      return a.atendente===atendente;
-    }
-    // Visão geral (Todos): conta o investimento uma única vez, ignorando os
-    // registros de detalhamento por atendente — eles são só um recorte do
-    // mesmo gasto já somado no registro "Geral", e somar os dois duplicava
-    // o investimento e inflava o prejuízo artificialmente.
-    return !(a.origemMeta && a.atendente);
-  });
-  let metaAdsBruto=0;
-  admFil.forEach(a=>metaAdsBruto+=a.investido||0);
-  const metaAds=R(metaAdsBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
-  // Custo de frascos e envio: reconhecido no dia do LANÇAMENTO do PAD (é quando o
-  // produto sai fisicamente, independente de já ter sido pago ou não).
-  const padCusto=calcPadCustos({dia,mes,ano,atendente:atendente||null});
-  // Receita, imposto e comissão: reconhecidos no dia real do PAGAMENTO (parcial
-  // ou integral), usando os registros de pagamento — não a data de lançamento.
-  const padReceita=calcPadReceitaPorDia(dia,mes,ano,atendente);
-  const padLucro=padReceita.bruto-(padCusto.custoFrascos+padCusto.custoEnvio+padReceita.impPJ+padReceita.pctAtend);
+  const admFil=adminLancs.filter(a=>a.dia===dia&&a.mes===mes&&a.ano===ano&&(!atendente||!a.atendente||a.atendente===atendente));
+  let metaAds=0;
+  admFil.forEach(a=>metaAds+=a.investido||0);
+  const padC=calcPadCustos({dia,mes,ano,atendente:atendente||null});
+  const padLucro=padC.bruto-padC.totalCustos;
   return R(totalSub+padLucro-metaAds);
 }
 
@@ -1579,7 +1474,7 @@ function addOpt(sel,val,label){const o=document.createElement('option');o.value=
 
 function initAllSelects(){
   const nomes=getNomes(),anos=getAnos().map(String);
-  ['dados-atend','pan-atend','cmp-atend-a','cmp-atend-b','adm-dash-atend','rast-atend','pad-atend-fil','calfin-atend','adm-atend-fil'].forEach(id=>{
+  ['dados-atend','pan-atend','cmp-atend-a','cmp-atend-b','adm-dash-atend','rast-atend','pad-atend-fil','calfin-atend'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;el.innerHTML='<option value="">Todos</option>';
     nomes.forEach(n=>addOpt(el,n,n));if(v)el.value=v;
@@ -1675,9 +1570,13 @@ function showPage(p){
   if(pg)pg.classList.add('active');
   ['nav-'+p,'nav-'+p+'-adm'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('active');});
 
+  // FIX: adjust main padding when dashboard-adm is active
   const mainEl = document.querySelector('.main');
   if(p === 'dashboard-adm'){
     if(mainEl) mainEl.style.padding = '0';
+    // Pausa a chuva Matrix enquanto o globo 3D está ativo — os dois competindo por
+    // CPU/GPU no mesmo frame é a causa mais provável da engasgada ao girar o globo
+    // com força. O fundo do globo já é escuro/estrelado, então nada se perde visualmente.
     if(window.matrixStop) window.matrixStop();
   } else {
     if(mainEl) mainEl.style.padding = '2rem';
@@ -1698,8 +1597,8 @@ function showPage(p){
     atendentes:renderAtendentes,
     admin:()=>{atualizarLabelPeriodo('metaPeriodo','adm-periodo-label');renderAdmin();initContaMetaSelect();autoSyncMetaAds();},
     lancamentos:renderRegistrosDia,
-    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');renderRastreamento();autoSyncRastreamento();gerarNotificacoes();},
-    pad:()=>{setPadTab('aberto');autoSyncRastreamento();gerarNotificacoes();}
+    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');renderRastreamento();autoSyncRastreamento();},
+    pad:()=>{setPadTab('aberto');autoSyncRastreamento();}
   };
   window.allRenders=fns;
   if(fns[p])fns[p]();
@@ -1731,28 +1630,9 @@ function renderDashboard(){
   let tBruto=0,tVendas=0,tLucro=0,tFrascos=0;
   const tituloEl=document.getElementById('db-titulo');
   if(tituloEl&&!adminLogado&&usuarioLogado)tituloEl.textContent='Dashboard — '+usuarioLogado.nome.split(' ')[0];
-  const admRows=adminLancs.filter(a=>{
-    if(!((!mes||a.mes===mes)&&(!ano||String(a.ano)===String(ano)))) return false;
-    if(atend) return a.atendente===atend;
-    return !(a.origemMeta && a.atendente);
-  });
+  const admRows=adminLancs.filter(a=>(!mes||a.mes===mes)&&(!ano||String(a.ano)===String(ano)));
   rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tVendas+=r.qtd_vendas||0;tFrascos+=c.frascos;});
-  const diasUnicos=new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano));
-  // Receita de PAD: soma pela data real do pagamento (parcial ou integral),
-  // respeitando os mesmos filtros de mês/ano/modo já aplicados nas vendas normais.
-  const hojeDash=new Date();
-  pads.forEach(p=>{
-    if(atend && p.atendente!==atend) return;
-    (p.pagamentos||[]).forEach(pg=>{
-      const dObj=new Date(pg.data+'T00:00:00');
-      const pgMes=MESES[dObj.getMonth()], pgAno=String(dObj.getFullYear());
-      if(mes && pgMes!==mes) return;
-      if(ano && pgAno!==ano) return;
-      if(modo==='hoje' && !(dObj.getDate()===hojeDash.getDate()&&dObj.getMonth()===hojeDash.getMonth()&&dObj.getFullYear()===hojeDash.getFullYear())) return;
-      tBruto+=pg.valor||0;
-      diasUnicos.add(dObj.getDate()+'|'+pgMes+'|'+pgAno);
-    });
-  });
+  const diasUnicos=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
   diasUnicos.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atend);});
   document.getElementById('db-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
@@ -1784,73 +1664,38 @@ function renderDashboard(){
   if(dk.length>0)charts['lucro']=new Chart(document.getElementById('ch-lucro'),{type:'line',data:{labels:dk,datasets:[{label:'Lucro',data:dk.map(d=>R(dias[d],2)),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:'#0F6E56'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
 }
 
-let _calfinNivel = 'anos';
+// ===== CALENDÁRIO FINANCEIRO: navegação em 3 níveis (Ano → Mês → Dia) =====
+let _calfinNivel = 'anos'; // 'anos' | 'ano' | 'mes' | 'dia'
 let _calfinAnoAtual = new Date().getFullYear();
-let _calfinMesAtual = null;
-let _calfinDiaAtual = null;
+let _calfinMesAtual = null; // nome do mês (string), quando nível='mes' ou 'dia'
+let _calfinDiaAtual = null; // número do dia, quando nível='dia'
 
-function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atendente, periodo){
+// Calcula o resumo financeiro (bruto, lucro líquido, custos, ROI, etc.) para um
+// conjunto de registros já filtrados por período e atendente.
+function calcularResumoFinanceiro(rowsVendas, admRowsPeriodo, padsPeriodo, atendente){
   let bruto=0, vendas=0, frascos=0, custoEnvio=0, impPJ=0, pctAtend=0;
   rowsVendas.filter(r=>!r.isPad).forEach(r=>{
     const c=calcRow(r);
-    bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnv; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
+    bruto+=r.bruto||0; vendas+=r.qtd_vendas||0; frascos+=c.frascos; custoEnvio+=c.custoEnvTotal; impPJ+=c.impPJ; pctAtend+=c.pctAtend;
   });
-  // Receita de PAD: soma pelos pagamentos (parciais/integrais) cuja data cai
-  // dentro do período visualizado — não pela data de lançamento do PAD. O DAS só
-  // é cobrado quando o pedido é concluído por completo dentro do período, sobre
-  // o valor cheio — igual ao critério usado em todo o resto do sistema.
-  if(periodo){
-    pads.forEach(p=>{
-      if(atendente && p.atendente!==atendente) return;
-      const pagamentosOrdenados = [...(p.pagamentos||[])].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
-      let acumulado=0;
-      pagamentosOrdenados.forEach(pg=>{
-        const v=pg.valor||0;
-        const acumuladoAntes=acumulado;
-        acumulado+=v;
-        const dentroPeriodo = pg.data>=periodo.inicio && pg.data<=periodo.fim;
-        if(dentroPeriodo){
-          bruto+=v;
-          pctAtend+=R(v*getComissao(p.atendente),2);
-        }
-        if(dentroPeriodo && acumuladoAntes<p.bruto && acumulado>=p.bruto){
-          impPJ+=R(p.bruto*TAX_PJ,2);
-        }
-      });
-    });
-  }
-  let investidoBruto=0, leads=0;
-  admRowsPeriodo.filter(a=>atendente?a.atendente===atendente:!(a.origemMeta&&a.atendente)).forEach(a=>{ investidoBruto+=a.investido||0; leads+=a.leads||0; });
-  const investido = R(investidoBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
+  let investido=0, leads=0;
+  admRowsPeriodo.filter(a=>!a.atendente).forEach(a=>{ investido+=a.investido||0; leads+=a.leads||0; });
 
-  // Custo de frascos/envio do PAD: reconhecido no dia do lançamento (é quando o
-  // produto sai fisicamente), independente de já ter sido pago ou não.
-  const padCustoFrascosEnvio = calcPadCustosPorLista(padsPeriodo||[]);
-  const custoFrascos = frascos*CUSTO_FRASCO + padCustoFrascosEnvio.custoFrascos;
-  custoEnvio += padCustoFrascosEnvio.custoEnvio;
+  const custoFrascos = frascos*CUSTO_FRASCO;
   const custoTotal = custoFrascos + custoEnvio + impPJ + pctAtend + investido;
 
-  const diasUnicos = new Set(rowsVendas.filter(r=>!r.isPad).map(r=>r.dia+'|'+r.mes+'|'+r.ano));
-  if(periodo){
-    pads.forEach(p=>{
-      if(atendente && p.atendente!==atendente) return;
-      (p.pagamentos||[]).forEach(pg=>{
-        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
-        const dObj=new Date(pg.data+'T00:00:00');
-        diasUnicos.add(dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear());
-      });
-    });
-  }
+  // Lucro: soma do calcLucroDia de cada dia único presente no conjunto.
+  const diasUnicos = [...new Set(rowsVendas.filter(r=>!r.isPad).map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
   let lucro=0;
   diasUnicos.forEach(k=>{ const[dd,mm,aa]=k.split('|'); lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendente||''); });
 
-  const roi = investido>0 ? R((lucro/investido)*100,1) : null;
+  const roi = investido>0 ? R((lucro/investido)*100,1) : null; // ROI em %, null = sem investimento no período
   const margem = bruto>0 ? R(lucro/bruto*100,1) : 0;
 
-  return { bruto:R(bruto,2), lucro:R(lucro,2), custoTotal:R(custoTotal,2), custoFrascos:R(custoFrascos,2), custoEnvio:R(custoEnvio,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2), investido:investido, leads, vendas, frascos, roi, margem };
+  return { bruto:R(bruto,2), lucro:R(lucro,2), custoTotal:R(custoTotal,2), custoFrascos:R(custoFrascos,2), custoEnvio:R(custoEnvio,2), impPJ:R(impPJ,2), pctAtend:R(pctAtend,2), investido:R(investido,2), leads, vendas, frascos, roi, margem };
 }
 
-function abrirGerenciarAtendCalfin(){ }
+function abrirGerenciarAtendCalfin(){ /* placeholder reservado, não usado por enquanto */ }
 
 function renderCalendarioFin(){
   const atend = document.getElementById('calfin-atend').value;
@@ -1893,19 +1738,21 @@ function cardResumoMiniHtml(r, corDestaque){
     </div>`;
 }
 
+// Nível 1: grade com os 12 meses do ano
+// Nível 0 (tela inicial): lista de todos os anos que têm algum dado registrado
 function renderCalfinNivelAnos(atend, cont){
   const anosComDados = new Set();
   dados.forEach(d=>{ if(!atend||d.atendente===atend) anosComDados.add(d.ano); });
+  // Garante que o ano atual sempre apareça, mesmo sem dados ainda
   anosComDados.add(new Date().getFullYear());
-  const anos = [...anosComDados].sort((a,b)=>b-a);
+  const anos = [...anosComDados].sort((a,b)=>b-a); // mais recente primeiro
 
   let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">`;
   anos.forEach(ano=>{
     const rowsVendas = dados.filter(d=>String(d.ano)===String(ano) && (!atend||d.atendente===atend));
     const admRows = adminLancs.filter(a=>String(a.ano)===String(ano));
     const padsRows = pads.filter(p=>String(p.ano)===String(ano));
-    const periodoAno={inicio:diaToISO(1,'Janeiro',ano),fim:diaToISO(31,'Dezembro',ano)};
-    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoAno);
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
     const temDados = r.bruto>0 || r.custoTotal>0;
     html += `
       <div onclick="calfinAbrirAno(${ano})" style="cursor:pointer;background:var(--bg-card);border:1px solid var(--border2);border-radius:var(--r-lg);padding:1.1rem;transition:all .2s;${!temDados?'opacity:.45':''}" onmouseover="this.style.borderColor='var(--neon-dim)'" onmouseout="this.style.borderColor='var(--border2)'">
@@ -1932,9 +1779,7 @@ function renderCalfinNivelAno(atend, cont){
     const rowsVendas = dados.filter(d=>d.mes===mes && String(d.ano)===String(_calfinAnoAtual) && (!atend||d.atendente===atend));
     const admRows = adminLancs.filter(a=>a.mes===mes && String(a.ano)===String(_calfinAnoAtual));
     const padsRows = pads.filter(p=>p.mes===mes && String(p.ano)===String(_calfinAnoAtual));
-    const totalDiasMes=new Date(_calfinAnoAtual,MESES.indexOf(mes)+1,0).getDate();
-    const periodoMes={inicio:diaToISO(1,mes,_calfinAnoAtual),fim:diaToISO(totalDiasMes,mes,_calfinAnoAtual)};
-    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoMes);
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
     anoTotal.bruto+=r.bruto; anoTotal.lucro+=r.lucro; anoTotal.custoTotal+=r.custoTotal;
     const temDados = r.bruto>0 || r.custoTotal>0;
     html += `
@@ -1955,10 +1800,11 @@ function renderCalfinNivelAno(atend, cont){
   cont.innerHTML = html;
 }
 
+// Nível 2: grade tipo calendário com os dias do mês selecionado
 function renderCalfinNivelMes(atend, cont){
   const mesIdx = MESES.indexOf(_calfinMesAtual);
   const totalDias = new Date(_calfinAnoAtual, mesIdx+1, 0).getDate();
-  const primeiroDiaSemana = (new Date(_calfinAnoAtual, mesIdx, 1).getDay()+6)%7;
+  const primeiroDiaSemana = (new Date(_calfinAnoAtual, mesIdx, 1).getDay()+6)%7; // 0=segunda
 
   let mesTotal = {bruto:0, lucro:0, custoTotal:0};
   const porDia = {};
@@ -1966,8 +1812,7 @@ function renderCalfinNivelMes(atend, cont){
     const rowsVendas = dados.filter(x=>x.dia===d && x.mes===_calfinMesAtual && String(x.ano)===String(_calfinAnoAtual) && (!atend||x.atendente===atend));
     const admRows = adminLancs.filter(a=>a.dia===d && a.mes===_calfinMesAtual && String(a.ano)===String(_calfinAnoAtual));
     const padsRows = pads.filter(p=>p.dia===d && p.mes===_calfinMesAtual && String(p.ano)===String(_calfinAnoAtual));
-    const periodoDia={inicio:diaToISO(d,_calfinMesAtual,_calfinAnoAtual),fim:diaToISO(d,_calfinMesAtual,_calfinAnoAtual)};
-    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoDia);
+    const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
     porDia[d]=r;
     mesTotal.bruto+=r.bruto; mesTotal.lucro+=r.lucro; mesTotal.custoTotal+=r.custoTotal;
   }
@@ -2003,14 +1848,14 @@ function renderCalfinNivelMes(atend, cont){
   cont.innerHTML = html;
 }
 
+// Nível 3: abre direto o modal de detalhe do dia (a tela "mês" continua visível por trás)
 function abrirCalfinDiaModal(atend){
-  renderCalfinNivelMes(atend, document.getElementById('calfin-conteudo'));
+  renderCalfinNivelMes(atend, document.getElementById('calfin-conteudo')); // mantém o calendário do mês visível por trás
   const dia = _calfinDiaAtual, mes = _calfinMesAtual, ano = _calfinAnoAtual;
   const rowsVendas = dados.filter(x=>x.dia===dia && x.mes===mes && String(x.ano)===String(ano) && (!atend||x.atendente===atend));
   const admRows = adminLancs.filter(a=>a.dia===dia && a.mes===mes && String(a.ano)===String(ano));
   const padsRows = pads.filter(p=>p.dia===dia && p.mes===mes && String(p.ano)===String(ano));
-  const periodoDiaModal={inicio:diaToISO(dia,mes,ano),fim:diaToISO(dia,mes,ano)};
-  const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend, periodoDiaModal);
+  const r = calcularResumoFinanceiro(rowsVendas, admRows, padsRows, atend);
 
   document.getElementById('calfin-dia-titulo').textContent = `${dia} de ${mes} de ${ano}${atend?' — '+atend.split(' ')[0]:''}`;
   const linha=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid var(--border)"><span style="color:var(--t2);font-size:13px">${label}</span><span style="font-weight:700;font-size:13px;${cor?'color:'+cor:''}">${valor}</span></div>`;
@@ -2020,7 +1865,7 @@ function abrirCalfinDiaModal(atend){
     ${linha('ROI', r.roi!=null ? r.roi+'%' : '— (sem investimento)', r.roi!=null ? (r.roi>=0?'var(--green)':'var(--red)') : 'var(--t3)')}
     ${linha('Custo de frascos', fmt(r.custoFrascos), 'var(--red-t)')}
     ${linha('Custo de envio', fmt(r.custoEnvio), 'var(--red-t)')}
-    ${linha('DAS', fmt(r.impPJ))}
+    ${linha('Imposto PJ', fmt(r.impPJ))}
     ${linha('% Atendentes', fmt(r.pctAtend))}
     ${linha('Vendas', r.vendas)}
     ${linha('Frascos', r.frascos)}
@@ -2047,7 +1892,8 @@ function renderPanorama(){
   const atend=document.getElementById('pan-atend').value;
   const rows=filtrarPorPeriodo(dados, periodo, atend);
   let tBruto=0,tVendas=0,tLucro=0,tImpPJ=0,tPct=0,tFrascos=0,tEnvio=0;
-  const { investido: tInv, leads: tLeads } = getInvestimentoMetaAds(periodo, atend);
+  const admRows=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
+  let tInv=0,tLeads=0;admRows.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
   const byD={};
   rows.filter(r=>!r.isPad).forEach(r=>{
     const c=calcRow(r);
@@ -2056,40 +1902,7 @@ function renderPanorama(){
     byD[chaveDia].bruto+=(r.bruto||0);byD[chaveDia].vendas+=(r.qtd_vendas||0);byD[chaveDia].impPJ+=c.impPJ;byD[chaveDia].pct+=c.pctAtend;byD[chaveDia].frascos+=c.frascos;byD[chaveDia].envio+=c.custoEnvTotal;
     tBruto+=(r.bruto||0);tVendas+=(r.qtd_vendas||0);tImpPJ+=c.impPJ;tPct+=c.pctAtend;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;
   });
-  const admFilPanorama = adminLancs.filter(a=>{
-    if(!dataNoPeriodo(a.dia,a.mes,a.ano,periodo)) return false;
-    if(atend) return a.atendente===atend;
-    return !(a.origemMeta && a.atendente);
-  });
-  admFilPanorama.forEach(a=>{const chaveDia=a.dia+'|'+a.mes+'|'+a.ano;if(byD[chaveDia]){byD[chaveDia].investido+=R((a.investido||0)*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);byD[chaveDia].leads+=(a.leads||0);}});
-  // Receita de PAD: soma no dia real em que o pagamento (parcial ou integral) foi
-  // registrado, pra "Receita bruta" bater com o mesmo critério usado no lucro. O
-  // DAS só é cobrado quando o pedido é concluído por completo, sobre o valor cheio.
-  pads.forEach(p=>{
-    if(atend && p.atendente!==atend) return;
-    const pagamentosOrdenados=[...(p.pagamentos||[])].sort((a,b)=>(a.data||'').localeCompare(b.data||''));
-    let acumulado=0;
-    pagamentosOrdenados.forEach(pg=>{
-      const v=pg.valor||0;
-      const acumuladoAntes=acumulado;
-      acumulado+=v;
-      const dentroPeriodo = pg.data>=periodo.inicio && pg.data<=periodo.fim;
-      if(!dentroPeriodo) return;
-      const dObj=new Date(pg.data+'T00:00:00');
-      const chaveDia=dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear();
-      if(!byD[chaveDia])byD[chaveDia]={dia:dObj.getDate(),mes:MESES[dObj.getMonth()],ano:dObj.getFullYear(),bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
-      byD[chaveDia].bruto+=v;
-      tBruto+=v;
-      const comissaoPad=R(v*getComissao(p.atendente),2);
-      byD[chaveDia].pct+=comissaoPad;
-      tPct+=comissaoPad;
-      if(acumuladoAntes<p.bruto && acumulado>=p.bruto){
-        const dasPad=R(p.bruto*TAX_PJ,2);
-        byD[chaveDia].impPJ+=dasPad;
-        tImpPJ+=dasPad;
-      }
-    });
-  });
+  admRows.forEach(a=>{const chaveDia=a.dia+'|'+a.mes+'|'+a.ano;if(byD[chaveDia]){byD[chaveDia].investido+=(a.investido||0);byD[chaveDia].leads+=(a.leads||0);}});
   Object.keys(byD).forEach(k=>{const dd=byD[k];dd.lucro=calcLucroDia(dd.dia,dd.mes,dd.ano,atend);tLucro+=dd.lucro;});
   document.getElementById('pan-metrics').innerHTML=`
     <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
@@ -2099,8 +1912,9 @@ function renderPanorama(){
     <div class="metric-card"><div class="metric-label">Frascos</div><div class="metric-value">${tFrascos}</div></div>
     <div class="metric-card"><div class="metric-label">Custo frascos</div><div class="metric-value mv-red">${fmt(tFrascos*CUSTO_FRASCO)}</div></div>
     <div class="metric-card"><div class="metric-label">Custo envio</div><div class="metric-value mv-red">${fmt(tEnvio)}</div></div>
-    <div class="metric-card"><div class="metric-label">DAS</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
+    <div class="metric-card"><div class="metric-label">Imp. PJ</div><div class="metric-value">${fmt(tImpPJ)}</div></div>
     <div class="metric-card"><div class="metric-label">% Atendentes</div><div class="metric-value">${fmt(tPct)}</div></div>
+    <div class="metric-card"><div class="metric-label">Leads</div><div class="metric-value">${tLeads}</div></div>
   `;
   const chaves = Object.keys(byD).sort((a,b)=>{
     const da=byD[a], db=byD[b];
@@ -2121,28 +1935,21 @@ function renderComparativo(){
   const periodoB = getPeriodoSalvo('comparativoPeriodoB','Mês passado');
   const atA=document.getElementById('cmp-atend-a').value;
   const atB=document.getElementById('cmp-atend-b').value;
-  function resumo(rows, periodo, atendenteFiltro){
-    const { bruto, vendas } = getReceitaTotalPeriodo(periodo, atendenteFiltro);
-    let lucro=0;
-    const diasSet=new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano));
-    pads.forEach(p=>{
-      if(atendenteFiltro && p.atendente!==atendenteFiltro) return;
-      (p.pagamentos||[]).forEach(pg=>{
-        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
-        const dObj=new Date(pg.data+'T00:00:00');
-        diasSet.add(dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear());
-      });
-    });
-    diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendenteFiltro||'');});
-    const { investido: inv, leads } = getInvestimentoMetaAds(periodo, atendenteFiltro);
+  function resumo(rows, periodo){
+    let bruto=0,vendas=0,lucro=0;
+    rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
+    const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
+    diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
+    const admR=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
+    let inv=0,leads=0;admR.forEach(a=>{inv+=a.investido||0;leads+=a.leads||0;});
     const ticket=vendas>0?R(bruto/vendas,2):0;
     const conv=leads>0?R(vendas/leads*100,1):0;
     const roas=inv>0?R(bruto/inv,2):0;
     const margem=bruto>0?R(lucro/bruto*100,1):0;
     return{bruto,inv,leads,vendas,lucro,ticket,conv,roas,margem};
   }
-  const rA=resumo(filtrarPorPeriodo(dados,periodoA,atA), periodoA, atA);
-  const rB=resumo(filtrarPorPeriodo(dados,periodoB,atB), periodoB, atB);
+  const rA=resumo(filtrarPorPeriodo(dados,periodoA,atA), periodoA);
+  const rB=resumo(filtrarPorPeriodo(dados,periodoB,atB), periodoB);
   function lA(){return`${periodoA.label}${atA?' · '+atA.split(' ')[0]:''}`;}
   function lB(){return`${periodoB.label}${atB?' · '+atB.split(' ')[0]:''}`;}
   const metrics=[
@@ -2167,26 +1974,18 @@ function renderComparativo(){
 function renderRanking(){
   const periodo = getPeriodoSalvo('rankingPeriodo');
   const ordem=document.getElementById('rank-ordem').value;
+  const admRows=filtrarPorPeriodo(adminLancs.filter(a=>!a.atendente), periodo);
+  let tLeads=0;admRows.forEach(a=>tLeads+=a.leads||0);
   const nomes=getNomes();
   const resumos=nomes.map(nome=>{
     const rows=filtrarPorPeriodo(dados, periodo, nome);
-    const { bruto, vendas } = getReceitaTotalPeriodo(periodo, nome);
-    let lucro=0,frascos=0;
-    rows.forEach(r=>{const c=calcRow(r);frascos+=c.frascos;});
-    const diasSet=new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano));
-    pads.forEach(p=>{
-      if(p.atendente!==nome) return;
-      (p.pagamentos||[]).forEach(pg=>{
-        if(pg.data<periodo.inicio||pg.data>periodo.fim) return;
-        const dObj=new Date(pg.data+'T00:00:00');
-        diasSet.add(dObj.getDate()+'|'+MESES[dObj.getMonth()]+'|'+dObj.getFullYear());
-      });
-    });
-    diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),nome);});
-    const { investido, leads } = getInvestimentoMetaAds(periodo, nome);
+    let bruto=0,vendas=0,lucro=0,frascos=0;
+    rows.forEach(r=>{const c=calcRow(r);bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;frascos+=c.frascos;});
+    const diasU=[...new Set(rows.map(r=>r.dia+'|'+r.mes+'|'+r.ano))];
+    diasU.forEach(k=>{const[dd,mm,aa]=k.split('|');lucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),nome);});
     const ticket=vendas>0?R(bruto/vendas,2):0;
-    const conv=leads>0?R(vendas/leads*100,1):0;
-    return{nome,bruto,vendas,lucro,frascos,ticket,conv,leads,investido};
+    const conv=tLeads>0?R(vendas/tLeads*100,1):0;
+    return{nome,bruto,vendas,lucro,frascos,ticket,conv,leads:tLeads};
   });
   resumos.sort((a,b)=>b[ordem]-a[ordem]);
   const medals=['🥇','🥈','🥉'];
@@ -2211,31 +2010,40 @@ function renderMetas(){
     const rows=filtrar(meta.atendente||'',mes,ano);
     let bruto=0,vendas=0;
     rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
-    function bar(real,metaV,lbl){
+    const admRows=adminLancs.filter(a=>a.mes===mes&&String(a.ano)===String(ano));
+    let leads=0;admRows.forEach(a=>leads+=a.leads||0);
+    const padPeriodo=pads.filter(p=>p.mes===mes&&String(p.ano)===String(ano)&&(!meta.atendente||p.atendente===meta.atendente));
+    const padPagos=padPeriodo.filter(p=>p.status==='Pago').length;
+    const padFrustrados=padPeriodo.filter(p=>p.status==='Frustrado').length;
+    const padTotal=padPagos+padFrustrados;
+    const convPAD=padTotal>0?R(padPagos/padTotal*100,1):0;
+    const META_PAD=70;
+    const recup=meta.recuperacao||0;
+    function bar(real,metaV,lbl,isPerc){
       if(!metaV||metaV<=0)return'';
       const p=Math.min(R(real/metaV*100,1),100);
       const cor=p>=100?'var(--green)':p>=60?'var(--amber)':'var(--red)';
       const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';
-      return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">${lbl}</span><span style="font-weight:700">${p}% — ${status}</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p}%;background:${cor}"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">${fmt(real)}</strong></span><span>Meta: <strong style="color:var(--t1)">${fmt(metaV)}</strong></span></div></div>`;
+      const realLabel=isPerc?real+'%':fmt(real);
+      const metaLabel=isPerc?metaV+'%':fmt(metaV);
+      return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">${lbl}</span><span style="font-weight:700">${p}% — ${status}</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p}%;background:${cor}"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">${realLabel}</strong></span><span>Meta: <strong style="color:var(--t1)">${metaLabel}</strong></span></div></div>`;
     }
-    html+=`<div class="table-card" style="margin-bottom:14px"><div class="table-header"><div><p style="font-size:14px;font-weight:700">${meta.atendente||'Todos os atendentes'}</p><p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano}</p></div><button class="btn btn-danger btn-sm" onclick="deleteMeta(${mi})"><i class="ti ti-trash"></i></button></div><div style="padding:1rem">${bar(bruto,meta.receita,'Meta 1 de receita (R$)')}${bar(bruto,meta.receita2,'Meta 2 de receita (R$)')}</div></div>`;
+    const pPAD=Math.min(R(convPAD/META_PAD*100,1),100);
+    const corPAD=convPAD>=META_PAD?'var(--green)':convPAD>=META_PAD*0.5?'var(--amber)':'var(--red)';
+    const statusPAD=convPAD>=META_PAD?'✅ Atingida':convPAD>=META_PAD*0.5?'⚠️ Em andamento':'❌ Abaixo';
+    const padBlock=`<div style="margin-bottom:14px;background:var(--blue-l);padding:12px;border-radius:var(--r-md)"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--blue-t);font-weight:700">Conversão de PAD <span style="font-weight:400;font-size:11px">(meta fixa: ${META_PAD}%)</span></span><span style="font-weight:700;color:var(--blue-t)">${convPAD}% — ${statusPAD}</span></div><div class="progress-bar" style="height:10px;background:rgba(24,95,165,.15)"><div class="progress-fill" style="width:${pPAD}%;background:var(--blue)"></div></div><div style="font-size:11px;color:var(--blue-t);margin-top:4px">${padTotal>0?padPagos+' pagos de '+padTotal+' definidos ('+padFrustrados+' frustrado'+(padFrustrados!==1?'s':'')+')':'Sem PADs finalizados neste período'}</div></div>`;
+    html+=`<div class="table-card" style="margin-bottom:14px"><div class="table-header"><div><p style="font-size:14px;font-weight:700">${meta.atendente||'Todos os atendentes'}</p><p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano}</p></div><button class="btn btn-danger btn-sm" onclick="deleteMeta(${mi})"><i class="ti ti-trash"></i></button></div><div style="padding:1rem">${bar(bruto,meta.receita,'Meta de receita (R$)',false)}${(()=>{if(!recup||recup<=0)return'';const qtdRecup=rows.filter(r=>r.recuperacao).length;const p=Math.min(R(qtdRecup/recup*100,1),100);const cor=p>=100?'var(--green)':p>=60?'var(--amber)':'var(--red)';const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';return'<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">Recuperação de vendas</span><span style="font-weight:700">'+p+'% — '+status+'</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:'+p+'%;background:'+cor+'"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">'+qtdRecup+' vendas</strong></span><span>Meta: <strong style="color:var(--t1)">'+recup+' vendas</strong></span></div></div>';})()}${padBlock}</div></div>`;
   });
   document.getElementById('metas-container').innerHTML=html;
 }
 
-function deleteMeta(idx){
-  if(confirm('Remover?')){
-    const item=metas[idx];
-    if(item&&item.fbId&&window.fbDelete)window.fbDelete('metas',item.fbId);
-    metas.splice(idx,1);renderMetas();toast('Meta removida.');
-  }
-}
+function deleteMeta(idx){if(confirm('Remover?')){metas.splice(idx,1);renderMetas();toast('Meta removida.');}}
 
 function renderDados(){
   const atend=document.getElementById('dados-atend').value;
   const periodo=getPeriodoSalvo('dadosPeriodo','Máximo');
   const search=(document.getElementById('search-inp').value||'').toLowerCase();
-  let rows=filtrarPorPeriodo(dados.filter(r=>!r.isPad), periodo, atend);
+  let rows=filtrarPorPeriodo(dados, periodo, atend);
   if(search)rows=rows.filter(r=>JSON.stringify(r).toLowerCase().includes(search));
   document.getElementById('dados-count').textContent=`${rows.length} registro${rows.length!==1?'s':''}`;
   let tb='';
@@ -2262,29 +2070,14 @@ function openAtendModal(){editAtendIdx=-1;document.getElementById('atend-modal-t
 function closeAtendModal(){document.getElementById('modal-atend').classList.remove('open');}
 function editAtend(idx){editAtendIdx=idx;const a=atendentes[idx];document.getElementById('atend-modal-title').textContent='Editar atendente';document.getElementById('ma-nome').value=a.nome;document.getElementById('ma-comissao').value=a.comissao;document.getElementById('ma-meta-id').value=a.metaId||'';document.getElementById('ma-payt-id').value=a.paytId||'';document.getElementById('modal-atend').classList.add('open');}
 function salvarAtendente(){
-  const nome=document.getElementById('ma-nome').value.trim();
-  const comInput=document.getElementById('ma-comissao').value;
-  const com=comInput===''||isNaN(parseFloat(comInput))?5:parseFloat(comInput);
+  const nome=document.getElementById('ma-nome').value.trim(),com=parseFloat(document.getElementById('ma-comissao').value)||5;
   const metaId=document.getElementById('ma-meta-id').value.trim();
   const paytId=document.getElementById('ma-payt-id').value.trim();
   if(!nome){toast('Informe o nome!');return;}
-  if(editAtendIdx>=0){
-    atendentes[editAtendIdx]={...atendentes[editAtendIdx],nome,comissao:com,metaId,paytId};
-    if(window.fbSave&&atendentes[editAtendIdx].fbId)window.fbSave('atendentes',atendentes[editAtendIdx].fbId,atendentes[editAtendIdx]);
-  }else{
-    const novo={nome,comissao:com,metaId,paytId,fbId:'atend_'+Date.now()};
-    atendentes.push(novo);
-    if(window.fbSave)window.fbSave('atendentes',novo.fbId,novo);
-  }
+  if(editAtendIdx>=0)atendentes[editAtendIdx]={...atendentes[editAtendIdx],nome,comissao:com,metaId,paytId};else atendentes.push({nome,comissao:com,metaId,paytId});
   closeAtendModal();initAllSelects();renderAtendentes();toast(editAtendIdx>=0?'Atualizado!':'Adicionado!');
 }
-function deleteAtend(idx){
-  if(confirm('Remover?')){
-    const item=atendentes[idx];
-    if(item&&item.fbId&&window.fbDelete)window.fbDelete('atendentes',item.fbId);
-    atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');
-  }
-}
+function deleteAtend(idx){if(confirm('Remover?')){atendentes.splice(idx,1);initAllSelects();renderAtendentes();toast('Removido.');}}
 
 function diaToISO(dia, mes, ano){
   const mi = MESES.indexOf(mes);
@@ -2297,6 +2090,7 @@ function dataNoPeriodo(dia, mes, ano, periodo){
   const { inicio, fim } = periodo || getPeriodoMetaAtual();
   return iso >= inicio && iso <= fim;
 }
+// Filtra uma lista de registros (que tenham dia/mes/ano) por um período {inicio,fim} ISO.
 function filtrarPorPeriodo(lista, periodo, atendente){
   return lista.filter(r => {
     if(atendente && r.atendente!==atendente) return false;
@@ -2304,68 +2098,27 @@ function filtrarPorPeriodo(lista, periodo, atendente){
   });
 }
 
-// Receita total de um período = vendas normais (dados, sem contar a cópia
-// financeira de PAD pago) + pagamentos de PAD (parciais ou integrais) recebidos
-// dentro do período, pela data real de cada pagamento. Usada em todo lugar que
-// mostra "Receita bruta/total", pra manter o mesmo critério em todas as telas.
-function getReceitaTotalPeriodo(periodo, atendente){
-  let bruto=0, vendas=0;
-  dados.filter(d=>!d.isPad).forEach(d=>{
-    if(atendente && d.atendente!==atendente) return;
-    if(!dataNoPeriodo(d.dia,d.mes,d.ano,periodo)) return;
-    bruto+=d.bruto||0;
-    vendas+=d.qtd_vendas||0;
-  });
-  pads.forEach(p=>{
-    if(atendente && p.atendente!==atendente) return;
-    (p.pagamentos||[]).forEach(pg=>{
-      if(pg.data>=periodo.inicio && pg.data<=periodo.fim) bruto+=pg.valor||0;
-    });
-  });
-  return { bruto:R(bruto,2), vendas };
-}
-
-// Função única usada em TODO o sistema (Dashboard, Panorama, Comparativo, Ranking,
-// Calendário Financeiro) para calcular investimento e leads do Meta Ads de forma
-// correta: já com o imposto de 13,83% incluso, e atribuindo certinho por atendente
-// — sem nunca somar o total "Geral" junto com o detalhamento por atendente (o que
-// duplicava o valor) e sem nunca usar o total da empresa inteira quando um
-// atendente específico está selecionado.
-function getInvestimentoMetaAds(periodo, atendente){
-  const admFil = adminLancs.filter(a=>{
-    if(!dataNoPeriodo(a.dia,a.mes,a.ano,periodo)) return false;
-    if(atendente) return a.atendente===atendente;
-    return !(a.origemMeta && a.atendente);
-  });
-  let investidoBruto=0, leads=0;
-  admFil.forEach(a=>{ investidoBruto+=a.investido||0; leads+=a.leads||0; });
-  return { investido: R(investidoBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2), leads };
-}
-
 function renderAdmin(){
   const { inicio, fim } = getPeriodoMetaAtual();
   const contasFiltro = getContasSelecionadasMeta();
-  const atendFiltroAdm = document.getElementById('adm-atend-fil')?.value||'';
 
+  // Apenas registros "Geral" (sem atendente) entram nas métricas e na tabela principal —
+  // os registros por atendente são um detalhamento complementar do mesmo investimento,
+  // não uma soma adicional (evita contar o gasto em duplicidade).
   const admFil = adminLancs.filter(a => {
+    if(a.origemMeta && a.atendente) return false; // detalhamento por atendente, não soma aqui
     if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
     if(a.origemMeta && contasFiltro.length>0 && !contasFiltro.includes(a.contaMeta)) return false;
-    if(atendFiltroAdm){
-      // Atendente específico: conta só o que foi atribuído a ele.
-      return a.atendente===atendFiltroAdm;
-    }
-    // Todos: conta o investimento uma única vez, ignorando o detalhamento por
-    // atendente (que é só um recorte do mesmo gasto já somado no "Geral").
-    return !(a.origemMeta && a.atendente);
+    return true;
   });
   let tInv=0,tLeads=0;
   admFil.forEach(a=>{tInv+=a.investido||0;tLeads+=a.leads||0;});
 
-  const rows = dados.filter(r => !r.isPad && dataNoPeriodo(r.dia, r.mes, r.ano) && (!atendFiltroAdm||r.atendente===atendFiltroAdm));
+  const rows = dados.filter(r => !r.isPad && dataNoPeriodo(r.dia, r.mes, r.ano));
   let tBruto=0,tFrascos=0,tEnvio=0,tVendas=0;
   rows.forEach(r=>{const c=calcRow(r);tBruto+=r.bruto||0;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tVendas+=r.qtd_vendas||0;});
 
-  const padsNoPeriodo = pads.filter(p => dataNoPeriodo(p.dia, p.mes, p.ano) && (!atendFiltroAdm||p.atendente===atendFiltroAdm));
+  const padsNoPeriodo = pads.filter(p => dataNoPeriodo(p.dia, p.mes, p.ano));
   const padCAdm = calcPadCustosPorLista(padsNoPeriodo);
   tFrascos+=padCAdm.frascos;tBruto+=padCAdm.bruto;
 
@@ -2374,13 +2127,16 @@ function renderAdmin(){
   admFil.forEach(a=>diasSet.add(a.dia+'|'+a.mes+'|'+a.ano));
   padsNoPeriodo.forEach(p=>diasSet.add(p.dia+'|'+p.mes+'|'+p.ano));
   let tLucro=0;
-  diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),atendFiltroAdm);});
+  diasSet.forEach(k=>{const[dd,mm,aa]=k.split('|');tLucro+=calcLucroDia(parseInt(dd),mm,parseInt(aa),'');});
 
+  // Imposto sobre o investimento em Meta Ads (taxa real observada nas faturas: ~13,83%)
   const PERCENTUAL_IMPOSTO_META_ADS = 0.1383;
   const impostoMetaAds = tInv * PERCENTUAL_IMPOSTO_META_ADS;
   const investimentoComImposto = tInv + impostoMetaAds;
   const roiMetaAds = tInv>0 ? R((tLucro/tInv)*100,1) : null;
 
+  // Vendas e valor retornado do dia: soma vendas normais (Front) + PAD lançados,
+  // desconsiderando PADs com status "Frustrado".
   const padsValidos = padsNoPeriodo.filter(p => p.status !== 'Frustrado');
   const qtdVendasFront = tVendas;
   const qtdVendasPad = padsValidos.length;
@@ -2389,7 +2145,9 @@ function renderAdmin(){
   const valorVendasPad = padsValidos.reduce((s,p)=>s+(p.bruto||0),0);
   const valorVendasTotal = valorVendasFront + valorVendasPad;
 
-  const totalAquisicoesCpa = qtdVendasFront + padsValidos.length;
+  // CPA — Custo por Aquisição: investimento (com imposto) ÷ total de aquisições (Front + PAD pagos, sem frustrados)
+  const padPagosTotal = padsNoPeriodo.filter(p => p.status === 'Pago').length;
+  const totalAquisicoesCpa = qtdVendasFront + padPagosTotal;
   const cpaMetaAds = totalAquisicoesCpa>0 ? investimentoComImposto/totalAquisicoesCpa : null;
 
   document.getElementById('adm-metrics').innerHTML=`
@@ -2415,6 +2173,7 @@ function renderAdmin(){
   if(!tb1)tb1='<tr><td colspan="13" class="empty"><i class="ti ti-inbox"></i>Nenhum dado sincronizado para o período/contas selecionadas.</td></tr>';
   document.getElementById('adm-inv-tbody').innerHTML=tb1;
 
+  // Tabela de investimento por atendente (detalhamento por conjunto de anúncios identificado)
   const admPorAtendente = adminLancs.filter(a => {
     if(!(a.origemMeta && a.atendente)) return false;
     if(!dataNoPeriodo(a.dia, a.mes, a.ano)) return false;
@@ -2429,6 +2188,8 @@ function renderAdmin(){
   if(!tbAtend)tbAtend='<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum conjunto de anúncios identificado para um atendente neste período. Cadastre o "Identificador no Meta Ads" em Atendentes.</td></tr>';
   document.getElementById('adm-inv-atend-tbody').innerHTML=tbAtend;
 
+  // Gráfico: investimento por atendente ao longo dos dias (já incluindo o imposto
+  // de 13,83% sobre o Meta Ads), uma linha por atendente.
   const PERCENTUAL_IMPOSTO_META_ADS_2 = 0.1383;
   const diasUnicosAtend = [...new Set(admPorAtendente.map(a=>diaToISO(a.dia,a.mes,a.ano)))].sort();
   const atendentesNoGrafico = [...new Set(admPorAtendente.map(a=>a.atendente))];
@@ -2452,20 +2213,22 @@ function renderAdmin(){
     });
   }
 
+  // CPA — Custo por Aquisição: investimento (com imposto) ÷ (vendas normais + PAD pagos).
+  // PADs frustrados ou ainda pendentes NÃO entram na contagem de aquisições.
   const diasUnicosCpa = [...new Set([...rows.map(r=>diaToISO(r.dia,r.mes,r.ano)), ...padsNoPeriodo.map(p=>diaToISO(p.dia,p.mes,p.ano)), ...admFil.map(a=>diaToISO(a.dia,a.mes,a.ano))])].sort();
   let tbCpa='';
   const cpaLabels=[], cpaValores=[];
   diasUnicosCpa.forEach(diaIso=>{
     const investidoDia = admFil.filter(a=>diaToISO(a.dia,a.mes,a.ano)===diaIso).reduce((s,a)=>s+(a.investido||0),0) * (1+PERCENTUAL_IMPOSTO_META_ADS_2);
     const vendasNormaisDia = rows.filter(r=>diaToISO(r.dia,r.mes,r.ano)===diaIso).reduce((s,r)=>s+(r.qtd_vendas||0),0);
-    const padValidosDia = padsNoPeriodo.filter(p=>diaToISO(p.dia,p.mes,p.ano)===diaIso && p.status!=='Frustrado').length;
-    const totalAquisicoes = vendasNormaisDia + padValidosDia;
+    const padPagosDia = padsNoPeriodo.filter(p=>diaToISO(p.dia,p.mes,p.ano)===diaIso && p.status==='Pago').length;
+    const totalAquisicoes = vendasNormaisDia + padPagosDia;
     const cpa = totalAquisicoes>0 ? investidoDia/totalAquisicoes : null;
     const [aa,mm,dd] = diaIso.split('-');
     cpaLabels.push(dd+'/'+mm);
     cpaValores.push(cpa!=null?R(cpa,2):null);
     if(investidoDia>0 || totalAquisicoes>0){
-      tbCpa+=`<tr><td style="font-weight:700">${dd}/${mm}</td><td>${fmt(investidoDia)}</td><td>${vendasNormaisDia}</td><td>${padValidosDia}</td><td>${totalAquisicoes}</td><td style="font-weight:600;${cpa!=null?'':'color:var(--t3)'}">${cpa!=null?fmt(cpa):'—'}</td></tr>`;
+      tbCpa+=`<tr><td style="font-weight:700">${dd}/${mm}</td><td>${fmt(investidoDia)}</td><td>${vendasNormaisDia}</td><td>${padPagosDia}</td><td>${totalAquisicoes}</td><td style="font-weight:600;${cpa!=null?'':'color:var(--t3)'}">${cpa!=null?fmt(cpa):'—'}</td></tr>`;
     }
   });
   if(!tbCpa)tbCpa='<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum dado no período</td></tr>';
@@ -2481,15 +2244,21 @@ function renderAdmin(){
   }
 }
 
+// ===== META ADS — Integração via Netlify Function (multi-conta, token por conta) =====
 const META_FUNC_URL = '/.netlify/functions/meta-ads';
-let contasMetaSalvas = [];
-let _contaMetaParaNomear = null;
-let _tokenNovaContaTemp = null;
+let contasMetaSalvas = []; // [{id, nome, token, visivel, fbId}] — cada conta com seu próprio token
+let _contaMetaParaNomear = null; // {id, novoRegistro} — estado temporário do modal de nomear
+let _tokenNovaContaTemp = null; // token digitado no modal "adicionar conta", antes de nomear/salvar
 
+// Contas marcadas para aparecer na Administração (filtro de visualização).
+// Se nenhuma estiver marcada, considera todas (comportamento "ver tudo").
 function getContasSelecionadasMeta(){
   const marcadas = contasMetaSalvas.filter(c => c.visivel).map(c => c.id);
-  return marcadas;
+  return marcadas; // array vazio = sem filtro (mostra todas)
 }
+// Conta "principal" usada como destino de uma sincronização manual avulsa
+// (ex: botão Atualizar quando só uma conta está marcada). Se houver mais de uma
+// marcada, sincronizarMetaAds() percorre todas.
 function getContaMetaSalva(){
   const marcadas = contasMetaSalvas.filter(c => c.visivel);
   if(marcadas.length>0) return marcadas[0].id;
@@ -2657,16 +2426,19 @@ function confirmarNomeContaMeta(){
   renderContasSalvasLista();
 }
 
-const META_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000;
+// Roda automaticamente sempre que a página Administração é aberta (entrada ou F5).
+// Tem um intervalo mínimo (cooldown) para não disparar a API do Meta repetidas vezes
+// em poucos segundos, por exemplo se o ADM ficar trocando de aba rapidamente.
+const META_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
 function autoSyncMetaAds(){
   const ultima = parseInt(sessionStorage.getItem('metaAutoSyncTs') || '0', 10);
   const agora = Date.now();
   if(agora - ultima < META_AUTOSYNC_COOLDOWN_MS){
-    return;
+    return; // sincronizado recentemente, não repete
   }
   const conta = getContaMetaSalva();
   if(!conta){
-    return;
+    return; // sem conta configurada ainda, não tenta sincronizar sozinho
   }
   sessionStorage.setItem('metaAutoSyncTs', String(agora));
   sincronizarMetaAds(true);
@@ -2680,6 +2452,7 @@ async function sincronizarMetaAds(silencioso){
     }
     return;
   }
+  // Sincroniza todas as contas marcadas como visíveis; se nenhuma marcada, sincroniza todas.
   const marcadas = contasMetaSalvas.filter(c=>c.visivel);
   const contas = (marcadas.length>0 ? marcadas : contasMetaSalvas).map(c=>c.id);
 
@@ -2703,6 +2476,9 @@ async function sincronizarMetaAds(silencioso){
       if(data.erro){ erros.push(getNomeContaMeta(conta)+': '+data.erro); continue; }
 
       const dias = data.dias || [];
+      // Remove os lançamentos antigos vindos da Meta especificamente para ESTA conta
+      // (tanto localmente quanto no Firestore), para não afetar dados de outras contas
+      // sincronizadas anteriormente nem duplicar os desta.
       const antigos = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta);
       adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta));
       if(window.fbDelete){
@@ -2711,10 +2487,10 @@ async function sincronizarMetaAds(silencioso){
         }
       }
       dias.forEach(d=>{
-        if(!d.investido && !d.leads && !d.impressoes) return;
+        if(!d.investido && !d.leads && !d.impressoes) return; // ignora dias totalmente vazios
         const rec = {
           dia: d.dia, mes: d.mes, ano: d.ano,
-          atendente: '',
+          atendente: '', // Geral — vindo da Meta, não é por atendente
           investido: d.investido, leads: d.leads,
           cliques: d.cliques, cpc: d.cpc, ctr: d.ctr,
           impressoes: d.impressoes, alcance: d.alcance,
@@ -2726,6 +2502,9 @@ async function sincronizarMetaAds(silencioso){
         totalNovos++;
       });
 
+      // Busca adicional por conjunto de anúncios, para atribuir investimento aos
+      // atendentes que tiverem um "Identificador no Meta Ads" cadastrado. Isso é
+      // complementar ao "Geral" acima — não substitui nem altera esses registros.
       const atendentesComId = atendentes.filter(a => a.metaId && a.metaId.trim());
       if(atendentesComId.length>0){
         try{
@@ -2736,6 +2515,7 @@ async function sincronizarMetaAds(silencioso){
           const dataAdset = await resAdset.json();
           if(!dataAdset.erro){
             const linhas = dataAdset.linhas || [];
+            // Remove registros antigos por atendente desta conta antes de reinserir
             const antigosAtend = adminLancs.filter(a => a.origemMeta && a.contaMeta===conta && a.atendente);
             adminLancs = adminLancs.filter(a => !(a.origemMeta && a.contaMeta===conta && a.atendente));
             if(window.fbDelete){
@@ -2747,7 +2527,7 @@ async function sincronizarMetaAds(silencioso){
               if(!l.investido && !l.leads && !l.impressoes) return;
               const nomeAdset = (l.adset_nome||'').toLowerCase();
               const atendenteBatido = atendentesComId.find(a => nomeAdset.includes(a.metaId.trim().toLowerCase()));
-              if(!atendenteBatido) return;
+              if(!atendenteBatido) return; // adset sem identificador conhecido, ignora (já está contado no Geral)
               const rec = {
                 dia: l.dia, mes: l.mes, ano: l.ano,
                 atendente: atendenteBatido.nome,
@@ -2787,20 +2567,22 @@ async function sincronizarMetaAds(silencioso){
 }
 
 function isoHojeMatrix(){
-  return isoDate(hojeDate());
+  return new Date().toISOString().split('T')[0];
 }
 function dataInicioPermitida(){
+  // A Graph API rejeita períodos com mais de 37 meses. Usamos 36 como margem de segurança.
   const d = new Date();
   d.setMonth(d.getMonth() - 36);
   return d.toISOString().split('T')[0];
 }
 
+// ===== PERÍODO ESTILO FACEBOOK (Administração) — calendário visual com arraste =====
 function isoDate(d){ return d.toISOString().split('T')[0]; }
 function hojeDate(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
 function addDias(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 function inicioMes(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
 function fimMes(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
-function inicioSemana(d){ const x=new Date(d); const dia=(x.getDay()+6)%7; return addDias(x,-dia); }
+function inicioSemana(d){ const x=new Date(d); const dia=(x.getDay()+6)%7; return addDias(x,-dia); } // semana começa segunda
 
 const META_PERIODO_ATALHOS = [
   { label:'Hoje', calc:()=>{const h=hojeDate();return[h,h];} },
@@ -2816,12 +2598,16 @@ const META_PERIODO_ATALHOS = [
   { label:'Máximo', calc:()=>{const d=new Date();d.setFullYear(d.getFullYear()-10);return[d,hojeDate()];} },
 ];
 
-let _calMesBase = null;
-let _calSelInicio = null;
-let _calSelFim = null;
+let _calMesBase = null;   // Date — mês exibido na primeira grade (a segunda mostra o mês seguinte)
+let _calSelInicio = null; // ISO yyyy-mm-dd — início da seleção em andamento/concluída
+let _calSelFim = null;    // ISO yyyy-mm-dd
 let _calArrastando = false;
-let _calContextoAtual = null;
+let _calContextoAtual = null; // {chave, onAplicar, onAtalho} — qual página está usando o calendário agora
 
+// ===== Registro de contextos: cada página com filtro de período registra-se aqui =====
+// chave: nome usado no sessionStorage (ex: 'metaPeriodo', 'panoramaPeriodo')
+// onAplicar: função chamada depois de aplicar/fechar o calendário (normalmente o render da página)
+// labelElId: id do elemento que mostra o texto do período (ex: cartão clicável)
 const CAL_CONTEXTOS = {};
 function registrarContextoPeriodo(chave, onAplicar, labelElId, atalhoPadrao){
   CAL_CONTEXTOS[chave] = { chave, onAplicar, labelElId, atalhoPadrao };
@@ -2846,6 +2632,7 @@ function setPeriodoSalvo(chave, inicio, fim, label){
   return periodo;
 }
 
+// Compatibilidade com o código já existente da página Meta Ads (Administração)
 function getPeriodoMetaAtual(){ return getPeriodoSalvo('metaPeriodo'); }
 function setPeriodoMetaAtual(inicio, fim, label){ return setPeriodoSalvo('metaPeriodo', inicio, fim, label); }
 
@@ -2854,6 +2641,7 @@ function formatarDataBR(iso){
   return `${d}/${m}/${a}`;
 }
 
+// Abre o calendário para qualquer contexto registrado.
 function abrirCalendarioPeriodo(chave){
   const ctx = CAL_CONTEXTOS[chave];
   if(!ctx){ console.error('Contexto de período não registrado:', chave); return; }
@@ -2874,6 +2662,7 @@ function abrirCalendarioPeriodo(chave){
   renderCalendarioGenerico();
   document.getElementById('modal-meta-periodo').classList.add('open');
 }
+// Atalho de compatibilidade (mesma assinatura antiga usada pela página Meta Ads)
 function abrirPeriodoMeta(){ abrirCalendarioPeriodo('metaPeriodo'); }
 
 function closeMetaPeriodoModal(){ document.getElementById('modal-meta-periodo').classList.remove('open'); }
@@ -2887,6 +2676,7 @@ function aplicarAtalhoPeriodoGenerico(label){
   closeMetaPeriodoModal();
   if(_calContextoAtual.onAplicar) _calContextoAtual.onAplicar();
 }
+// Compatibilidade
 function aplicarAtalhoPeriodoMeta(label){ _calContextoAtual = CAL_CONTEXTOS['metaPeriodo']; aplicarAtalhoPeriodoGenerico(label); }
 
 function mudarMesCalendarioMeta(delta){
@@ -2909,7 +2699,7 @@ function renderCalendarioGenerico(){
 
 function montarGradeMesGenerico(mesData){
   const ano = mesData.getFullYear(), mes = mesData.getMonth();
-  const primeiroDiaSemana = (new Date(ano, mes, 1).getDay()+6)%7;
+  const primeiroDiaSemana = (new Date(ano, mes, 1).getDay()+6)%7; // 0=segunda
   const totalDias = new Date(ano, mes+1, 0).getDate();
   let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:var(--t3);text-align:center;margin-bottom:4px">';
   for(let i=0;i<7;i++) html += `<div>${nomeDiaSemana(i)}</div>`;
@@ -2978,10 +2768,14 @@ function confirmarPeriodoCalendarioGenerico(){
   closeMetaPeriodoModal();
   if(_calContextoAtual.onAplicar) _calContextoAtual.onAplicar();
 }
+// Compatibilidade
 function confirmarPeriodoCalendarioMeta(){ confirmarPeriodoCalendarioGenerico(); }
 
+// Em alguns navegadores, soltar o clique fora da grade não dispara onmouseup do container;
+// este listener global garante que o arraste sempre finalize.
 document.addEventListener('mouseup', ()=>{ if(_calArrastando) finalizarArrasteCalGenerico(); });
 
+// Registra o contexto da página Meta Ads (Administração) — mantém comportamento já existente
 registrarContextoPeriodo('metaPeriodo', renderAdmin, 'adm-periodo-label');
 registrarContextoPeriodo('panoramaPeriodo', renderPanorama, 'pan-periodo-label');
 registrarContextoPeriodo('comparativoPeriodoA', renderComparativo, 'cmp-periodo-a-label');
@@ -3014,11 +2808,16 @@ function salvarLancamento(){
   const bruto=valorEditado||0;
   const nomeCliente=document.getElementById('f-nome-cliente').value.trim();
   const telefone=document.getElementById('f-telefone').value.trim();
-  const rec={mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone};
+  const rec={mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone,recuperacao:isRecuperacao};
   rec.fbId='dado_'+Date.now();
   dados.push(rec);
   if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
-  limparOferta();initAllSelects();renderRegistrosDia();toast('Venda registrada!');
+  isRecuperacao=false;
+  const btnR=document.getElementById('btn-recuperacao');
+  const iconR=document.getElementById('icon-recuperacao');
+  if(btnR){btnR.style.borderColor='';btnR.style.background='';btnR.style.color='';}
+  if(iconR){iconR.style.borderColor='';iconR.style.background='';iconR.innerHTML='';}
+  limparOferta();initAllSelects();renderRegistrosDia();tocarSomVenda();toast('Venda registrada!');
 }
 function limparOferta(){
   document.querySelectorAll('.oferta-item').forEach(el=>{el.classList.remove('selected');const conf=document.getElementById('oconf-'+el.dataset.id);if(conf)conf.style.display='none';});
@@ -3046,8 +2845,8 @@ function renderRegistrosDia(){
     if(totalBruto)totalBruto.textContent='R$ 0,00';
     return;
   }
-  const atendSelecionado = document.getElementById('f-atend')?.value || '';
-  const atendenteFiltro = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : atendSelecionado;
+  // ADM vê as vendas de todos os atendentes naquele dia; atendente comum só vê as próprias.
+  const atendenteFiltro = (!adminLogado && usuarioLogado) ? usuarioLogado.nome : '';
   const rows=dados.filter(d=>d.dia===dia&&d.mes===mes&&d.ano===ano&&!d.isPad&&(!atendenteFiltro||d.atendente===atendenteFiltro));
   if(sub)sub.textContent=(atendenteFiltro?atendenteFiltro.split(' ')[0]+' — ':'Todos os atendentes — ')+`${dia} de ${mes} de ${ano}`;
   if(totalVendas)totalVendas.textContent=rows.length;
@@ -3057,6 +2856,7 @@ function renderRegistrosDia(){
     const gi=dados.indexOf(r);
     const o=OFERTAS.find(x=>x.id===r.ofertaId)||{nome:'—',frascos:0};
     tBruto+=r.bruto||0;
+    // Marcação leve de origem/atendente — só aparece pro ADM, que vê vendas de todos.
     const marcacaoAtendente = (!atendenteFiltro && r.atendente) ? `<span class="badge b-blue" style="font-size:8px;padding:1px 5px" title="Atendente">${r.atendente.split(' ')[0]}</span>` : '';
     const marcacaoOrigem = r.origemPayt ? `<span class="badge b-purple" style="font-size:8px;padding:1px 5px" title="Vindo automaticamente da Payt"><i class="ti ti-bolt" style="font-size:8px"></i> Payt</span>` : '';
     tb+=`<tr id="row-dia-${gi}">
@@ -3084,13 +2884,17 @@ function renderRegistrosDia(){
   if(tbody)tbody.innerHTML=tb;
   if(totalBruto)totalBruto.textContent=fmt(tBruto);
 }
-function deletarVendaDia(idx){
-  if(confirm('Remover esta venda?')){
-    const item=dados[idx];
-    if(item&&item.fbId&&window.fbDelete)window.fbDelete('dados',item.fbId);
-    dados.splice(idx,1);initAllSelects();renderRegistrosDia();toast('Venda removida.');
-  }
+let isRecuperacao=false;
+
+function toggleRecuperacao(){
+  isRecuperacao=!isRecuperacao;
+  const btn=document.getElementById('btn-recuperacao');
+  const icon=document.getElementById('icon-recuperacao');
+  if(isRecuperacao){btn.style.borderColor='var(--amber)';btn.style.background='var(--amber-l)';btn.style.color='var(--amber-t)';icon.style.borderColor='var(--amber)';icon.style.background='var(--amber)';icon.innerHTML='<i class="ti ti-check" style="font-size:11px;color:#fff"></i>';}
+  else{btn.style.borderColor='var(--border2)';btn.style.background='var(--bg1)';btn.style.color='var(--t2)';icon.style.borderColor='var(--border2)';icon.style.background='transparent';icon.innerHTML='';}
 }
+
+function deletarVendaDia(idx){if(confirm('Remover esta venda?')){dados.splice(idx,1);initAllSelects();renderRegistrosDia();toast('Venda removida.');}}
 
 function toggleEditVenda(gi){
   ['nome','tel','valor'].forEach(f=>{
@@ -3124,41 +2928,32 @@ function editRow(idx){
 }
 function salvarModal(){
   const rec={dia:parseInt(document.getElementById('m-dia').value)||0,mes:document.getElementById('m-mes').value,ano:parseInt(document.getElementById('m-ano').value)||2026,atendente:document.getElementById('m-atend').value,ofertaId:parseInt(document.getElementById('m-oferta').value)||1,bruto:parseFloat(document.getElementById('m-bruto').value)||0,qtd_vendas:parseInt(document.getElementById('m-qtdv').value)||0};
-  if(editIdx>=0){
-    rec.fbId=dados[editIdx].fbId||('dado_'+Date.now());
-    dados[editIdx]=rec;
-  }else{
-    rec.fbId='dado_'+Date.now();
-    dados.push(rec);
-  }
-  if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
+  if(editIdx>=0)dados[editIdx]=rec;else dados.push(rec);
   closeModal();initAllSelects();renderDados();toast(editIdx>=0?'Atualizado!':'Adicionado!');
 }
-function deleteRow(idx){
-  if(confirm('Remover?')){
-    const item=dados[idx];
-    if(item&&item.fbId&&window.fbDelete)window.fbDelete('dados',item.fbId);
-    dados.splice(idx,1);initAllSelects();renderDados();toast('Removido.');
-  }
-}
+function deleteRow(idx){if(confirm('Remover?')){dados.splice(idx,1);initAllSelects();renderDados();toast('Removido.');}}
 
-function openMetaModal(){['mm-receita','mm-receita2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('modal-meta').classList.add('open');}
+function openMetaModal(){['mm-receita','mm-recuperacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('modal-meta').classList.add('open');}
 function closeMetaModal(){document.getElementById('modal-meta').classList.remove('open');}
 function salvarMeta(){
   const mes=document.getElementById('mm-mes').value,ano=parseInt(document.getElementById('mm-ano').value)||2026,atendente=document.getElementById('mm-atend').value;
-  const rec={mes,ano,atendente,receita:parseFloat(document.getElementById('mm-receita').value)||0,receita2:parseFloat(document.getElementById('mm-receita2').value)||0};
+  const rec={mes,ano,atendente,receita:parseFloat(document.getElementById('mm-receita').value)||0,recuperacao:parseFloat(document.getElementById('mm-recuperacao').value)||0};
   rec.fbId='meta_'+Date.now();
   metas.push(rec);
   if(window.fbSave)window.fbSave('metas',rec.fbId,rec);
   closeMetaModal();document.getElementById('meta-mes-fil').value=mes;document.getElementById('meta-ano-fil').value=String(ano);renderMetas();toast('Meta salva!');
 }
 
+// ===== GLOBO =====
 let dashGloboInstance=null;
 let dashGloboLoaded=false;
 
 function iniciarDashGlobo(){
   if(dashGloboLoaded)return;
   dashGloboLoaded=true;
+  // Carrega o three.js standalone primeiro (independente do bundle interno do globe.gl,
+  // que empacota sua própria cópia sem expô-la globalmente) — isso garante uma
+  // referência confiável a THREE para construir as cápsulas dos pedidos.
   function carregarGlobeGl(){
     if(!window.Globe){
       const s=document.createElement('script');
@@ -3174,7 +2969,7 @@ function iniciarDashGlobo(){
     const t=document.createElement('script');
     t.src='https://unpkg.com/three@0.128.0/build/three.min.js';
     t.onload=carregarGlobeGl;
-    t.onerror=carregarGlobeGl;
+    t.onerror=carregarGlobeGl; // segue mesmo sem THREE — cápsula cai no fallback de esfera padrão
     document.head.appendChild(t);
   } else {
     carregarGlobeGl();
@@ -3186,6 +2981,7 @@ async function construirDashGlobo(){
   if(!container)return;
   const loadingEl=document.getElementById('dash-globo-loading');
 
+  // FIX: ensure container has correct dimensions before init
   const w=container.offsetWidth||window.innerWidth-230;
   const h=container.offsetHeight||window.innerHeight;
 
@@ -3200,15 +2996,21 @@ async function construirDashGlobo(){
     .atmosphereAltitude(0.15)
     .pointOfView({lat:-15,lng:-50,altitude:1.8},1500);
 
+  // Limita a resolução de renderização (pixel ratio) — em monitores de alta densidade
+  // (retina, 4K), renderizar em 2x-3x pixels sem necessidade é uma causa comum de
+  // travamento/crash em globos 3D. 1.5 mantém boa nitidez sem o custo total.
   if(dashGloboInstance.renderer){
     const renderer = dashGloboInstance.renderer();
     if(renderer && renderer.setPixelRatio) renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.5));
   }
 
   dashGloboInstance.controls().autoRotate=false;
+  // Damping suaviza o movimento ao arrastar — sem isso, o navegador tenta recalcular
+  // a órbita imediatamente a cada pixel de movimento do mouse, o que é a causa mais
+  // provável da "engasgada" ao girar com força.
   dashGloboInstance.controls().enableDamping=true;
   dashGloboInstance.controls().dampingFactor=0.12;
-  dashGloboInstance.controls().rotateSpeed=0.6;
+  dashGloboInstance.controls().rotateSpeed=0.6; // mais lento = menos recálculos por segundo
   dashGloboInstance.controls().zoomSpeed=0.6;
 
   if(loadingEl)loadingEl.style.display='none';
@@ -3225,6 +3027,8 @@ async function construirDashGlobo(){
   await atualizarPontosDashGlobo();
 }
 
+// Carrega e desenha as fronteiras de países (mundo) e estados (Brasil) no globo,
+// como camadas de polígonos sutis — apenas demarcação visual, sem interação/clique.
 async function carregarFronteirasDashGlobo(){
   if(!dashGloboInstance)return;
   try{
@@ -3235,6 +3039,8 @@ async function carregarFronteirasDashGlobo(){
     const paisesGeo = await paisesRes.json();
     const estadosGeo = await estadosRes.json();
 
+    // Só o contorno do Brasil entre os países (evita renderizar ~180 países do mundo,
+    // que é a causa mais provável do globo travar/crashar).
     const brasilFeature = paisesGeo.features.find(f =>
       (f.properties?.NAME === 'Brazil') || (f.properties?.ADMIN === 'Brazil') || (f.properties?.ISO_A3 === 'BRA')
     );
@@ -3255,6 +3061,10 @@ async function carregarFronteirasDashGlobo(){
   }
 }
 
+// Cache de geocodificação persistido no localStorage — evita reconsultar a API do
+// Nominatim (e o delay de limite de requisições) para locais já vistos antes,
+// mesmo depois de recarregar a página. Isso é a principal causa de lentidão/
+// crash no globo quando há muitos pedidos rastreados.
 const GEOCACHE_KEY = 'matrixGeoCacheDash';
 function carregarGeoCacheDash(){
   try{
@@ -3270,22 +3080,24 @@ const geoCacheDash = carregarGeoCacheDash();
 async function geocodDash(local){
   if(!local)return null;
   if(geoCacheDash[local])return geoCacheDash[local];
-  const match=local.match(/([A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s]*)\/\s*([A-Za-z]{2})\b/);
-  if(!match){console.warn('[MATRIX rota] Não reconheci formato cidade/UF em:',JSON.stringify(local));return null;}
-  const cidade=match[1].trim();
-  const uf=match[2].trim().toUpperCase();
+  const match=local.match(/([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÀÈÌÒÙÇ\s]+)\/([A-Z]{2})/);
+  if(!match)return null;
   try{
-    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(cidade+', '+uf+', Brasil')+'&limit=1&countrycodes=br';
+    const url='https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(match[1].trim()+', '+match[2]+', Brasil')+'&limit=1&countrycodes=br';
     const res=await fetch(url);
-    if(!res.ok){console.warn('[MATRIX rota] Nominatim respondeu status',res.status,'para',cidade,uf);return null;}
     const data=await res.json();
     if(data&&data[0]){const coords={lat:parseFloat(data[0].lat),lng:parseFloat(data[0].lon)};geoCacheDash[local]=coords;salvarGeoCacheDash();return coords;}
-    console.warn('[MATRIX rota] Nominatim não encontrou nada para:',cidade,uf);
-  }catch(e){console.warn('[MATRIX rota] Erro ao geolocalizar',local,':',e.message);}
+  }catch(e){}
   return null;
 }
 
+// Constrói um pequeno objeto 3D em formato de cápsula (cilindro + duas esferas nas
+// pontas) para representar cada pedido no globo, no lugar de um ponto genérico.
+// Three.js r128 não tem CapsuleGeometry nativa (só a partir da r142), por isso
+// ===== ÍCONE DOS PEDIDOS NO GLOBO: letras 3D extrudadas girando =====
 function getThreeRef(){
+  // globe.gl, carregado via <script> UMD, não expõe THREE em window.THREE — por isso
+  // carregamos o three.js como biblioteca própria e independente (ver iniciarDashGlobo).
   return window.THREE || null;
 }
 
@@ -3298,8 +3110,8 @@ function iniciarRotacaoCaixaGlobo(caixa){
   const ctrl = { parar: false };
   _caixasRotacaoAtivas.push(ctrl);
   const escalaBase = 1;
-  const amplitude = 0.18;
-  const velocidade = 1.6;
+  const amplitude = 0.18;   // quanto cresce/diminui (18% acima e abaixo do tamanho base)
+  const velocidade = 1.6;   // velocidade do pulso
   let inicio = null;
   function passo(tempo){
     if(ctrl.parar || !caixa.scale) return;
@@ -3307,27 +3119,40 @@ function iniciarRotacaoCaixaGlobo(caixa){
     const t = (tempo - inicio)/1000;
     const fator = escalaBase + Math.sin(t*velocidade)*amplitude;
     caixa.scale.set(fator, fator, fator);
+    // Billboard suavizado: a logo vira gradualmente de frente para a câmera (não
+    // instantaneamente), eliminando a sensação de "andar" pela tela ao girar o
+    // globo rápido, mas sem ficar de lado/deitada como ficava sem nenhum ajuste.
     try{
       const cam = dashGloboInstance && dashGloboInstance.camera && dashGloboInstance.camera();
       if(cam && caixa.parent){
         const camPosLocal = caixa.parent.worldToLocal(cam.position.clone());
         const posOriginal = caixa.position.clone();
-        const quatAtual = caixa.quaternion.clone();
-        caixa.lookAt(camPosLocal);
+        const quatAtual = caixa.quaternion.clone(); // orientação real de antes deste frame
+        caixa.lookAt(camPosLocal); // efeito colateral: seta caixa.quaternion para "de frente"
         const quatAlvo = caixa.quaternion.clone();
         caixa.position.copy(posOriginal);
-        caixa.quaternion.copy(quatAtual);
-        caixa.quaternion.slerp(quatAlvo, 0.06);
+        caixa.quaternion.copy(quatAtual); // volta para a orientação real...
+        caixa.quaternion.slerp(quatAlvo, 0.06); // ...e gira só um pouquinho em direção ao alvo
       }
-    }catch(e){ }
+    }catch(e){ /* câmera indisponível nesta chamada — segue só com a pulsação */ }
     requestAnimationFrame(passo);
   }
   requestAnimationFrame(passo);
 }
 
+// Gera, via Canvas 2D nativo (sem nenhum arquivo externo), uma textura com o texto
+// "MAXIMUS" na cor do status — aplicada depois a um plano 3D que gira sobre o pedido.
+// ===== LETRAS 3D EXTRUDADAS: traços reais da logo MAXIMUS =====
+// Em vez de uma imagem/textura estampada num plano ou caixa, aqui construímos a
+// geometria 3D de verdade a partir do contorno exato de cada traço da logo
+// (extraído previamente da foto do produto), usando THREE.Shape + ExtrudeGeometry.
+// Isso dá profundidade real às próprias letras (incluindo o X estilizado), sem
+// depender de nenhum arquivo de fonte externo.
 const CONTORNOS_LOGO_MAXIMUS = {"largura_total":3.2875399361022364,"altura_total":1.0,"formas":[{"pontos":[[1.1022,0.7188],[1.0703,0.7572],[1.0479,0.77],[0.9744,0.7093],[1.0032,0.6965],[1.0256,0.6741],[1.0383,0.6454],[1.0319,0.6006],[0.9968,0.5623],[0.9681,0.5527],[0.7827,0.5527],[0.6805,0.4665],[0.9521,0.4665],[1.0064,0.4728],[1.0383,0.4856],[1.0863,0.524],[1.1118,0.5623],[1.1214,0.5879],[1.1246,0.6581]],"area":4735.5,"pai":-1},{"pontos":[[1.1054,0.7732],[1.2428,0.6358],[1.3131,0.6965],[1.2524,0.7604],[1.2332,0.77]],"area":1393.5,"pai":-1},{"pontos":[[2.1406,0.7859],[2.1438,0.5911],[2.1629,0.5431],[2.1981,0.5016],[2.262,0.4696],[2.3259,0.4665],[2.3866,0.4888],[2.4217,0.5176],[2.4441,0.5495],[2.4601,0.5911],[2.4601,0.7859],[2.3898,0.7859],[2.3866,0.6038],[2.377,0.5815],[2.3482,0.5527],[2.3195,0.5399],[2.2843,0.5399],[2.2556,0.5527],[2.2204,0.5942],[2.2141,0.6198],[2.2141,0.7859]],"area":5127.5,"pai":-1},{"pontos":[[2.5399,0.7891],[2.5112,0.7732],[2.4888,0.7476],[2.4792,0.7125],[2.4824,0.6805],[2.4952,0.655],[2.5304,0.6262],[2.6358,0.5847],[2.6518,0.5687],[2.655,0.5495],[2.6294,0.5272],[2.5815,0.524],[2.524,0.5367],[2.4824,0.5591],[2.4824,0.492],[2.5623,0.4665],[2.639,0.4665],[2.6741,0.476],[2.7093,0.5016],[2.722,0.5272],[2.7252,0.5751],[2.7125,0.607],[2.6773,0.639],[2.5655,0.6837],[2.5527,0.6997],[2.5527,0.7157],[2.5751,0.7348],[2.6198,0.738],[2.6709,0.7252],[2.6997,0.7093],[2.6997,0.7732],[2.6358,0.7955],[2.5655,0.7955]],"area":4492.5,"pai":-1},{"pontos":[[1.7157,0.8019],[1.7157,0.4665],[1.7891,0.4665],[1.7923,0.6166],[1.8051,0.6102],[1.9105,0.5048],[2.0319,0.6166],[2.0351,0.4665],[2.1118,0.4665],[2.1118,0.8019],[1.9169,0.6134],[1.9105,0.6134]],"area":6999.0,"pai":-1},{"pontos":[[1.6901,0.8019],[1.5783,0.6933],[1.5783,0.4665],[1.6901,0.4665]],"area":3097.0,"pai":-1},{"pontos":[[0.3355,0.4696],[0.4249,0.4665],[0.4281,0.6102],[0.6006,0.4728],[0.8562,0.6869],[0.8562,0.7955],[0.6038,0.5879],[0.5942,0.5879],[0.3387,0.8019]],"area":7430.5,"pai":-1},{"pontos":[[1.77,0.9712],[1.6486,0.9712],[1.623,0.9585],[1.1054,0.476],[1.2332,0.4792],[1.2556,0.492],[1.3163,0.5495],[1.3259,0.5527],[1.4952,0.3866],[1.5208,0.377],[1.6358,0.377],[1.3962,0.6166],[1.3962,0.623]],"area":9242.5,"pai":-1}]};
 
 const logoExtrusaoCacheGlobo = {};
+// Escurece uma cor hex (#RRGGBB) por um fator (0 = sem mudança, 1 = preto total).
+// Usado para dar a aparência de "face lateral em sombra" sem depender de luz real.
 function escurecerCor(corHex, fator){
   const hex = corHex.replace('#','');
   const r = Math.round(parseInt(hex.substring(0,2),16) * (1-fator));
@@ -3339,17 +3164,24 @@ function escurecerCor(corHex, fator){
 
 function criarCaixaPedidoGlobo(cor){
   const THREE = getThreeRef();
-  if(!THREE) return null;
+  if(!THREE) return null; // sem THREE: globe.gl usa sua esfera padrão automaticamente
   try{
     if(!logoExtrusaoCacheGlobo[cor]){
+      // Dois materiais sólidos (sem depender de luz na cena, que se mostrou
+      // pouco confiável neste bundle): a face frontal/traseira usa a cor do
+      // status normal, e a lateral (a "espessura" visível da extrusão) usa uma
+      // versão mais escura da mesma cor — isso já cria a ilusão de volume e
+      // profundidade sem precisar de nenhuma luz funcionando.
       const corEscurecida = escurecerCor(cor, 0.45);
       const materialFace = new THREE.MeshBasicMaterial({ color: cor });
       const materialLateral = new THREE.MeshBasicMaterial({ color: corEscurecida });
 
       const grupo = new THREE.Group();
-      const espessura = 0.26;
-      const escalaTamanho = 1.6;
+      const espessura = 0.26; // profundidade ajustada ao novo tamanho menor
+      const escalaTamanho = 1.6; // ajustado para um tamanho mais discreto
 
+      // Centraliza o grupo: desloca todos os contornos para que o centro da logo
+      // fique na origem (0,0), facilitando o posicionamento sobre o globo.
       const cx = (CONTORNOS_LOGO_MAXIMUS.largura_total/2);
       const cy = (CONTORNOS_LOGO_MAXIMUS.altura_total/2);
 
@@ -3360,11 +3192,29 @@ function criarCaixaPedidoGlobo(cor){
           if(i===0) shape.moveTo(x,y); else shape.lineTo(x,y);
         });
         const geometria = new THREE.ExtrudeGeometry(shape, { depth: espessura, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.02, bevelSegments: 2 });
+        // ExtrudeGeometry separa a malha em grupos: 0 = face frontal/traseira, 1 = laterais do bisel/extrusão
         const malha = new THREE.Mesh(geometria, [materialFace, materialLateral]);
         grupo.add(malha);
       });
 
+      // Sem rotação local: como cancelamos a rotação herdada do globo (na animação,
+      // via quaternion), a logo fica na orientação em que foi desenhada — plana,
+      // reta, sempre alinhada da mesma forma, em qualquer ponto do mapa.
+
       if(!grupo || grupo.isObject3D !== true) return null;
+
+      // Pino triangular (cone apontando para baixo) embaixo da logo — funciona como
+      // um marcador de localização, ancorando visualmente onde o pedido está sobre
+      // o globo. Fica na mesma cor do status, dentro do mesmo grupo (acompanha a
+      // pulsação e a orientação de frente para a câmera automaticamente).
+      const alturaTotalLogo = CONTORNOS_LOGO_MAXIMUS.altura_total*escalaTamanho;
+      const materialPino = new THREE.MeshBasicMaterial({ color: cor });
+      const pinoGeo = new THREE.ConeGeometry(0.22, 0.5, 12);
+      const pino = new THREE.Mesh(pinoGeo, materialPino);
+      pino.rotation.x = Math.PI; // cone aponta para baixo
+      pino.position.y = -(alturaTotalLogo/2) - 0.25; // logo abaixo da base da logo
+      pino.position.z = espessura/2; // centrado na espessura da extrusão
+      grupo.add(pino);
 
       logoExtrusaoCacheGlobo[cor] = grupo;
     }
@@ -3384,7 +3234,7 @@ async function atualizarPontosDashGlobo(){
   const userAtend=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:'';
   const cores={postagem:'#888888',rota:'#0EA5E9',retirada:'#F59E0B',entregue:'#00FF80',devolucao:'#EF4444',invalido:'#EF4444'};
   const labels={postagem:'Aguardando postagem',rota:'Em rota',retirada:'Aguardando retirada',entregue:'Entregue',devolucao:'Devolução'};
-  let rows=[...dados.filter(r=>!r.isPad).map(r=>({...r,_origemGlobo:'Rastreamento'})), ...pads.map(p=>({...p,_origemGlobo:'PAD'}))];
+  let rows=[...dados];
   if(userAtend)rows=rows.filter(r=>r.atendente===userAtend);
   if(atend)rows=rows.filter(r=>r.atendente===atend);
   rows=rows.filter(r=>r.rastreamento&&(r.trackData||(r.trackHistorico&&r.trackHistorico.length>0)));
@@ -3397,21 +3247,18 @@ async function atualizarPontosDashGlobo(){
     const jaEmCache = !!geoCacheDash[local];
     const coords=await geocodDash(local);
     if(!coords)continue;
-    if(!jaEmCache) await new Promise(res=>setTimeout(res,200));
-
     const st=getStatusCorreios(r);
-    todosPontos.push({
-      lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,
-      cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,
-      local,cod:r.rastreamento,atend:r.atendente.split(' ')[0],origem:r._origemGlobo
-    });
+    todosPontos.push({lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,local,cod:r.rastreamento,atend:r.atendente.split(' ')[0]});
+    if(!jaEmCache) await new Promise(res=>setTimeout(res,200)); // só espera quando consultou a API de verdade
   }
 
-  _pontosGloboTodos = todosPontos;
+  _pontosGloboTodos = todosPontos; // guarda a lista completa para reaplicar o filtro sem buscar tudo de novo
   renderFiltrosStatusDashAdm(todosPontos);
   aplicarFiltroStatusEDesenharPontos();
 }
 
+// Conta quantos pontos existem por status e desenha os botões-pílula de filtro,
+// cada um com ícone, cor e contador. Multi-seleção: nenhum marcado = mostra todos.
 const STATUS_GLOBO_CONFIG = [
   { tipo:'postagem', label:'Aguardando postagem', cor:'#888888', icone:'ti-clock' },
   { tipo:'rota', label:'Em rota', cor:'#0EA5E9', icone:'ti-truck-delivery' },
@@ -3420,7 +3267,7 @@ const STATUS_GLOBO_CONFIG = [
   { tipo:'devolucao', label:'Devolução', cor:'#EF4444', icone:'ti-arrow-back-up' },
 ];
 let _pontosGloboTodos = [];
-let _statusGloboSelecionados = new Set();
+let _statusGloboSelecionados = new Set(); // vazio = mostra todos
 
 function renderFiltrosStatusDashAdm(pontos){
   const cont = document.getElementById('adm-dash-status-filtros');
@@ -3467,8 +3314,8 @@ function aplicarFiltroStatusEDesenharPontos(){
   dashGloboInstance
     .objectsData(pontos).objectLat('lat').objectLng('lng').objectAltitude(0.02)
     .objectThreeObject(d=>criarCaixaPedidoGlobo(d.cor))
-    .objectLabel(d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-weight:700;color:'+d.cor+'">'+d.nome+'</span><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;background:'+(d.origem==="PAD"?"rgba(14,165,233,.2);color:#7DD3FC":"rgba(0,255,128,.15);color:#00FF80")+'">'+d.origem+'</span></div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div></div>')
-    .ringsData([]);
+    .objectLabel(d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="font-weight:700;color:'+d.cor+';margin-bottom:4px">'+d.nome+'</div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div></div>')
+    .ringsData([]); // sem pulso/raio ao redor dos pontos — só a caixa girando
 }
 
 function toggleDespesasDashAdm(){
@@ -3480,18 +3327,23 @@ function aplicarEstadoDespesasDashAdm(){
   const conteudo = document.getElementById('adm-dash-despesas');
   const chevron = document.getElementById('adm-dash-despesas-chevron');
   if(!conteudo||!chevron) return;
+  // Padrão: fechado, a menos que o usuário já tenha explicitamente aberto antes nesta sessão.
   const minimizado = sessionStorage.getItem('dashDespesasMin')!=='0';
   conteudo.style.display = minimizado?'none':'block';
   chevron.style.transform = minimizado?'rotate(180deg)':'rotate(0deg)';
 }
 
 function renderDashAdm(){
+  // Usuário comum: o globo mostra automaticamente só os próprios pedidos, sem
+  // possibilidade de trocar para ver dados de outros atendentes — o seletor fica
+  // escondido, e o filtro é travado no próprio nome dele.
   const selAtend = document.getElementById('adm-dash-atend');
   if(selAtend) selAtend.style.display = adminLogado ? 'inline-block' : 'none';
   const atend = adminLogado
     ? (selAtend ? selAtend.value : '')
     : (usuarioLogado ? usuarioLogado.nome : '');
 
+  // Sem filtros de período no globo — sempre mostra os números de HOJE.
   const agora=new Date();
   const filDia=agora.getDate(), filMes=MESES[agora.getMonth()], filAno=agora.getFullYear();
 
@@ -3506,28 +3358,19 @@ function renderDashAdm(){
     if(a.dia!==filDia)return false;
     if(a.mes!==filMes)return false;
     if(String(a.ano)!==String(filAno))return false;
-    if(atend){
-      // Atendente específico selecionado: conta só o investimento atribuído a ele,
-      // nunca o total "Geral" de todos os atendentes somados.
-      return a.atendente===atend;
-    }
-    // "Todos": conta o investimento uma única vez, ignorando os registros de
-    // detalhamento por atendente (que são um recorte do mesmo gasto já somado
-    // no registro "Geral"), evitando duplicar o investimento.
-    return !(a.origemMeta && a.atendente);
+    return true;
   });
   let tFrascos=0,tEnvio=0,tImpPJ=0,tPctAtend=0;
-  rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tFrascos+=c.frascos;tEnvio+=c.custoEnv;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
-  let tMetaAdsBruto=0;
-  admFil.forEach(a=>{tMetaAdsBruto+=a.investido||0;});
-  const tMetaAds=R(tMetaAdsBruto*(1+PERCENTUAL_IMPOSTO_META_ADS_GLOBAL),2);
+  rows.filter(r=>!r.isPad).forEach(r=>{const c=calcRow(r);tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;tImpPJ+=c.impPJ;tPctAtend+=c.pctAtend;});
+  let tMetaAds=0;
+  admFil.forEach(a=>{tMetaAds+=a.investido||0;});
   const padC=calcPadCustos({dia:filDia,mes:filMes,ano:filAno,atendente:atend||null});
-  const padReceitaHoje=calcPadReceitaPorDia(filDia,filMes,filAno,atend);
-  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio;tImpPJ+=padReceitaHoje.impPJ;tPctAtend+=padReceitaHoje.pctAtend;
+  tFrascos+=padC.frascos;tEnvio+=padC.custoEnvio+padC.custoFrascos;tImpPJ+=padC.impPJ;tPctAtend+=padC.pctAtend;
   const tLucro = calcLucroDia(filDia, filMes, filAno, atend);
 
   renderCardGatewayDashAdm(atend, tLucro);
 
+  // Card de Despesas — detalhado, visível apenas para o ADM logado.
   const despesasWrap = document.getElementById('adm-dash-despesas-wrap');
   if(adminLogado){
     despesasWrap.style.display = 'block';
@@ -3538,7 +3381,7 @@ function renderDashAdm(){
       linhaDesp('Custo de frascos', custoFrascos)
       + linhaDesp('Custo de envios', tEnvio)
       + linhaDesp('Meta Ads', tMetaAds)
-      + linhaDesp('DAS', tImpPJ)
+      + linhaDesp('Imposto PJ', tImpPJ)
       + linhaDesp('% Atendentes', tPctAtend)
       + '<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;margin-top:4px;border-top:1px solid rgba(239,68,68,.25)"><span style="font-weight:700;color:#fff">Total</span><span style="font-weight:800;color:#FCA5A5">'+fmt(totalDespesas)+'</span></div>';
     aplicarEstadoDespesasDashAdm();
@@ -3549,6 +3392,8 @@ function renderDashAdm(){
   if(!dashGloboLoaded){iniciarDashGlobo();}else if(dashGloboInstance){setTimeout(atualizarPontosDashGlobo,100);}
 }
 
+// Card de resumo estilo gateway de pagamento: Vendas hoje, variação vs ontem,
+// nível do atendente (quando filtrado por um específico), e resumo Ontem/Semana/Mês.
 function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   const hoje = hojeDate();
   const ontem = addDias(hoje,-1);
@@ -3565,25 +3410,7 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
     return { bruto, vendas };
   }
 
-  const padHoje = pads.filter(p=>{
-    if(atendFiltro && p.atendente!==atendFiltro) return false;
-    if(p.status==='Frustrado') return false;
-    return diaToISO(p.dia,p.mes,p.ano)===isoDate(hoje);
-  });
-  const padHojeValor = padHoje.reduce((s,p)=>s+(p.bruto||0),0);
-  const agendamentosQtdEl=document.getElementById('gw-agendamentos-qtd');
-  const agendamentosValorEl=document.getElementById('gw-agendamentos-valor');
-  if(agendamentosQtdEl)agendamentosQtdEl.textContent=padHoje.length;
-  if(agendamentosValorEl)agendamentosValorEl.textContent=fmt(padHojeValor);
-
-  const pagamentosHoje = [];
-  pads.filter(p=>!atendFiltro||p.atendente===atendFiltro).forEach(p=>{
-    (p.pagamentos||[]).forEach(pg=>{ if(pg.data===isoDate(hoje)) pagamentosHoje.push(pg); });
-  });
-  const recebidoHojePad = pagamentosHoje.reduce((s,pg)=>s+(pg.valor||0),0);
-
   const vHoje = somaPeriodo(hoje, hoje);
-  vHoje.bruto = R(vHoje.bruto + recebidoHojePad, 2);
   const vOntem = somaPeriodo(ontem, ontem);
   const vSemana = somaPeriodo(inicioSem, hoje);
   const vMes = somaPeriodo(inicioM, hoje);
@@ -3599,6 +3426,7 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
     lucroEl.style.display = 'none';
   }
   document.getElementById('gw-qtd-vendas').textContent = vHoje.vendas+' venda'+(vHoje.vendas!==1?'s':'');
+  // Ticket médio removido do card (já disponível no Panorama)
 
   const variacaoEl = document.getElementById('gw-variacao');
   if(vOntem.bruto>0){
@@ -3620,37 +3448,18 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   document.getElementById('gw-mes-valor').textContent = fmt(vMes.bruto).replace('R$ ','R$');
   document.getElementById('gw-mes-vendas').textContent = vMes.vendas+' ped.';
 
-  const metasBloco = document.getElementById('gw-metas-bloco');
-  const hojeMeta=new Date();
-  const mesAtualMeta=MESES[hojeMeta.getMonth()];
-  const anoAtualMeta=hojeMeta.getFullYear();
-  const metaDoMes = metas.find(m=>m.mes===mesAtualMeta && String(m.ano)===String(anoAtualMeta) && (atendFiltro?m.atendente===atendFiltro:!m.atendente));
-  function preencherMeta(num, valorMeta, cor){
-    const bloco=document.getElementById('gw-meta'+num+'-bloco');
-    if(!valorMeta||valorMeta<=0){ if(bloco)bloco.style.display='none'; return false; }
-    if(bloco)bloco.style.display='block';
-    const pct=Math.min(R(vMes.bruto/valorMeta*100,1),100);
-    document.getElementById('gw-meta'+num+'-pct').textContent=pct+'%';
-    document.getElementById('gw-meta'+num+'-progress').style.width=pct+'%';
-    document.getElementById('gw-meta'+num+'-progress').style.background=cor;
-    document.getElementById('gw-meta'+num+'-valores').textContent=fmt(vMes.bruto)+' de '+fmt(valorMeta);
-    return true;
+  const nivelBloco = document.getElementById('gw-nivel-bloco');
+  if(atendFiltro){
+    const nivel = getNivelAtendente(atendFiltro);
+    nivelBloco.style.display = 'block';
+    document.getElementById('gw-nivel-nome').textContent = nivel.nome;
+    document.getElementById('gw-nivel-receita').textContent = fmt(nivel.receita)+' acumulado';
+    document.getElementById('gw-nivel-proximo-nome').textContent = nivel.proximoNome || 'Nível máximo!';
+    document.getElementById('gw-nivel-falta').textContent = nivel.proximoNome ? ('faltam '+fmt(nivel.faltam)) : '🏆';
+    document.getElementById('gw-nivel-progress').style.width = nivel.pctProgresso+'%';
+  } else {
+    nivelBloco.style.display = 'none';
   }
-  document.getElementById('gw-meta1-bloco').style.display='none';
-  document.getElementById('gw-meta2-bloco').style.display='none';
-  let temMetaAtiva=false;
-  if(metaDoMes){
-    const meta1=metaDoMes.receita||0, meta2=metaDoMes.receita2||0;
-    const meta1Batida = meta1>0 && vMes.bruto>=meta1;
-    if(meta1>0 && !meta1Batida){
-      temMetaAtiva=preencherMeta(1, meta1, '#00FF80');
-    } else if(meta2>0){
-      temMetaAtiva=preencherMeta(2, meta2, '#0EA5E9');
-    } else if(meta1>0){
-      temMetaAtiva=preencherMeta(1, meta1, '#00FF80');
-    }
-  }
-  if(metasBloco) metasBloco.style.display = temMetaAtiva ? 'block' : 'none';
 }
 
 function renderRankingPublico(){
@@ -3660,9 +3469,10 @@ function renderRankingPublico(){
   const periodoEl=document.getElementById('rank-pub-periodo');
   if(periodoEl)periodoEl.textContent=mes+' de '+ano;
   const nomes=getNomes();
-  const periodoMesAtual={inicio:isoDate(inicioMes(hojeDate())),fim:isoDate(hojeDate())};
   const resumos=nomes.map(nome=>{
-    const { bruto, vendas } = getReceitaTotalPeriodo(periodoMesAtual, nome);
+    const rows=filtrar(nome,mes,String(ano));
+    let bruto=0,vendas=0;
+    rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
     return{nome,bruto,vendas};
   });
   resumos.sort((a,b)=>b.vendas-a.vendas);
@@ -3680,11 +3490,8 @@ function renderRankingPublico(){
   if(canvas&&resumos.length>0){charts['rank-pub']=new Chart(canvas,{type:'bar',data:{labels:resumos.map(r=>r.nome.split(' ')[0]),datasets:[{label:'Receita',data:resumos.map(r=>R(r.bruto,2)),backgroundColor:colors.slice(0,resumos.length),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});}
 }
 
+// ===== PAD =====
 let pads=[];
-let notificacoesRast=[];
-let notificacoesPad=[];
-let _notifAbaTipo='rastreamento';
-let _notifSubaba='naolidos';
 let padTab='aberto';
 
 function setPadTab(tab){
@@ -3706,20 +3513,12 @@ let padOfertaSelecionada=null;
 let padValorEditado=null;
 
 const PAD_STATUS=['Aguardando postagem','Em rota','Aguardando pagamento','Pago','Frustrado'];
-const CORES_STATUS_PAD={
-  'Aguardando postagem':{bg:'rgba(136,136,136,.18)',border:'#999',texto:'#ddd'},
-  'Em rota':{bg:'rgba(14,165,233,.18)',border:'#0EA5E9',texto:'#7DD3FC'},
-  'Aguardando pagamento':{bg:'rgba(245,158,11,.2)',border:'#F59E0B',texto:'#FCD34D'},
-  'Pago':{bg:'rgba(0,255,128,.18)',border:'#00FF80',texto:'#00FF80'},
-  'Frustrado':{bg:'rgba(239,68,68,.2)',border:'#EF4444',texto:'#FCA5A5'},
-};
 
 function openPadModal(){
   padOfertaSelecionada=null;padValorEditado=null;
   ['pad-dia','pad-nome','pad-tel','pad-negociacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('pad-ano').value='2026';
   initAllSelects();
-  document.getElementById('pad-atend').disabled=false;
   const pa=document.getElementById('pad-atend');
   if(pa&&usuarioLogado){const opt=[...pa.options].find(o=>o.value===usuarioLogado.nome);if(opt){pa.value=usuarioLogado.nome;}else if(pa.options.length>0){pa.selectedIndex=0;}}
   buildPadOfertasGrid();
@@ -3727,12 +3526,12 @@ function openPadModal(){
 }
 function closePadModal(){
   document.getElementById('modal-pad').classList.remove('open');
-  document.getElementById('pad-atend').disabled=false;
   const saveBtn=document.querySelector('#modal-pad .btn-primary');
   if(saveBtn){saveBtn.onclick=salvarPad;saveBtn.innerHTML='<i class="ti ti-device-floppy"></i> Lançar PAD';}
   const title=document.querySelector('#modal-pad .modal-title');
   if(title)title.textContent='Lançar PAD';
 }
+// Funções de CEP/endereço removidas — PAD não coleta mais dados de entrega.
 function buildPadOfertasGrid(){
   const grid=document.getElementById('pad-ofertas-grid');
   if(!grid)return;
@@ -3777,30 +3576,13 @@ function salvarPad(){
 }
 
 function renderPad(){
-  fecharStatusDropdownPad();
   const filtrosAdm=document.getElementById('pad-filters-adm');
   if(filtrosAdm)filtrosAdm.style.display=adminLogado?'flex':'none';
   const atendFil=adminLogado?(document.getElementById('pad-atend-fil')?.value||''):(usuarioLogado?.nome||'');
-  const buscaPad=(document.getElementById('pad-busca')?.value||'').toLowerCase();
   let rows=[...pads];
   if(atendFil)rows=rows.filter(p=>p.atendente===atendFil);
-  if(buscaPad)rows=rows.filter(p=>{const s=((p.nomeCliente||'')+(p.telefone||'')+(p.rastreamento||'')).toLowerCase();return s.includes(buscaPad);});
   rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const abertos=rows.filter(p=>['Aguardando postagem','Em rota','Aguardando pagamento'].includes(p.status));
-  const pendentesReceber=rows.filter(p=>{
-    if(p.status==='Frustrado')return false;
-    const totalPago=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
-    return totalPago<p.bruto;
-  });
-  const totalAReceber=pendentesReceber.reduce((s,p)=>{
-    const totalPago=(p.pagamentos||[]).reduce((s2,pg)=>s2+(pg.valor||0),0);
-    return s+R(p.bruto-totalPago,2);
-  },0);
-  const resumoEl=document.getElementById('pad-receber-resumo');
-  if(resumoEl)resumoEl.innerHTML=`
-    <div class="metric-card"><div class="metric-label">Total a receber</div><div class="metric-value mv-amber">${fmt(totalAReceber)}</div></div>
-    <div class="metric-card"><div class="metric-label">Pedidos pendentes</div><div class="metric-value">${pendentesReceber.length}</div></div>
-  `;
   const pagos=rows.filter(p=>p.status==='Pago');
   const frustrados=rows.filter(p=>p.status==='Frustrado');
   const setN=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
@@ -3811,8 +3593,8 @@ function renderPad(){
     const gi=pads.indexOf(p);
     const o=OFERTAS.find(x=>x.id===p.ofertaId)||{nome:'—',frascos:0};
     const nomeCurto=o.nome.replace(' de Maximus V6','').replace('Frascos','fr.').replace('Frasco','fr.');
-    const corStatusPad = CORES_STATUS_PAD[p.status]||CORES_STATUS_PAD['Aguardando postagem'];
-    const statusCell='<button type="button" class="status-pad-trigger" onclick="toggleStatusDropdownPad('+gi+',this)" style="font-size:13px;font-weight:800;padding:10px 16px;border-radius:24px;border:2px solid '+corStatusPad.border+';background:'+corStatusPad.bg+';color:'+corStatusPad.texto+';cursor:pointer;min-width:190px;letter-spacing:.2px;display:inline-flex;align-items:center;justify-content:space-between;gap:8px;font-family:inherit">'+p.status+' <i class="ti ti-chevron-down" style="font-size:13px"></i></button>';
+    const statusOpts=PAD_STATUS.map(s=>'<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+s+'</option>').join('');
+    const statusCell='<select onchange="mudarStatusPad('+gi+',this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:.5px solid var(--border2);background:var(--bg1);color:var(--t1)">'+statusOpts+'</select>';
     let rastrCol='';
     if(adminLogado){
       const rval=p.rastreamento||'';
@@ -3822,29 +3604,12 @@ function renderPad(){
       rastrCol='<td>'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Aguardando</span>')+'</td>';
     }
     const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${p.trackInvalido?`<div style="font-weight:600;font-size:11px;color:var(--red);margin-bottom:3px">⚠️ Código inválido</div>`:p.trackStatus?`<div style="font-weight:600;font-size:11px;color:var(--neon);margin-bottom:2px">${p.trackStatus}</div><div style="font-size:9px;color:var(--t3);margin-bottom:3px">${p.trackData||''}</div>`:`<div style="font-size:10px;color:var(--t3);margin-bottom:3px;font-style:italic">Aguardando busca</div>`}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
-    const pagamentos = p.pagamentos||[];
-    const totalPago = pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
-    const pagamentoCol = `<td style="min-width:170px">
-      <div style="font-size:12px;font-weight:700;color:${totalPago>0?'var(--green)':'var(--t3)'}">${fmt(totalPago)} <span style="font-weight:400;color:var(--t3)">/ ${fmt(p.bruto)}</span></div>
-      ${pagamentos.length>0?`<div style="font-size:9px;color:var(--t3);margin-top:3px;max-width:170px;display:flex;flex-direction:column;gap:2px">${pagamentos.map((pg,pgi)=>`<div style="display:flex;align-items:center;gap:4px;justify-content:space-between">
-        <span>${(pg.tipo==='integral'?'✅':'🔸')} ${fmt(pg.valor)} em ${formatarDataBR(pg.data)}</span>
-        <span style="display:flex;gap:2px;flex-shrink:0">
-          <button onclick="openPadPagamentoModal(${gi},${pgi})" title="Editar pagamento" style="background:none;border:none;color:var(--t3);cursor:pointer;padding:1px;font-size:11px"><i class="ti ti-edit"></i></button>
-          <button onclick="excluirPagamentoPad(${gi},${pgi})" title="Excluir pagamento" style="background:none;border:none;color:var(--red-t);cursor:pointer;padding:1px;font-size:11px"><i class="ti ti-trash"></i></button>
-        </span>
-      </div>`).join('')}</div>`:''}
-      <button class="btn btn-sm" onclick="openPadPagamentoModal(${gi})" style="margin-top:4px;padding:2px 8px;font-size:10px"><i class="ti ti-plus"></i> Pagamento</button>
-    </td>`;
-    const podeEditar = adminLogado || (usuarioLogado && p.atendente===usuarioLogado.nome);
-    const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':(podeEditar?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px" title="Editar meu lançamento"><i class="ti ti-edit"></i></button></td>':'<td></td>');
-    const neg=(p.negociacao&&p.status!=='Pago')?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
+    const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':'<td></td>';
+    const neg=p.negociacao?'<div style="margin-top:4px;font-size:11px;color:var(--amber-t);background:var(--amber-l);padding:2px 6px;border-radius:4px"><i class="ti ti-notes" style="font-size:10px"></i> '+p.negociacao+'</div>':'';
     const cidade=p.cidade?'<div style="font-size:10px;color:var(--t3)">'+p.cidade+(p.estado?' - '+p.estado:'')+'</div>':'';
-    const previsaoCol = '<td style="font-size:11px;white-space:nowrap">'+(p.previsaoEntrega?'<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> '+new Date(p.previsaoEntrega).toLocaleDateString('pt-BR')+'</span>':'<span style="color:var(--t3)">—</span>')+'</td>';
-    const marcadoHoje = p.apuradoData===isoHojeMatrix();
-    const apuradoCol = '<td style="text-align:center"><button onclick="toggleApuradoPad('+gi+')" title="'+(marcadoHoje?'Já apurado hoje — clique pra desmarcar':'Marcar como apurado hoje')+'" style="width:26px;height:26px;border-radius:50%;border:2px solid '+(marcadoHoje?'var(--neon)':'var(--border2)')+';background:'+(marcadoHoje?'var(--neon)':'transparent')+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s"><i class="ti ti-check" style="font-size:14px;color:'+(marcadoHoje?'#000':'transparent')+'"></i></button></td>';
-    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+previsaoCol+apuradoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
+    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+rastrCol+acompanhamentoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
   });
-  if(!tb)tb='<tr><td colspan="12" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
+  if(!tb)tb='<tr><td colspan="8" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
   const tbody=document.getElementById('pad-tbody');
   if(tbody)tbody.innerHTML=tb;
 }
@@ -3853,6 +3618,7 @@ function mudarStatusPad(gi,novoStatus){
   pads[gi].status=novoStatus;
   if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);
   if(novoStatus==='Pago'){
+    tocarSomVenda();
     const p=pads[gi];
     const rec={mes:p.mes,ano:p.ano,atendente:p.atendente,dia:p.dia,ofertaId:p.ofertaId,bruto:p.bruto,qtd_vendas:1,nomeCliente:p.nomeCliente+' (PAD)',telefone:p.telefone,recuperacao:false,rastreamento:p.rastreamento||'',isPad:true};
     rec.fbId='dado_pad_'+Date.now();
@@ -3862,56 +3628,13 @@ function mudarStatusPad(gi,novoStatus){
     toast('✅ PAD marcado como Pago! Venda registrada em Lançamentos.');
   }else{toast('Status atualizado!');}
   renderPad();
-  gerarNotificacoes();
 }
-
-// Menu customizado de status do PAD — substitui o <select> nativo (cuja lista
-// aberta não pode ser estilizada, ficando com a aparência do sistema operacional).
-let _statusPadDropdownGi=-1;
-function toggleStatusDropdownPad(gi, btnEl){
-  const dropdown=document.getElementById('status-pad-dropdown');
-  if(!dropdown) return;
-  if(_statusPadDropdownGi===gi && dropdown.style.display==='block'){
-    fecharStatusDropdownPad();
-    return;
-  }
-  _statusPadDropdownGi=gi;
-  const p=pads[gi];
-  dropdown.innerHTML=PAD_STATUS.map(s=>{
-    const cor=CORES_STATUS_PAD[s];
-    const ativo=p.status===s;
-    return '<div onclick="escolherStatusPad('+gi+',\''+s+'\')" onmouseover="this.style.background=\''+cor.bg+'\'" onmouseout="this.style.background=\''+(ativo?cor.bg:'transparent')+'\'" style="padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:2px;background:'+(ativo?cor.bg:'transparent')+';color:'+cor.texto+';border:1.5px solid '+(ativo?cor.border:'transparent')+';transition:background .15s">'+s+'</div>';
-  }).join('');
-  const rect=btnEl.getBoundingClientRect();
-  dropdown.style.left=rect.left+'px';
-  dropdown.style.top=(rect.bottom+6)+'px';
-  dropdown.style.minWidth=rect.width+'px';
-  dropdown.style.display='block';
-}
-function escolherStatusPad(gi, novoStatus){
-  fecharStatusDropdownPad();
-  mudarStatusPad(gi, novoStatus);
-}
-function fecharStatusDropdownPad(){
-  const dropdown=document.getElementById('status-pad-dropdown');
-  if(dropdown)dropdown.style.display='none';
-  _statusPadDropdownGi=-1;
-}
-document.addEventListener('click', (e)=>{
-  const dropdown=document.getElementById('status-pad-dropdown');
-  if(!dropdown || dropdown.style.display!=='block') return;
-  if(!dropdown.contains(e.target) && !e.target.closest('.status-pad-trigger')){
-    fecharStatusDropdownPad();
-  }
-});
-
 function editarRastPad(gi){document.getElementById('prview-'+gi).style.display='none';document.getElementById('predit-'+gi).style.display='flex';document.getElementById('prinp-'+gi).focus();}
 function cancelarRastPad(gi){document.getElementById('prview-'+gi).style.display='flex';document.getElementById('predit-'+gi).style.display='none';}
-function salvarRastPad(gi){const codigo=document.getElementById('prinp-'+gi).value.trim();pads[gi].rastreamento=codigo;if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);renderPad();toast('Código salvo!');if(codigo)buscarRastreio(gi,'pad');}
+function salvarRastPad(gi){pads[gi].rastreamento=document.getElementById('prinp-'+gi).value.trim();if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);renderPad();toast('Código salvo!');}
 function editarPad(gi){
   const p=pads[gi];
   document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
-  document.getElementById('pad-atend').disabled=!adminLogado;
   buildPadOfertasGrid();padOfertaSelecionada=p.ofertaId;padValorEditado=p.bruto;
   setTimeout(()=>{const item=document.querySelector('#pad-ofertas-grid .oferta-item[data-id="'+p.ofertaId+'"]');if(item){item.classList.add('selected');const inp=document.getElementById('padoval-'+p.ofertaId);if(inp)inp.value=p.bruto;const conf=document.getElementById('padoconf-'+p.ofertaId);if(conf){conf.textContent='✓ Valor: '+fmt(p.bruto);conf.style.display='block';}}},50);
   document.querySelector('#modal-pad .modal-title').textContent='Editar PAD';
@@ -3928,89 +3651,8 @@ function salvarEdicaoPad(gi){
 }
 function deletarPad(gi){if(confirm('Remover este PAD?')){if(window.fbDelete&&pads[gi].fbId)window.fbDelete('pads',pads[gi].fbId);pads.splice(gi,1);renderPad();toast('PAD removido.');}}
 
-let _padPagamentoGi=-1;
-let _padPagamentoIdx=-1;
-function openPadPagamentoModal(gi, idx){
-  _padPagamentoGi=gi;
-  _padPagamentoIdx=(idx!=null?idx:-1);
-  const p=pads[gi];
-  const pagamentos=p.pagamentos||[];
-  const totalPago=pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
-  const editando=_padPagamentoIdx>=0;
-  const pgAtual=editando?pagamentos[_padPagamentoIdx]:null;
-  document.querySelector('#modal-pad-pagamento .modal-title').textContent=editando?'Editar pagamento':'Registrar pagamento';
-  if(editando){
-    document.getElementById('pp-tipo').value=pgAtual.tipo;
-    document.getElementById('pp-valor').value=pgAtual.valor;
-    document.getElementById('pp-data').value=pgAtual.data;
-    const restanteSemEste=R(p.bruto-(totalPago-pgAtual.valor),2);
-    document.getElementById('pp-resumo').textContent='Editando este pagamento. Sem ele, restariam '+fmt(restanteSemEste>0?restanteSemEste:0)+' de '+fmt(p.bruto);
-  }else{
-    const restante=R(p.bruto-totalPago,2);
-    document.getElementById('pp-tipo').value='parcial';
-    document.getElementById('pp-valor').value=restante>0?restante:'';
-    document.getElementById('pp-data').value=isoHojeMatrix();
-    document.getElementById('pp-resumo').textContent='Já pago: '+fmt(totalPago)+' de '+fmt(p.bruto)+' — restam '+fmt(restante>0?restante:0);
-  }
-  const saveBtn=document.querySelector('#modal-pad-pagamento .btn-primary');
-  saveBtn.innerHTML=editando?'<i class="ti ti-device-floppy"></i> Salvar alterações':'<i class="ti ti-device-floppy"></i> Registrar';
-  document.getElementById('modal-pad-pagamento').classList.add('open');
-}
-function closePadPagamentoModal(){
-  document.getElementById('modal-pad-pagamento').classList.remove('open');
-  _padPagamentoGi=-1;
-  _padPagamentoIdx=-1;
-}
-function salvarPagamentoPad(){
-  if(_padPagamentoGi<0)return;
-  const tipo=document.getElementById('pp-tipo').value;
-  const valor=parseFloat(document.getElementById('pp-valor').value)||0;
-  const data=document.getElementById('pp-data').value||isoHojeMatrix();
-  if(valor<=0){toast('Informe um valor válido!');return;}
-  const p=pads[_padPagamentoGi];
-  if(!p.pagamentos)p.pagamentos=[];
-  if(_padPagamentoIdx>=0){
-    p.pagamentos[_padPagamentoIdx]={valor,data,tipo};
-  }else{
-    p.pagamentos.push({valor,data,tipo});
-  }
-  if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
-  const eraEdicao=_padPagamentoIdx>=0;
-  closePadPagamentoModal();
-  renderPad();
-  if(typeof gerarNotificacoes==='function')gerarNotificacoes();
-  toast(eraEdicao?'Pagamento atualizado!':(tipo==='integral'?'Pagamento integral registrado!':'Pagamento parcial registrado!'));
-}
-function excluirPagamentoPad(gi, idx){
-  if(!confirm('Remover este pagamento?'))return;
-  const p=pads[gi];
-  if(!p.pagamentos)return;
-  p.pagamentos.splice(idx,1);
-  if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
-  renderPad();
-  if(typeof gerarNotificacoes==='function')gerarNotificacoes();
-  toast('Pagamento removido.');
-}
-
-// Marca o pedido como "apurado" no dia de hoje — só guarda a data da última vez
-// que foi marcado. Como a exibição sempre compara com a data de HOJE, o marcador
-// "reseta" sozinho a cada novo dia, sem precisar de nenhuma rotina automática.
-function toggleApuradoPad(gi){
-  const p=pads[gi];
-  if(!p)return;
-  const hojeIso=isoHojeMatrix();
-  if(p.apuradoData===hojeIso){
-    p.apuradoData='';
-    toast('Marcação removida.');
-  }else{
-    p.apuradoData=hojeIso;
-    toast('Marcado como apurado hoje!');
-  }
-  if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
-  renderPad();
-}
-
-let _statusRastreamentoSelecionados = new Set();
+// ===== RASTREAMENTO =====
+let _statusRastreamentoSelecionados = new Set(); // vazio = mostra todos
 
 function renderFiltrosStatusRastreamento(rows){
   const cont = document.getElementById('rast-status-filtros');
@@ -4050,7 +3692,7 @@ function renderRastreamento(){
   const atendFiltro=adminLogado?(document.getElementById('rast-atend')?.value||''):(usuarioLogado?.nome||'');
   const periodoFiltro=adminLogado?getPeriodoSalvo('rastreamentoPeriodo','Máximo'):null;
   const busca=(document.getElementById('rast-busca')?.value||'').toLowerCase();
-  let rows=dados.filter(r=>!r.isPad);
+  let rows=[...dados];
   if(atendFiltro)rows=rows.filter(r=>r.atendente===atendFiltro);
   if(periodoFiltro)rows=rows.filter(r=>dataNoPeriodo(r.dia,r.mes,r.ano,periodoFiltro));
   if(busca)rows=rows.filter(r=>{const s=((r.nomeCliente||'')+(r.telefone||'')+(r.rastreamento||'')+(r.atendente||'')).toLowerCase();return s.includes(busca);});
@@ -4097,7 +3739,6 @@ function salvarRastreio(gi){
   dados[gi].rastreamento=codigo;
   if(window.fbSave&&dados[gi].fbId)window.fbSave('dados',dados[gi].fbId,dados[gi]);
   renderRastreamento();toast('Código salvo!');
-  if(codigo) buscarRastreio(gi,'rast');
 }
 
 async function buscarRastreio(gi,tipo){
@@ -4117,25 +3758,26 @@ async function buscarRastreio(gi,tipo){
     obj.trackStatus=eventos[0]?.descricao||'—';
     obj.trackData=(eventos[0]?.data||'')+(eventos[0]?.hora?' '+eventos[0].hora:'')+(eventos[0]?.local?' — '+eventos[0].local:'');
     obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;
-    marcarInicioRetiradaSeNecessario(obj);
     if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);
     if(tipo==='pad')renderPad();else renderRastreamento();
-    gerarNotificacoes();
     toast('Rastreamento atualizado!');
   }catch(e){console.error('Tracking error:',e);toast('Erro ao buscar. Verifique o código.');}
 }
 
 async function atualizarTodosRastreios(silencioso){
   const status=document.getElementById('rast-update-status');
+  // Considera "pendente de atualização" todo pedido com rastreamento que ainda NÃO
+  // chegou a um status final (Entregue ou Devolução) — assim o status nunca fica
+  // congelado na 1ª consulta, continua sendo atualizado enquanto o pedido "viver".
   const naoFinal = obj => {
-    if(!obj.trackStatus) return true;
+    if(!obj.trackStatus) return true; // nunca buscado ainda
     const st = getStatusCorreios(obj);
     return st.tipo!=='entregue' && st.tipo!=='devolucao';
   };
   const pendentes=dados.filter(r=>r.rastreamento&&!r.isPad&&naoFinal(r));
   const padPendentes=pads.filter(p=>p.rastreamento&&naoFinal(p));
   const total=pendentes.length+padPendentes.length;
-  if(total===0){ gerarNotificacoes(); if(!silencioso) toast('Nenhum rastreamento pendente!'); return; }
+  if(total===0){ if(!silencioso) toast('Nenhum rastreamento pendente!'); return; }
   if(status)status.textContent=`Sincronizando rastreamentos (0/${total})...`;
   let done=0;
   for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,500));}
@@ -4143,11 +3785,18 @@ async function atualizarTodosRastreios(silencioso){
   if(status)status.textContent=`✅ Atualizado — ${new Date().toLocaleTimeString('pt-BR')}`;
   setTimeout(()=>{if(status)status.textContent='';},5000);
   renderRastreamento();
-  gerarNotificacoes();
   if(!silencioso) toast(`${total} rastreamentos atualizados!`);
 }
 
+// Roda automaticamente ao entrar/recarregar a página de Rastreamento (ou PAD).
+// Tem um cooldown de 5 minutos para não disparar a API repetidas vezes se a pessoa
+// ficar trocando de aba rapidamente.
+const RASTREIO_AUTOSYNC_COOLDOWN_MS = 5 * 60 * 1000;
 function autoSyncRastreamento(){
+  const ultima = parseInt(sessionStorage.getItem('rastreioAutoSyncTs') || '0', 10);
+  const agora = Date.now();
+  if(agora - ultima < RASTREIO_AUTOSYNC_COOLDOWN_MS) return;
+  sessionStorage.setItem('rastreioAutoSyncTs', String(agora));
   atualizarTodosRastreios(true);
 }
 
@@ -4163,7 +3812,7 @@ async function buscarRastreioSilent(gi,tipo){
     const eventos=[];
     if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''}));}
     else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});}
-    if(eventos.length>0){obj.trackStatus=eventos[0].descricao;obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
+    if(eventos.length>0){obj.trackStatus=eventos[0].descricao;obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
   }catch(e){console.error('Silent track error:',e);}
 }
 
@@ -4177,158 +3826,6 @@ function getStatusCorreios(r){
   if(s.includes('transferência')||s.includes('em rota')||s.includes('trânsito')||s.includes('postado')||s.includes('coletado')||s.includes('saiu para entrega')||s.includes('encaminhado')||s.includes('chegou')||s.includes('objeto recebido'))return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
   if(r.trackInvalido)return{label:'Código inválido',cor:'var(--red)',icon:'ti-alert-triangle',tipo:'invalido'};
   return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
-}
-
-// ===== NOTIFICAÇÕES DE ENTREGAS (Rastreamento e PAD) =====
-function diasDesdeLancamentoNotif(dia,mes,ano){
-  const lancado=new Date(ano,MESES.indexOf(mes),dia);
-  const hoje=new Date();
-  return Math.floor((hoje-lancado)/86400000);
-}
-function diasEmStatusRetirada(r){
-  if(!r.retiradaDesdeISO) return 0;
-  const d0=new Date(r.retiradaDesdeISO+'T00:00:00');
-  const hoje=new Date(); hoje.setHours(0,0,0,0);
-  return Math.floor((hoje-d0)/86400000);
-}
-function isDevolvidoFinal(r){
-  const s=(r.trackStatus||'').toLowerCase();
-  return s.includes('devolvido ao remetente')||s.includes('entregue ao remetente');
-}
-// Sempre que o status virar "Aguardando retirada" pela primeira vez, grava a data —
-// é a partir dela que contamos os "mais de 3 dias parado".
-function marcarInicioRetiradaSeNecessario(obj){
-  if(getStatusCorreios(obj).tipo==='retirada' && !obj.retiradaDesdeISO){
-    obj.retiradaDesdeISO = isoHojeMatrix();
-  }
-}
-
-function temCarteiroNaoAtendeu(obj){
-  const s=(obj.trackStatus||'').toLowerCase();
-  return s.includes('carteiro')&&(s.includes('não atendeu')||s.includes('nao atendeu')||s.includes('não atendido')||s.includes('nao atendido'));
-}
-function temPrazoRetiradaEncerrado(obj){
-  return (obj.trackStatus||'').toLowerCase().includes('prazo de retirada encerrado');
-}
-
-const REGRAS_NOTIF_RASTREAMENTO=[
-  {chave:'retirada', testa:r=>getStatusCorreios(r).tipo==='retirada', msg:r=>`O pedido de ${r.nomeCliente||'cliente'} está aguardando retirada.`},
-  {chave:'entregue', testa:r=>getStatusCorreios(r).tipo==='entregue', msg:r=>`O pedido de ${r.nomeCliente||'cliente'} foi entregue!`},
-  {chave:'retirada_atraso', testa:r=>getStatusCorreios(r).tipo==='retirada' && diasEmStatusRetirada(r)>=3, msg:r=>`O pedido de ${r.nomeCliente||'cliente'} está aguardando retirada há mais de 3 dias e ainda não foi retirado.`},
-  {chave:'em_devolucao', testa:r=>getStatusCorreios(r).tipo==='devolucao' && !isDevolvidoFinal(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} não foi entregue — está em devolução.`},
-  {chave:'devolvido', testa:r=>getStatusCorreios(r).tipo==='devolucao' && isDevolvidoFinal(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} foi devolvido ao remetente.`},
-  {chave:'carteiro_nao_atendeu', testa:r=>temCarteiroNaoAtendeu(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} não foi entregue — o carteiro tentou entregar mas não foi atendido.`},
-  {chave:'prazo_retirada_encerrado', testa:r=>temPrazoRetiradaEncerrado(r), msg:r=>`O pedido de ${r.nomeCliente||'cliente'} não foi retirado a tempo — o prazo de retirada na agência foi encerrado.`},
-];
-const REGRAS_NOTIF_PAD=[
-  {chave:'retirada', testa:p=>getStatusCorreios(p).tipo==='retirada', msg:p=>`O PAD de ${p.nomeCliente||'cliente'} está aguardando retirada.`},
-  {chave:'entregue', testa:p=>getStatusCorreios(p).tipo==='entregue', msg:p=>`O PAD de ${p.nomeCliente||'cliente'} foi entregue!`},
-  {chave:'retirada_atraso', testa:p=>getStatusCorreios(p).tipo==='retirada' && diasEmStatusRetirada(p)>=3, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} está aguardando retirada há mais de 3 dias e ainda não foi retirado.`},
-  {chave:'em_devolucao', testa:p=>getStatusCorreios(p).tipo==='devolucao' && !isDevolvidoFinal(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi entregue — está em devolução.`},
-  {chave:'devolvido', testa:p=>getStatusCorreios(p).tipo==='devolucao' && isDevolvidoFinal(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} foi devolvido ao remetente.`},
-  {chave:'carteiro_nao_atendeu', testa:p=>temCarteiroNaoAtendeu(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi entregue — o carteiro tentou entregar mas não foi atendido.`},
-  {chave:'prazo_retirada_encerrado', testa:p=>temPrazoRetiradaEncerrado(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi retirado a tempo — o prazo de retirada na agência foi encerrado.`},
-  {chave:'atraso_10d', testa:p=>getStatusCorreios(p).tipo!=='entregue' && diasDesdeLancamentoNotif(p.dia,p.mes,p.ano)>=10, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} passou de 10 dias e ainda não foi entregue.`},
-  {chave:'saiu_entrega', testa:p=>(p.trackStatus||'').toLowerCase().includes('saiu para entrega'), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
-];
-
-function gerarNotificacoes(){
-  dados.filter(d=>!d.isPad && d.rastreamento).forEach(r=>{
-    REGRAS_NOTIF_RASTREAMENTO.forEach(regra=>{
-      if(!regra.testa(r)) return;
-      const chaveUnica=(r.fbId||r.rastreamento)+'_'+regra.chave;
-      if(notificacoesRast.some(n=>n.chaveUnica===chaveUnica)) return;
-      const notif={ chaveUnica, mensagem:regra.msg(r), lida:false, criadoEm:Date.now(), atendente:r.atendente||'', nomeCliente:r.nomeCliente||'', fbId:'notifrast_'+Date.now()+'_'+Math.random().toString(36).slice(2,8) };
-      notificacoesRast.push(notif);
-      if(window.fbSave)window.fbSave('notificacoesRastreamento',notif.fbId,notif);
-    });
-  });
-  pads.forEach(p=>{
-    REGRAS_NOTIF_PAD.forEach(regra=>{
-      if(!regra.testa(p)) return;
-      const chaveUnica=(p.fbId||p.id)+'_'+regra.chave;
-      if(notificacoesPad.some(n=>n.chaveUnica===chaveUnica)) return;
-      const notif={ chaveUnica, mensagem:regra.msg(p), lida:false, criadoEm:Date.now(), atendente:p.atendente||'', nomeCliente:p.nomeCliente||'', fbId:'notifpad_'+Date.now()+'_'+Math.random().toString(36).slice(2,8) };
-      notificacoesPad.push(notif);
-      if(window.fbSave)window.fbSave('notificacoesPad',notif.fbId,notif);
-    });
-  });
-  atualizarBadgeNotificacoes();
-}
-
-function atualizarBadgeNotificacoes(){
-  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
-  const naoLidasRast=notificacoesRast.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
-  const naoLidasPad=notificacoesPad.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
-  const badgeRast=document.getElementById('notif-badge-rastreamento');
-  if(badgeRast){ if(naoLidasRast>0){badgeRast.style.display='inline-block';badgeRast.textContent=naoLidasRast>99?'99+':naoLidasRast;}else{badgeRast.style.display='none';} }
-  const badgePad=document.getElementById('notif-badge-pad');
-  if(badgePad){ if(naoLidasPad>0){badgePad.style.display='inline-block';badgePad.textContent=naoLidasPad>99?'99+':naoLidasPad;}else{badgePad.style.display='none';} }
-}
-
-function abrirNotificacoesModal(tipo){
-  if(tipo) _notifAbaTipo=tipo;
-  document.getElementById('modal-notificacoes').classList.add('open');
-  renderNotificacoes();
-}
-function fecharNotificacoesModal(){
-  document.getElementById('modal-notificacoes').classList.remove('open');
-}
-function trocarSubabaNotif(sub){ _notifSubaba=sub; renderNotificacoes(); }
-
-function renderNotificacoes(){
-  const cont=document.getElementById('notif-lista');
-  if(!cont) return;
-  const tituloEl=document.getElementById('notif-modal-titulo');
-  if(tituloEl) tituloEl.textContent = _notifAbaTipo==='pad' ? 'Notificações — PAD' : 'Notificações — Rastreamento';
-  ['naolidos','lidos'].forEach(s=>{
-    const btn=document.getElementById('notif-sub-'+s);
-    if(!btn) return;
-    if(s===_notifSubaba){ btn.style.color='var(--neon)'; btn.style.borderBottomColor='var(--neon)'; }
-    else{ btn.style.color='var(--t2)'; btn.style.borderBottomColor='transparent'; }
-  });
-  const lista = _notifAbaTipo==='pad' ? notificacoesPad : notificacoesRast;
-  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
-  let filtradas = lista.filter(n=> !meuNome || n.atendente===meuNome);
-  filtradas = filtradas.filter(n=> _notifSubaba==='lidos' ? n.lida : !n.lida);
-  filtradas.sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0));
-  if(filtradas.length===0){
-    cont.innerHTML='<div class="empty" style="padding:1.5rem"><i class="ti ti-bell-off"></i>Nenhuma notificação aqui.</div>';
-    return;
-  }
-  cont.innerHTML = filtradas.map(n=>{
-    const dataStr = n.criadoEm ? new Date(n.criadoEm).toLocaleString('pt-BR') : '';
-    return `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-      <div style="flex:1">
-        <div style="font-size:13px;color:var(--t1);line-height:1.4">${n.mensagem}</div>
-        <div style="font-size:10px;color:var(--t3);margin-top:4px">${n.atendente?n.atendente.split(' ')[0]+' · ':''}${dataStr}</div>
-      </div>
-      ${n.lida?'':`<button class="btn btn-sm" onclick="marcarNotifComoLida('${_notifAbaTipo}','${n.fbId}')" title="Marcar como lido"><i class="ti ti-check"></i></button>`}
-    </div>`;
-  }).join('');
-}
-
-function marcarNotifComoLida(tipo, fbId){
-  const lista = tipo==='pad' ? notificacoesPad : notificacoesRast;
-  const item = lista.find(n=>n.fbId===fbId);
-  if(!item) return;
-  item.lida=true;
-  if(window.fbSave) window.fbSave(tipo==='pad'?'notificacoesPad':'notificacoesRastreamento', fbId, item);
-  renderNotificacoes();
-  atualizarBadgeNotificacoes();
-}
-function marcarTodasNotifComoLidas(){
-  const lista = _notifAbaTipo==='pad' ? notificacoesPad : notificacoesRast;
-  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
-  const alvo=lista.filter(n=>!n.lida && (!meuNome||n.atendente===meuNome));
-  if(alvo.length===0){ toast('Nenhuma notificação pendente.'); return; }
-  alvo.forEach(n=>{
-    n.lida=true;
-    if(window.fbSave) window.fbSave(_notifAbaTipo==='pad'?'notificacoesPad':'notificacoesRastreamento', n.fbId, n);
-  });
-  renderNotificacoes();
-  atualizarBadgeNotificacoes();
-  toast('Notificações marcadas como lidas.');
 }
 
 function verHistorico(gi, tipo){
@@ -4356,12 +3853,11 @@ async function migrarParaFirebase(){
   for(let i=0;i<pads.length;i++){const p=pads[i];if(!p.fbId)p.fbId='pad_'+i+'_'+Date.now();await window.fbSave('pads',p.fbId,p);total++;}
   for(let i=0;i<adminLancs.length;i++){const a=adminLancs[i];if(!a.fbId)a.fbId='adm_'+i+'_'+Date.now();await window.fbSave('adminLancs',a.fbId,a);total++;}
   for(let i=0;i<metas.length;i++){const m=metas[i];if(!m.fbId)m.fbId='meta_'+i+'_'+Date.now();await window.fbSave('metas',m.fbId,m);total++;}
-  for(let i=0;i<atendentes.length;i++){const a=atendentes[i];if(!a.fbId)a.fbId='atend_'+i+'_'+Date.now();await window.fbSave('atendentes',a.fbId,a);total++;}
   toast('✅ '+total+' registros migrados para o Firebase!');
 }
 
 function exportarCSV(){
-  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoFrascosEnvio,DAS,Pct_Atend,Lucro';
+  const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoEnvio,Imp_PJ,Pct_Atend,Lucro';
   const rows=dados.map(r=>{const c=calcRow(r);return[r.mes,r.ano,r.atendente,r.dia,getNomeOferta(r.ofertaId),c.frascos,r.bruto,r.qtd_vendas||0,c.custoFrascos,c.custoEnvTotal,c.impPJ,c.pctAtend,c.subtotal].join(',');});
   const csv=[header,...rows].join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
@@ -4389,6 +3885,7 @@ function toggleTema(){
   else{if(icon)icon.className='ti ti-sun';if(label)label.textContent='Modo claro';if(ball)ball.style.transform='translateX(0)';if(toggle)toggle.style.background='var(--border2)';if(window.matrixStart)window.matrixStart();}
 }
 
+// MATRIX RAIN
 (function(){
   const canvas=document.getElementById('matrix-canvas');const ctx=canvas.getContext('2d');
   const chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF01';
@@ -4405,7 +3902,6 @@ if(!document.body.classList.contains('tema-claro')){if(window.matrixStart)window
 
 initAllSelects();
 buildOfertasGrid();
-tentarSessaoSalva();
 </script>
 </body>
 </html>
