@@ -353,9 +353,16 @@ tr:hover td{background:var(--neon-glow)}
         firstLoad.dados = false;
         autoMigrate();
       } else {
+        const eraPrimeiro = firstLoad.dados;
         firstLoad.dados = false;
         dados = fbDados;
         scheduleRender();
+        // ADM: toca o som quando um NOVO lançamento de venda chega em tempo real,
+        // independente de qual página está aberta — sem tocar no carregamento inicial.
+        if(!eraPrimeiro && adminLogado){
+          const novos = snap.docChanges().filter(c=>c.type==='added' && !c.doc.data().isPad);
+          if(novos.length>0) tocarSomVenda();
+        }
       }
     });
 
@@ -365,9 +372,17 @@ tr:hover td{background:var(--neon-glow)}
       if(firstLoad.pads && fbPads.length === 0){
         firstLoad.pads = false;
       } else {
+        const eraPrimeiro = firstLoad.pads;
         firstLoad.pads = false;
         pads = fbPads;
         scheduleRender();
+        // ADM: toca o som quando um PAD é marcado como Pago em tempo real.
+        if(!eraPrimeiro && adminLogado){
+          const pagos = snap.docChanges().filter(c=>
+            (c.type==='modified') && c.doc.data().status==='Pago'
+          );
+          if(pagos.length>0) tocarSomVenda();
+        }
       }
     });
 
