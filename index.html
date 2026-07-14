@@ -4173,9 +4173,15 @@ async function buscarRastreioSilent(gi,tipo){
   const codigo=obj.rastreamento.trim().toUpperCase();
   try{
     const res=await fetch('/.netlify/functions/rastrear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
-    if(!res.ok){obj.trackInvalido=true;obj.trackStatus='⚠️ Código inválido';return;}
+    // Erro de rede/servidor: NÃO marca como inválido — pode ser instabilidade momentânea.
+    // Só marca como inválido quando a API confirmar explicitamente que o código não existe.
+    if(!res.ok){console.warn('Rastreio API error para '+codigo+': HTTP '+res.status);return;}
     const data=await res.json();
-    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){obj.trackInvalido=true;obj.trackStatus='⚠️ Código inválido';if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);return;}
+    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){
+      obj.trackInvalido=true;obj.trackStatus='⚠️ Código inválido';
+      if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);
+      return;
+    }
     const eventos=[];
     if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''}));}
     else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});}
@@ -4187,10 +4193,15 @@ function getStatusCorreios(r){
   if(!r.rastreamento)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   if(!r.trackStatus)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   const s=r.trackStatus.toLowerCase();
-  if(s.includes('entregue ao remetente')||s.includes('devolvido ao remetente')||s.includes('devolução')||s.includes('prazo de retirada encerrado')||s.includes('não entregue - prazo'))return{label:'Devolução',cor:'var(--red)',icon:'ti-arrow-back-up',tipo:'devolucao'};
-  if(s.includes('entregue ao destinatário')||s.includes('objeto entregue')||(s.includes('entregue')&&!s.includes('remetente')))return{label:'Entregue',cor:'var(--neon)',icon:'ti-circle-check',tipo:'entregue'};
+  // Devolução: sempre verifica ANTES de "entregue" para evitar falsos positivos
+  if(s.includes('entregue ao remetente')||s.includes('devolvido ao remetente')||s.includes('devolução')||s.includes('prazo de retirada encerrado')||s.includes('não entregue - prazo')||s.includes('retornando ao remetente')||s.includes('retorno ao remetente'))return{label:'Devolução',cor:'var(--red)',icon:'ti-arrow-back-up',tipo:'devolucao'};
+  // Entregue: só classifica como entregue se for EXPLICITAMENTE ao destinatário
+  // — evita falsos positivos com "não entregue", "tentativa de entrega", etc.
+  if(s.includes('entregue ao destinatário')||s.includes('objeto entregue ao destinatário')||s==='objeto entregue')return{label:'Entregue',cor:'var(--neon)',icon:'ti-circle-check',tipo:'entregue'};
+  // Aguardando retirada
   if(s.includes('aguardando retirada')||s.includes('disponível para retirada')||s.includes('destinatário ausente')||s.includes('tentativa de entrega'))return{label:'Aguardando retirada',cor:'var(--amber)',icon:'ti-building-store',tipo:'retirada'};
-  if(s.includes('transferência')||s.includes('em rota')||s.includes('trânsito')||s.includes('postado')||s.includes('coletado')||s.includes('saiu para entrega')||s.includes('encaminhado')||s.includes('chegou')||s.includes('objeto recebido'))return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
+  // Em rota
+  if(s.includes('transferência')||s.includes('em rota')||s.includes('trânsito')||s.includes('postado')||s.includes('coletado')||s.includes('saiu para entrega')||s.includes('encaminhado')||s.includes('chegou')||s.includes('objeto recebido')||s.includes('em transferência'))return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
   if(r.trackInvalido)return{label:'Código inválido',cor:'var(--red)',icon:'ti-alert-triangle',tipo:'invalido'};
   return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
 }
