@@ -1739,7 +1739,7 @@ function showPage(p){
     atendentes:renderAtendentes,
     admin:()=>{atualizarLabelPeriodo('metaPeriodo','adm-periodo-label');renderAdmin();initContaMetaSelect();autoSyncMetaAds();},
     lancamentos:renderRegistrosDia,
-    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');renderRastreamento();autoSyncRastreamento();gerarNotificacoes();},
+    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');autoSyncRastreamento();renderRastreamento();gerarNotificacoes();},
     pad:()=>{setPadTab('aberto');autoSyncRastreamento();gerarNotificacoes();}
   };
   window.allRenders=fns;
@@ -4249,6 +4249,8 @@ function salvarRastreio(gi){
 async function buscarRastreio(gi,tipo){
   const obj=tipo==='pad'?pads[gi]:dados[gi];
   if(!obj||!obj.rastreamento){toast('Sem código de rastreamento!');return;}
+  // Limpa trackInvalido antes de buscar — permite re-consultar mesmo que estivesse marcado como inválido
+  if(obj.trackInvalido){obj.trackInvalido=false;if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,{...obj,trackInvalido:false});}
   const codigo=obj.rastreamento.trim().toUpperCase();
   toast('Buscando rastreamento...');
   try{
@@ -4304,7 +4306,20 @@ async function atualizarTodosRastreios(silencioso){
 }
 
 function autoSyncRastreamento(){
-  // Sem cooldown — busca sempre que entrar na página ou recarregar
+  // Limpa trackInvalido de todos antes de re-buscar — garante que registros
+  // marcados erroneamente como inválido (ex: API fora) sejam re-consultados limpos.
+  dados.forEach(d=>{
+    if(d.trackInvalido){
+      d.trackInvalido=false;
+      if(window.fbSave&&d.fbId)window.fbSave('dados',d.fbId,{...d,trackInvalido:false});
+    }
+  });
+  pads.forEach(p=>{
+    if(p.trackInvalido){
+      p.trackInvalido=false;
+      if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,{...p,trackInvalido:false});
+    }
+  });
   atualizarTodosRastreios(true);
 }
 
