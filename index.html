@@ -756,10 +756,36 @@ tr:hover td{background:var(--neon-glow)}
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
     <div class="table-card">
-      <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Classificação</p></div>
+      <div class="table-header"><p style="font-size:13px;font-weight:700;color:var(--t1)">Classificação <span style="font-size:10px;color:var(--t3);font-weight:400">— clique num atendente para ver detalhes</span></p></div>
       <div style="padding:0 1rem" id="rank-list"></div>
     </div>
     <div class="chart-card"><p class="chart-title">Receita por atendente</p><div style="position:relative;height:280px"><canvas id="ch-rank"></canvas></div></div>
+  </div>
+
+  <!-- Modal detalhamento de vendas por atendente -->
+  <div class="modal-overlay" id="modal-rank-detalhe" onclick="if(event.target===this)closeRankDetalhe()">
+    <div class="modal" style="width:700px;max-height:88vh;overflow-y:auto">
+      <p class="modal-title" id="rank-detalhe-titulo">Vendas do atendente</p>
+      <div id="rank-detalhe-resumo" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem"></div>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr>
+              <th>Data pedido</th>
+              <th>Cliente</th>
+              <th>Oferta</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Data pagamento</th>
+            </tr>
+          </thead>
+          <tbody id="rank-detalhe-tbody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeRankDetalhe()">Fechar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1741,7 +1767,7 @@ function renderDashboard(){
   let mes=document.getElementById('db-mes')?.value||'';
   let ano=document.getElementById('db-ano')?.value||'';
   if(modo==='hoje'){const hoje=new Date();mes=MESES[hoje.getMonth()];ano=String(hoje.getFullYear());}
-  let rows=filtrar(atend,mes,ano);
+  let rows=filtrar(atend,mes,ano).filter(r=>!r.isPad);
   if(modo==='hoje'){const hoje=new Date();rows=rows.filter(r=>r.dia===hoje.getDate());}
   let tBruto=0,tVendas=0,tLucro=0,tFrascos=0;
   const tituloEl=document.getElementById('db-titulo');
@@ -2179,6 +2205,103 @@ function renderComparativo(){
   charts['comp']=new Chart(document.getElementById('ch-comp'),{type:'bar',data:{labels:['Receita','Investimento','Lucro','Leads','Vendas'],datasets:[{label:lA(),data:[rA.bruto,rA.inv,rA.lucro,rA.leads,rA.vendas],backgroundColor:'#378ADD',borderRadius:4},{label:lB(),data:[rB.bruto,rB.inv,rB.lucro,rB.leads,rB.vendas],backgroundColor:'#EF9F27',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>Number(v).toLocaleString('pt-BR')}}}}});
 }
 
+function closeRankDetalhe(){ document.getElementById('modal-rank-detalhe').classList.remove('open'); }
+
+function abrirRankDetalhe(nomeAtendente){
+  const periodo = getPeriodoSalvo('rankingPeriodo');
+
+  // Vendas normais (antecipado)
+  const vendasNormais = dados.filter(d=>
+    !d.isPad &&
+    d.atendente === nomeAtendente &&
+    dataNoPeriodo(d.dia, d.mes, d.ano, periodo)
+  );
+
+  // PADs do atendente no período
+  const padAtend = pads.filter(p => p.atendente === nomeAtendente);
+
+  let tBruto = 0, tVendas = 0, linhas = [];
+
+  // Linha por venda normal
+  vendasNormais.forEach(d => {
+    const dataStr = `${String(d.dia).padStart(2,'0')}/${MESES.indexOf(d.mes)+1<10?'0':''}${MESES.indexOf(d.mes)+1}/${d.ano}`;
+    const oferta = OFERTAS.find(o=>o.id===d.ofertaId)||{nome:'—'};
+    linhas.push({
+      dataPedido: dataStr,
+      dataSort: diaToISO(d.dia,d.mes,d.ano),
+      cliente: d.nomeCliente||'—',
+      oferta: oferta.nome.replace('Frascos de Maximus V6','fr.').replace('Frasco de Maximus V6','fr.'),
+      tipo: '<span class="badge b-blue">Antecipado</span>',
+      valor: d.bruto||0,
+      dataPagamento: '—'
+    });
+    tBruto += d.bruto||0;
+    tVendas++;
+  });
+
+  // Linhas por pagamento de PAD
+  padAtend.forEach(p => {
+    const oferta = OFERTAS.find(o=>o.id===p.ofertaId)||{nome:'—'};
+    const dataPedidoObj = new Date(diaToISO(p.dia,p.mes,p.ano)+'T00:00:00');
+    const dataPedidoStr = `${String(p.dia).padStart(2,'0')}/${String(MESES.indexOf(p.mes)+1).padStart(2,'0')}/${p.ano}`;
+    const totalPago = (p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
+    const isFrustrado = p.status === 'Frustrado';
+
+    (p.pagamentos||[]).forEach(pg => {
+      if(pg.data < periodo.inicio || pg.data > periodo.fim) return;
+      const [pgAno,pgMes,pgDia] = pg.data.split('-');
+      const dataPgStr = `${pgDia}/${pgMes}/${pgAno}`;
+      const isParcial = totalPago < (p.bruto||0);
+      const tipoBadge = isFrustrado
+        ? '<span class="badge" style="background:var(--red-l);color:var(--red)">Frustrado</span>'
+        : isParcial
+          ? '<span class="badge b-amber">PAD Parcial</span>'
+          : '<span class="badge b-green">PAD Integral</span>';
+      linhas.push({
+        dataPedido: dataPedidoStr,
+        dataSort: diaToISO(p.dia,p.mes,p.ano),
+        cliente: p.nomeCliente||'—',
+        oferta: oferta.nome.replace('Frascos de Maximus V6','fr.').replace('Frasco de Maximus V6','fr.'),
+        tipo: tipoBadge,
+        valor: pg.valor||0,
+        dataPagamento: dataPgStr
+      });
+      tBruto += pg.valor||0;
+      tVendas++;
+    });
+  });
+
+  // Ordena por data do pedido
+  linhas.sort((a,b) => a.dataSort.localeCompare(b.dataSort));
+
+  // Resumo no topo do modal
+  document.getElementById('rank-detalhe-resumo').innerHTML = `
+    <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
+    <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Total transações</div><div class="metric-value">${tVendas}</div></div>
+    <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Período</div><div class="metric-value" style="font-size:12px">${periodo.inicio.split('-').reverse().join('/')} → ${periodo.fim.split('-').reverse().join('/')}</div></div>
+  `;
+
+  // Tabela de linhas
+  const tbody = document.getElementById('rank-detalhe-tbody');
+  if(linhas.length === 0){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhuma venda no período</td></tr>';
+  } else {
+    tbody.innerHTML = linhas.map(l=>`
+      <tr>
+        <td style="white-space:nowrap;font-weight:600">${l.dataPedido}</td>
+        <td style="font-size:12px">${l.cliente}</td>
+        <td style="font-size:11px;color:var(--t2)">${l.oferta}</td>
+        <td>${l.tipo}</td>
+        <td style="font-weight:700;color:var(--green)">${fmt(l.valor)}</td>
+        <td style="font-size:11px;color:var(--t3)">${l.dataPagamento}</td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('rank-detalhe-titulo').textContent = `Vendas — ${nomeAtendente.split(' ')[0]}`;
+  document.getElementById('modal-rank-detalhe').classList.add('open');
+}
+
 function renderRanking(){
   const periodo = getPeriodoSalvo('rankingPeriodo');
   const ordem=document.getElementById('rank-ordem').value;
@@ -2209,7 +2332,7 @@ function renderRanking(){
   let html='';
   resumos.forEach((r,i)=>{
     const val=ordem==='bruto'||ordem==='lucro'||ordem==='ticket'?fmt(r[ordem]):ordem==='conv'?r.conv+'%':r[ordem];
-    html+=`<div class="ranking-item"><div class="rank-num">${medals[i]||i+1}</div><div class="rank-info"><div class="rank-name">${r.nome}</div><div class="rank-meta">Bruto: ${fmt(r.bruto)} · Vendas: ${r.vendas} · Frascos: ${r.frascos}</div><div class="progress-bar"><div class="progress-fill" style="width:${resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0}%;background:${colors[i]||'#888'}"></div></div></div><div class="rank-value" style="color:${colors[i]||'#888'}">${val}</div></div>`;
+    html+=`<div class="ranking-item" onclick="abrirRankDetalhe('${r.nome}')" style="cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--bg2)'" onmouseout="this.style.background=''"><div class="rank-num">${medals[i]||i+1}</div><div class="rank-info"><div class="rank-name">${r.nome}</div><div class="rank-meta">Bruto: ${fmt(r.bruto)} · Vendas: ${r.vendas} · Frascos: ${r.frascos}</div><div class="progress-bar"><div class="progress-fill" style="width:${resumos[0][ordem]>0?R(r[ordem]/resumos[0][ordem]*100,1):0}%;background:${colors[i]||'#888'}"></div></div></div><div class="rank-value" style="color:${colors[i]||'#888'}">${val}</div></div>`;
   });
   document.getElementById('rank-list').innerHTML=html||'<div class="empty"><i class="ti ti-inbox"></i>Sem dados</div>';
   dc('rank');
