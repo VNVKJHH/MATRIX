@@ -4143,27 +4143,26 @@ async function buscarRastreio(gi,tipo){
 
 async function atualizarTodosRastreios(silencioso){
   const status=document.getElementById('rast-update-status');
-  const naoFinal = obj => {
-    if(!obj.trackStatus) return true;
-    const st = getStatusCorreios(obj);
-    return st.tipo!=='entregue' && st.tipo!=='devolucao';
-  };
-  const pendentes=dados.filter(r=>r.rastreamento&&!r.isPad&&naoFinal(r));
-  const padPendentes=pads.filter(p=>p.rastreamento&&naoFinal(p));
+  // Busca TODOS os códigos cadastrados, sem nenhum filtro de status —
+  // incluindo já entregues, devolvidos, frustrados, abertos, tudo.
+  const pendentes=dados.filter(r=>r.rastreamento&&!r.isPad);
+  const padPendentes=pads.filter(p=>p.rastreamento);
   const total=pendentes.length+padPendentes.length;
-  if(total===0){ gerarNotificacoes(); if(!silencioso) toast('Nenhum rastreamento pendente!'); return; }
+  if(total===0){ gerarNotificacoes(); if(!silencioso) toast('Nenhum código de rastreamento cadastrado.'); return; }
   if(status)status.textContent=`Sincronizando rastreamentos (0/${total})...`;
   let done=0;
-  for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,500));}
-  for(const p of padPendentes){const gi=pads.indexOf(p);await buscarRastreioSilent(gi,'pad');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,500));}
+  for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,400));}
+  for(const p of padPendentes){const gi=pads.indexOf(p);await buscarRastreioSilent(gi,'pad');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,400));}
   if(status)status.textContent=`✅ Atualizado — ${new Date().toLocaleTimeString('pt-BR')}`;
   setTimeout(()=>{if(status)status.textContent='';},5000);
   renderRastreamento();
+  renderPad();
   gerarNotificacoes();
   if(!silencioso) toast(`${total} rastreamentos atualizados!`);
 }
 
 function autoSyncRastreamento(){
+  // Sem cooldown — busca sempre que entrar na página ou recarregar
   atualizarTodosRastreios(true);
 }
 
