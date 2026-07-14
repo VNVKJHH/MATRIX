@@ -4151,8 +4151,8 @@ async function atualizarTodosRastreios(silencioso){
   if(total===0){ gerarNotificacoes(); if(!silencioso) toast('Nenhum código de rastreamento cadastrado.'); return; }
   if(status)status.textContent=`Sincronizando rastreamentos (0/${total})...`;
   let done=0;
-  for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,400));}
-  for(const p of padPendentes){const gi=pads.indexOf(p);await buscarRastreioSilent(gi,'pad');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,400));}
+  for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,1800));}
+  for(const p of padPendentes){const gi=pads.indexOf(p);await buscarRastreioSilent(gi,'pad');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,1800));}
   if(status)status.textContent=`✅ Atualizado — ${new Date().toLocaleTimeString('pt-BR')}`;
   setTimeout(()=>{if(status)status.textContent='';},5000);
   renderRastreamento();
@@ -4176,6 +4176,8 @@ async function buscarRastreioSilent(gi,tipo){
     // Só marca como inválido quando a API confirmar explicitamente que o código não existe.
     if(!res.ok){console.warn('Rastreio API error para '+codigo+': HTTP '+res.status);return;}
     const data=await res.json();
+    // Rate limited: não marca como inválido, só ignora e tenta na próxima sincronização
+    if(data.status==='rate_limited'||data.status==='error'){console.warn('Rate limited/error para '+codigo+', tentando depois.');return;}
     if(!data.success||data.status==='not_found'||data.status==='invalid_format'){
       obj.trackInvalido=true;obj.trackStatus='⚠️ Código inválido';
       if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);
