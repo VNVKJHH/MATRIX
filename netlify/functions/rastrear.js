@@ -1,14 +1,7 @@
 const https = require('https');
 
-// Reaproveita a conexão HTTPS entre chamadas (evita refazer o handshake TLS toda
-// vez que a função está "quente" — isso sozinho já tira ~100-300ms de cada busca).
-const agent = new https.Agent({ keepAlive: true, maxSockets: 10 });
-
-// Cache simples em memória, válido enquanto a função estiver "quente" (mesmo
-// container). Evita bater na API externa de novo se alguém clicar duas vezes
-// seguidas, ou se o mesmo código for buscado de novo logo em seguida (ex: a
-// sincronização automática rodando logo depois de uma busca manual).
-const CACHE_TTL_MS = 90 * 1000; // 90 segundos
+const agent = new https.Agent({ keepAlive: true, maxSockets: 5 });
+const CACHE_TTL_MS = 5 * 60 * 1000;
 const cache = new Map();
 
 function buscarComTimeout(codigo, apiKey, timeoutMs) {
@@ -30,7 +23,7 @@ function buscarComTimeout(codigo, apiKey, timeoutMs) {
       res.on('data', c => data += c);
       res.on('end', () => resolve({ status: res.statusCode, body: data }));
     });
-    req.on('timeout', () => { req.destroy(new Error('Timeout ao consultar a API de rastreio (mais de ' + (timeoutMs/1000) + 's sem resposta).')); });
+    req.on('timeout', () => { req.destroy(new Error('Timeout')); });
     req.on('error', reject);
     req.end();
   });
@@ -44,7 +37,7 @@ exports.handler = async (event) => {
 
   const apiKey = process.env.SEU_RASTREIO_API_KEY;
   if (!apiKey) {
-    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'SEU_RASTREIO_API_KEY não configurado no Netlify.' }) };
+    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: 'SEU_RASTREIO_API_KEY não configurado.' }) };
   }
 
   try {
@@ -52,33 +45,40 @@ exports.handler = async (event) => {
     const codigo = (body.codigo || '').trim().toUpperCase();
     if (!codigo) return { statusCode: 400, body: JSON.stringify({ error: 'Código não informado' }) };
 
-    // Limpa entradas velhas do cache de vez em quando, sem precisar de cron.
     const agora = Date.now();
     for (const [k, v] of cache) { if (agora - v.criadoEm > CACHE_TTL_MS) cache.delete(k); }
-
     const emCache = cache.get(codigo);
     if (emCache && (agora - emCache.criadoEm) < CACHE_TTL_MS) {
-      console.log('Cache HIT:', codigo);
+      return { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json', 'X-Cache': 'HIT' }, body: emCache.body };
+    }
+
+    const result = await buscarComTimeout(codigo, apiKey, 10000);
+    console.log('SeuRastreio Status:', result.status, 'Codigo:', codigo);
+
+    // Rate limit ou Cloudflare: não marca como inválido, só avisa pra tentar depois
+    if (result.status === 429 || result.status === 503) {
       return {
         statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json', 'X-Cache': 'HIT' },
-        body: emCache.body
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: false, status: 'rate_limited' })
       };
     }
 
-    const result = await buscarComTimeout(codigo, apiKey, 8000);
-
-    console.log('SeuRastreio Status:', result.status);
-    console.log('SeuRastreio Response:', result.body.substring(0, 500));
-
-    const parsed = JSON.parse(result.body);
-    const respostaFinal = JSON.stringify(parsed);
-
-    // Só guarda no cache respostas que vieram com sucesso real (200), pra não
-    // "congelar" um erro temporário da API externa por 90 segundos.
-    if (result.status === 200) {
-      cache.set(codigo, { body: respostaFinal, criadoEm: agora });
+    let parsed;
+    try {
+      parsed = JSON.parse(result.body);
+    } catch(e) {
+      // Resposta não é JSON (ex: página HTML de erro do Cloudflare com código 1015)
+      console.log('Resposta nao JSON:', result.body.substring(0, 100));
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: false, status: 'rate_limited' })
+      };
     }
+
+    const respostaFinal = JSON.stringify(parsed);
+    if (result.status === 200) cache.set(codigo, { body: respostaFinal, criadoEm: agora });
 
     return {
       statusCode: 200,
@@ -87,6 +87,10 @@ exports.handler = async (event) => {
     };
   } catch (error) {
     console.log('Error:', error.message);
-    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: error.message }) };
+    return {
+      statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ success: false, status: 'error', message: error.message })
+    };
   }
 };
