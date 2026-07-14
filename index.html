@@ -1060,8 +1060,8 @@ tr:hover td{background:var(--neon-glow)}
       <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:11px;padding:5px 9px;background:#1a1a1a;border:1px solid rgba(255,255,255,.15);color:#ddd;border-radius:6px;max-width:130px;cursor:pointer"><option value="" style="background:#1a1a1a;color:#ddd">Todos</option></select>
     </div>
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-      <div id="gw-vendas-hoje-valor" onclick="abrirDetalheVendasHoje()" style="font-size:28px;font-weight:800;color:#fff;cursor:pointer" title="Ver detalhes das vendas de hoje">R$ 0,00</div>
-      <div id="gw-lucro-hoje" style="display:none;font-size:13px;font-weight:700"></div>
+      <div id="gw-vendas-hoje-valor" onclick="abrirDetalheVendasHoje()" style="font-size:28px;font-weight:800;color:#fff;cursor:pointer;white-space:nowrap" title="Ver detalhes das vendas de hoje">R$ 0,00</div>
+      <div id="gw-lucro-hoje" style="display:none;font-size:13px;font-weight:700;white-space:nowrap"></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
@@ -4476,8 +4476,10 @@ async function buscarRastreioSilent(gi,tipo){
     // Rate limited: não marca como inválido, só ignora e tenta na próxima sincronização
     if(data.status==='rate_limited'||data.status==='error'){console.warn('Rate limited/error para '+codigo+', tentando depois.');return;}
     if(!data.success||data.status==='not_found'||data.status==='invalid_format'){
+      // Marca na memória para exibição, mas NÃO salva no Firebase —
+      // assim o campo nunca fica "preso" como inválido no banco, e a próxima
+      // sincronização vai re-tentar normalmente sem precisar de limpeza manual.
       obj.trackInvalido=true;obj.trackStatus='⚠️ Código inválido';
-      if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);
       return;
     }
     const eventos=[];
