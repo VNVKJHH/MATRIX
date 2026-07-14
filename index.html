@@ -1060,7 +1060,7 @@ tr:hover td{background:var(--neon-glow)}
       <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:11px;padding:5px 9px;background:#1a1a1a;border:1px solid rgba(255,255,255,.15);color:#ddd;border-radius:6px;max-width:130px;cursor:pointer"><option value="" style="background:#1a1a1a;color:#ddd">Todos</option></select>
     </div>
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-      <div id="gw-vendas-hoje-valor" onclick="abrirDetalheVendasHoje()" style="font-size:28px;font-weight:800;color:#fff;cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="Ver detalhes das vendas de hoje">R$ 0,00</div>
+      <div id="gw-vendas-hoje-valor" onclick="abrirDetalheVendasHoje()" style="font-size:28px;font-weight:800;color:#fff;cursor:pointer" title="Ver detalhes das vendas de hoje">R$ 0,00</div>
       <div id="gw-lucro-hoje" style="display:none;font-size:13px;font-weight:700"></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
@@ -3868,7 +3868,7 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   const recebidoHojePad = pagamentosHoje.reduce((s,pg)=>s+(pg.valor||0),0);
 
   const vHoje = somaPeriodo(hoje, hoje);
-  vHoje.bruto = R(vHoje.bruto + recebidoHojePad, 2);
+  // recebidoHojePad já está incluído em somaPeriodo (que soma pads.pagamentos)
   const vOntem = somaPeriodo(ontem, ontem);
   const vSemana = somaPeriodo(inicioSem, hoje);
   const vMes = somaPeriodo(inicioM, hoje);
