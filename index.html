@@ -344,7 +344,7 @@ tr:hover td{background:var(--neon-glow)}
 
     onSnapshot(collection(db, 'dados'), snap => {
       const fbDados = [];
-      snap.forEach(d => fbDados.push(d.data()));
+      snap.forEach(d => { const doc=d.data(); doc.trackInvalido=false; fbDados.push(doc); });
       const eraPrimeiro = firstLoad.dados;
       firstLoad.dados = false;
       dados = fbDados;
@@ -357,7 +357,7 @@ tr:hover td{background:var(--neon-glow)}
 
     onSnapshot(collection(db, 'pads'), snap => {
       const fbPads = [];
-      snap.forEach(d => fbPads.push(d.data()));
+      snap.forEach(d => { const doc=d.data(); doc.trackInvalido=false; fbPads.push(doc); });
       if(firstLoad.pads && fbPads.length === 0){
         firstLoad.pads = false;
       } else {
@@ -789,6 +789,44 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
+<!-- Modal detalhe vendas de hoje (Dashboard) -->
+<div class="modal-overlay" id="modal-vendas-hoje" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:680px;max-height:88vh;overflow-y:auto">
+    <p class="modal-title" id="modal-vendas-hoje-titulo">Vendas de hoje</p>
+    <div id="modal-vendas-hoje-resumo" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem"></div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Atendente</th><th>Cliente</th><th>Oferta</th><th>Tipo</th><th>Valor</th></tr>
+        </thead>
+        <tbody id="modal-vendas-hoje-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('modal-vendas-hoje').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalhe agendamentos de hoje (Dashboard) -->
+<div class="modal-overlay" id="modal-agendamentos-hoje" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:680px;max-height:88vh;overflow-y:auto">
+    <p class="modal-title" id="modal-agendamentos-hoje-titulo">Agendamentos de hoje</p>
+    <div id="modal-agendamentos-hoje-resumo" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1rem"></div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th>Atendente</th><th>Cliente</th><th>Oferta</th><th>Negociação</th><th>Status</th><th>Valor</th></tr>
+        </thead>
+        <tbody id="modal-agendamentos-hoje-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.getElementById('modal-agendamentos-hoje').classList.remove('open')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <div class="page" id="page-rastreamento">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
     <p class="page-title" style="margin-bottom:0">Rastreamento</p>
@@ -1022,14 +1060,14 @@ tr:hover td{background:var(--neon-glow)}
       <select id="adm-dash-atend" onchange="renderDashAdm()" style="font-size:11px;padding:5px 9px;background:#1a1a1a;border:1px solid rgba(255,255,255,.15);color:#ddd;border-radius:6px;max-width:130px;cursor:pointer"><option value="" style="background:#1a1a1a;color:#ddd">Todos</option></select>
     </div>
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
-      <div id="gw-vendas-hoje-valor" style="font-size:28px;font-weight:800;color:#fff">R$ 0,00</div>
+      <div id="gw-vendas-hoje-valor" onclick="abrirDetalheVendasHoje()" style="font-size:28px;font-weight:800;color:#fff;cursor:pointer;text-decoration:underline dotted rgba(255,255,255,.3)" title="Ver detalhes das vendas de hoje">R$ 0,00</div>
       <div id="gw-lucro-hoje" style="display:none;font-size:13px;font-weight:700"></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">
       <span id="gw-variacao" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px"></span>
       <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.08);color:#ddd" id="gw-qtd-vendas">0 vendas</span>
     </div>
-    <div id="gw-agendamentos-bloco" style="display:flex;align-items:center;justify-content:space-between;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:9px 12px;margin-bottom:16px">
+    <div id="gw-agendamentos-bloco" onclick="abrirDetalheAgendamentosHoje()" style="display:flex;align-items:center;justify-content:space-between;background:rgba(14,165,233,.14);border:1px solid rgba(14,165,233,.3);border-radius:10px;padding:9px 12px;margin-bottom:16px;cursor:pointer" onmouseover="this.style.background='rgba(14,165,233,.22)'" onmouseout="this.style.background='rgba(14,165,233,.14)'">
       <div style="display:flex;align-items:center;gap:6px">
         <i class="ti ti-calendar-event" style="font-size:14px;color:#7DD3FC"></i>
         <span style="font-size:11px;font-weight:700;color:#7DD3FC">Agendamentos (PAD)</span>
@@ -2203,6 +2241,108 @@ function renderComparativo(){
   `;
   dc('comp');
   charts['comp']=new Chart(document.getElementById('ch-comp'),{type:'bar',data:{labels:['Receita','Investimento','Lucro','Leads','Vendas'],datasets:[{label:lA(),data:[rA.bruto,rA.inv,rA.lucro,rA.leads,rA.vendas],backgroundColor:'#378ADD',borderRadius:4},{label:lB(),data:[rB.bruto,rB.inv,rB.lucro,rB.leads,rB.vendas],backgroundColor:'#EF9F27',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{ticks:{callback:v=>Number(v).toLocaleString('pt-BR')}}}}});
+}
+
+function abrirDetalheAgendamentosHoje(){
+  const hoje = new Date();
+  const dia = hoje.getDate();
+  const mes = MESES[hoje.getMonth()];
+  const ano = hoje.getFullYear();
+  const atend = adminLogado ? (document.getElementById('adm-dash-atend')?.value||'') : (usuarioLogado?.nome||'');
+
+  const padHoje = pads.filter(p=>{
+    if(atend && p.atendente!==atend) return false;
+    if(p.status==='Frustrado') return false;
+    return p.dia===dia && p.mes===mes && String(p.ano)===String(ano);
+  });
+
+  const tValor = padHoje.reduce((s,p)=>s+(p.bruto||0),0);
+
+  const statusBadge = s => {
+    if(s==='Pago') return '<span class="badge b-green">Pago</span>';
+    if(s==='Frustrado') return '<span class="badge" style="background:var(--red-l);color:var(--red)">Frustrado</span>';
+    if(s==='Aguardando confirmação') return '<span class="badge b-amber">Aguard. confirmação</span>';
+    return `<span class="badge">${s||'—'}</span>`;
+  };
+
+  document.getElementById('modal-agendamentos-hoje-titulo').textContent =
+    `Agendamentos de hoje — ${dia} de ${mes}${atend?' · '+atend.split(' ')[0]:''}`;
+
+  document.getElementById('modal-agendamentos-hoje-resumo').innerHTML = `
+    <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Total agendado</div><div class="metric-value mv-blue">${fmt(tValor)}</div></div>
+    <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Qtd. agendamentos</div><div class="metric-value">${padHoje.length}</div></div>
+  `;
+
+  document.getElementById('modal-agendamentos-hoje-tbody').innerHTML = padHoje.length===0
+    ? '<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Nenhum agendamento hoje</td></tr>'
+    : padHoje.map(p=>{
+        const oferta=OFERTAS.find(o=>o.id===p.ofertaId)||{nome:'—'};
+        return `<tr>
+          <td style="font-size:12px;font-weight:600">${p.atendente?.split(' ')[0]||'—'}</td>
+          <td style="font-size:12px">${p.nomeCliente||'—'}</td>
+          <td style="font-size:11px;color:var(--t2)">${oferta.nome.replace('Frascos de Maximus V6','fr.').replace('Frasco de Maximus V6','fr.')}</td>
+          <td style="font-size:11px;color:var(--t3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.negociacao||'—'}</td>
+          <td>${statusBadge(p.status)}</td>
+          <td style="font-weight:700;color:var(--green)">${fmt(p.bruto||0)}</td>
+        </tr>`;
+      }).join('');
+
+  document.getElementById('modal-agendamentos-hoje').classList.add('open');
+}
+
+function abrirDetalheVendasHoje(){
+  const hoje = new Date();
+  const dia = hoje.getDate();
+  const mes = MESES[hoje.getMonth()];
+  const ano = hoje.getFullYear();
+  const atend = adminLogado ? (document.getElementById('adm-dash-atend')?.value||'') : (usuarioLogado?.nome||'');
+
+  const linhas = [];
+  let tBruto=0, tVendas=0;
+
+  // Vendas normais do dia
+  dados.filter(d=>!d.isPad && d.dia===dia && d.mes===mes && d.ano===ano && (!atend||d.atendente===atend)).forEach(d=>{
+    const oferta = OFERTAS.find(o=>o.id===d.ofertaId)||{nome:'—'};
+    linhas.push({
+      atendente: d.atendente?.split(' ')[0]||'—',
+      cliente: d.nomeCliente||'—',
+      oferta: oferta.nome.replace('Frascos de Maximus V6','fr.').replace('Frasco de Maximus V6','fr.'),
+      tipo: '<span class="badge b-blue">Antecipado</span>',
+      valor: d.bruto||0
+    });
+    tBruto+=d.bruto||0; tVendas++;
+  });
+
+  // Pagamentos de PAD do dia
+  pads.filter(p=>!atend||p.atendente===atend).forEach(p=>{
+    (p.pagamentos||[]).forEach(pg=>{
+      if(!pg.data) return;
+      const [pgAno,pgMes,pgDia]=pg.data.split('-');
+      if(parseInt(pgDia)!==dia||MESES[parseInt(pgMes)-1]!==mes||parseInt(pgAno)!==ano) return;
+      const oferta=OFERTAS.find(o=>o.id===p.ofertaId)||{nome:'—'};
+      const totalPago=(p.pagamentos||[]).reduce((s,x)=>s+(x.valor||0),0);
+      const isParcial=totalPago<(p.bruto||0);
+      linhas.push({
+        atendente: p.atendente?.split(' ')[0]||'—',
+        cliente: p.nomeCliente||'—',
+        oferta: oferta.nome.replace('Frascos de Maximus V6','fr.').replace('Frasco de Maximus V6','fr.'),
+        tipo: isParcial?'<span class="badge b-amber">PAD Parcial</span>':'<span class="badge b-green">PAD Integral</span>',
+        valor: pg.valor||0
+      });
+      tBruto+=pg.valor||0; tVendas++;
+    });
+  });
+
+  const titulo = `Vendas de hoje — ${dia} de ${mes}${atend?' · '+atend.split(' ')[0]:''}`;
+  document.getElementById('modal-vendas-hoje-titulo').textContent = titulo;
+  document.getElementById('modal-vendas-hoje-resumo').innerHTML = `
+    <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
+    <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Transações</div><div class="metric-value">${tVendas}</div></div>
+  `;
+  document.getElementById('modal-vendas-hoje-tbody').innerHTML = linhas.length===0
+    ? '<tr><td colspan="5" class="empty"><i class="ti ti-inbox"></i>Nenhuma venda hoje</td></tr>'
+    : linhas.map(l=>`<tr><td style="font-size:12px;font-weight:600">${l.atendente}</td><td style="font-size:12px">${l.cliente}</td><td style="font-size:11px;color:var(--t2)">${l.oferta}</td><td>${l.tipo}</td><td style="font-weight:700;color:var(--green)">${fmt(l.valor)}</td></tr>`).join('');
+  document.getElementById('modal-vendas-hoje').classList.add('open');
 }
 
 function closeRankDetalhe(){ document.getElementById('modal-rank-detalhe').classList.remove('open'); }
