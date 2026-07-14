@@ -4530,6 +4530,27 @@ async function migrarParaFirebase(){
   toast('✅ '+total+' registros migrados para o Firebase!');
 }
 
+function limparTrackInvalido(){
+  if(!confirm('Limpar o marcador "Código inválido" de todos os registros e re-buscar os status?')) return;
+  let count = 0;
+  dados.forEach(d=>{
+    if(d.trackInvalido){
+      d.trackInvalido = false;
+      if(window.fbSave && d.fbId) window.fbSave('dados', d.fbId, {...d, trackInvalido: false});
+      count++;
+    }
+  });
+  pads.forEach(p=>{
+    if(p.trackInvalido){
+      p.trackInvalido = false;
+      if(window.fbSave && p.fbId) window.fbSave('pads', p.fbId, {...p, trackInvalido: false});
+      count++;
+    }
+  });
+  toast(`${count} registros limpos! Sincronizando rastreamentos...`);
+  setTimeout(()=>atualizarTodosRastreios(true), 1000);
+}
+
 function exportarCSV(){
   const header='Mes,Ano,Atendente,Dia,Oferta,Frascos,Bruto,Qtd_Vendas,CustoFrascos,CustoFrascosEnvio,DAS,Pct_Atend,Lucro';
   const rows=dados.map(r=>{const c=calcRow(r);return[r.mes,r.ano,r.atendente,r.dia,getNomeOferta(r.ofertaId),c.frascos,r.bruto,r.qtd_vendas||0,c.custoFrascos,c.custoEnvTotal,c.impPJ,c.pctAtend,c.subtotal].join(',');});
