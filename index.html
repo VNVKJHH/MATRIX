@@ -3695,10 +3695,17 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
 
   function somaPeriodo(de, ate){
     let bruto=0, vendas=0;
+    const isoInicio=isoDate(de), isoFim=isoDate(ate);
     dados.filter(d=>!d.isPad && (!atendFiltro || d.atendente===atendFiltro)).forEach(d=>{
       const iso = diaToISO(d.dia, d.mes, d.ano);
       if(!iso) return;
-      if(iso>=isoDate(de) && iso<=isoDate(ate)){ bruto+=d.bruto||0; vendas+=d.qtd_vendas||0; }
+      if(iso>=isoInicio && iso<=isoFim){ bruto+=d.bruto||0; vendas+=d.qtd_vendas||0; }
+    });
+    // Inclui pagamentos de PAD no período (igual o Ranking), evitando divergência
+    pads.filter(p=>!atendFiltro||p.atendente===atendFiltro).forEach(p=>{
+      (p.pagamentos||[]).forEach(pg=>{
+        if(pg.data>=isoInicio && pg.data<=isoFim) bruto+=pg.valor||0;
+      });
     });
     return { bruto, vendas };
   }
