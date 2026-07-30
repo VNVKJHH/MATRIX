@@ -29,8 +29,11 @@ exports.handler = async function (event) {
     codigo = (body.codigo || '').trim().replace(/\s/g, '');
     cpf = (body.cpf || '').replace(/\D/g, '');
   } catch (e) {
+    console.error('[rastrear-jt] Body inválido:', event.body);
     return resposta(200, { success: false, status: 'invalid_format', erro: 'Corpo da requisição inválido' });
   }
+
+  console.log('[rastrear-jt] Consultando código:', codigo, '| CPF informado:', cpf ? 'sim ('+cpf.length+' dígitos)' : 'NÃO');
 
   if (!codigo) {
     return resposta(200, { success: false, status: 'invalid_format', erro: 'Código de rastreio ausente' });
@@ -38,26 +41,48 @@ exports.handler = async function (event) {
   if (!cpf) {
     // A J&T exige CPF junto do código pra liberar a consulta — sem isso nem
     // adianta chamar a API deles, sempre vai voltar vazio/erro.
+    console.warn('[rastrear-jt] CPF ausente para o código', codigo);
     return resposta(200, { success: false, status: 'error', erro: 'CPF do pedido é obrigatório para consultar a J&T Express' });
   }
 
   const payload = JSON.stringify({ cpf, waybillNo: codigo, langType: 'PT' });
 
   try {
+    console.log('[rastrear-jt] Chamando', URL_DETALHE);
     const resDetalhe = await fetch(URL_DETALHE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Origin': 'https://www.jtexpress.com.br',
+        'Referer': 'https://www.jtexpress.com.br/',
+      },
       body: payload,
     });
 
+    console.log('[rastrear-jt] Status HTTP da resposta:', resDetalhe.status);
+
     if (!resDetalhe.ok) {
+      const textoErro = await resDetalhe.text().catch(() => '(sem corpo)');
+      console.error('[rastrear-jt] HTTP não-OK:', resDetalhe.status, '| corpo:', textoErro.substring(0, 500));
       return resposta(200, { success: false, status: 'error', erro: 'HTTP ' + resDetalhe.status + ' na consulta de detalhes' });
     }
 
-    const dataDetalhe = await resDetalhe.json();
+    const textoBruto = await resDetalhe.text();
+    console.log('[rastrear-jt] Corpo bruto da resposta (primeiros 500 chars):', textoBruto.substring(0, 500));
+
+    let dataDetalhe;
+    try {
+      dataDetalhe = JSON.parse(textoBruto);
+    } catch (eParse) {
+      console.error('[rastrear-jt] Resposta não é JSON válido:', eParse.message);
+      return resposta(200, { success: false, status: 'error', erro: 'Resposta da J&T não é JSON válido' });
+    }
 
     // A API da J&T retorna succ:true/false e code:1 em caso de sucesso.
     if (!dataDetalhe || dataDetalhe.succ !== true || dataDetalhe.code !== 1 || !dataDetalhe.data) {
+      console.warn('[rastrear-jt] Resposta sem sucesso ou sem dados:', JSON.stringify(dataDetalhe).substring(0, 300));
       return resposta(200, { success: false, status: 'not_found' });
     }
 
@@ -83,7 +108,12 @@ exports.handler = async function (event) {
     try {
       const resPrevisao = await fetch(URL_PREVISAO, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Origin': 'https://www.jtexpress.com.br',
+          'Referer': 'https://www.jtexpress.com.br/',
+        },
         body: payload,
       });
       if (resPrevisao.ok) {
@@ -92,10 +122,14 @@ exports.handler = async function (event) {
           // dataPrevisao.data vem como "2026-08-04 23:59" — converte pra ISO
           previsaoEntrega = String(dataPrevisao.data).replace(' ', 'T');
         }
+      } else {
+        console.warn('[rastrear-jt] Previsão falhou com HTTP', resPrevisao.status, '(não é crítico)');
       }
     } catch (ePrevisao) {
-      // silencioso — previsão é opcional
+      console.warn('[rastrear-jt] Erro ao buscar previsão (não é crítico):', ePrevisao.message);
     }
+
+    console.log('[rastrear-jt] Sucesso —', historico.length, 'evento(s) encontrados para', codigo);
 
     return resposta(200, {
       success: true,
@@ -105,6 +139,8 @@ exports.handler = async function (event) {
       previsaoEntrega,
     });
   } catch (e) {
+    console.error('[rastrear-jt] Exceção não tratada para código', codigo, ':', e.name, '-', e.message);
+    if (e.stack) console.error(e.stack.split('\n').slice(0, 5).join(' | '));
     return resposta(200, { success: false, status: 'error', erro: e.message });
   }
 };
