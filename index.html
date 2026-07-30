@@ -4488,7 +4488,19 @@ async function atualizarTodosRastreios(silencioso){
   if(!silencioso) toast(`${total} rastreamentos atualizados!`);
 }
 
+// Sem esse "cooldown", toda vez que um rastreio era atualizado no Firebase, o
+// listener em tempo real disparava um novo re-render da página, que chamava
+// autoSyncRastreamento() de novo, que atualizava o Firebase de novo — um loop
+// que ficava chamando a function de rastreio dezenas de vezes por minuto
+// enquanto a tela do PAD/Rastreamento ficasse aberta.
+const RASTREIO_AUTOSYNC_COOLDOWN_MS = 3 * 60 * 1000;
 function autoSyncRastreamento(){
+  const ultima = parseInt(sessionStorage.getItem('rastreioAutoSyncTs') || '0', 10);
+  const agora = Date.now();
+  if(agora - ultima < RASTREIO_AUTOSYNC_COOLDOWN_MS){
+    return;
+  }
+  sessionStorage.setItem('rastreioAutoSyncTs', String(agora));
   // Limpa trackInvalido de todos antes de re-buscar — garante que registros
   // marcados erroneamente como inválido (ex: API fora) sejam re-consultados limpos.
   dados.forEach(d=>{
