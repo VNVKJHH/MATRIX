@@ -620,6 +620,7 @@ tr:hover td{background:var(--neon-glow)}
           <div class="form-group"><label>Atendente</label><select id="f-atend" onchange="renderRegistrosDia()"></select></div>
           <div class="form-group"><label>Nome do cliente</label><input type="text" id="f-nome-cliente" placeholder="Ex: João Silva"></div>
           <div class="form-group"><label>Telefone</label><input type="text" id="f-telefone" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+          <div class="form-group"><label>CPF <span style="font-size:10px;color:var(--t2)">— necessário p/ rastreio J&amp;T Express</span></label><input type="text" id="f-cpf" placeholder="000.000.000-00" oninput="mascaraCpf(this)"></div>
         </div>
         <div style="margin-bottom:.75rem">
           <p style="font-size:12px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Selecione a oferta vendida</p>
@@ -1322,6 +1323,7 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Atendente</label><select id="pad-atend"></select></div>
       <div class="form-group"><label>Nome do cliente</label><input type="text" id="pad-nome" placeholder="Ex: João Silva"></div>
       <div class="form-group"><label>Telefone</label><input type="text" id="pad-tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+      <div class="form-group"><label>CPF <span style="font-size:10px;color:var(--t2)">— necessário p/ rastreio J&amp;T Express</span></label><input type="text" id="pad-cpf" placeholder="000.000.000-00" oninput="mascaraCpf(this)"></div>
       <div class="form-group full">
         <label>Negociação <span style="font-size:11px;color:var(--t2)">— como ficou acordado</span></label>
         <textarea id="pad-negociacao" placeholder="Ex: Cliente aceitou pagar na entrega..." style="width:100%;font-size:13px;padding:8px 10px;border-radius:var(--r-md);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1);resize:vertical;min-height:70px;font-family:inherit"></textarea>
@@ -3292,7 +3294,8 @@ function salvarLancamento(){
   const bruto=valorEditado||0;
   const nomeCliente=document.getElementById('f-nome-cliente').value.trim();
   const telefone=document.getElementById('f-telefone').value.trim();
-  const rec={mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone};
+  const cpf=document.getElementById('f-cpf').value.trim();
+  const rec={mes,ano,atendente,dia,ofertaId:ofertaSelecionada,bruto,qtd_vendas:1,nomeCliente,telefone,cpf};
   rec.fbId='dado_'+Date.now();
   dados.push(rec);
   if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
@@ -3303,6 +3306,7 @@ function limparOferta(){
   ofertaSelecionada=null;valorEditado=null;
   const nc=document.getElementById('f-nome-cliente');if(nc)nc.value='';
   const tf=document.getElementById('f-telefone');if(tf)tf.value='';
+  const cf=document.getElementById('f-cpf');if(cf)cf.value='';
   atualizarResumoLanc();
 }
 function limparForm(){
@@ -3342,9 +3346,10 @@ function renderRegistrosDia(){
       <td>
         <div id="view-nome-${gi}" style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;flex-wrap:wrap">${r.nomeCliente||'<span style="color:var(--t3)">—</span>'}${r.recuperacao?'<span class="badge b-amber" style="font-size:9px;padding:1px 5px">RECUP.</span>':''}${marcacaoAtendente}${marcacaoOrigem}</div>
         <div id="edit-nome-${gi}" style="display:none"><input type="text" value="${r.nomeCliente||''}" id="inp-nome-${gi}" style="width:110px;font-size:12px;padding:3px 6px"></div>
-        <div style="font-size:11px;color:var(--t3)">${r.telefone||''}</div>
+        <div id="view-cpf-${gi}" style="font-size:11px;color:var(--t3)">${r.telefone||''}${r.cpf?' · CPF '+r.cpf:''}</div>
         ${r.rastreamento?`<div style="margin-top:3px"><span class="badge b-green" style="font-size:9px"><i class="ti ti-truck-delivery" style="font-size:9px"></i> ${r.rastreamento}</span></div>`:''}
-        <div id="edit-tel-${gi}" style="display:none"><input type="text" value="${r.telefone||''}" id="inp-tel-${gi}" style="width:110px;font-size:12px;padding:3px 6px" oninput="mascaraTel(this)"></div>
+        <div id="edit-tel-${gi}" style="display:none"><input type="text" value="${r.telefone||''}" id="inp-tel-${gi}" style="width:110px;font-size:12px;padding:3px 6px;margin-bottom:4px" oninput="mascaraTel(this)" placeholder="Telefone"></div>
+        <div id="edit-cpf-${gi}" style="display:none"><input type="text" value="${r.cpf||''}" id="inp-cpf-${gi}" style="width:110px;font-size:12px;padding:3px 6px" oninput="mascaraCpf(this)" placeholder="CPF"></div>
       </td>
       <td>
         <div id="view-oferta-${gi}" style="font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">${o.nome.replace('Frascos de Maximus V6','fr.')}</div>
@@ -3371,12 +3376,14 @@ function deletarVendaDia(idx){
 }
 
 function toggleEditVenda(gi){
-  ['nome','tel','valor'].forEach(f=>{
+  ['nome','cpf','valor'].forEach(f=>{
     const view=document.getElementById('view-'+f+'-'+gi);
     const edit=document.getElementById('edit-'+f+'-'+gi);
     if(view)view.style.display='none';
     if(edit)edit.style.display='block';
   });
+  const editTel=document.getElementById('edit-tel-'+gi);
+  if(editTel)editTel.style.display='block';
   const btnEdit=document.getElementById('btn-edit-'+gi);
   const btnSave=document.getElementById('btn-save-'+gi);
   if(btnEdit)btnEdit.style.display='none';
@@ -3385,12 +3392,25 @@ function toggleEditVenda(gi){
 function salvarEditVenda(gi){
   const nome=document.getElementById('inp-nome-'+gi)?.value.trim()||'';
   const tel=document.getElementById('inp-tel-'+gi)?.value.trim()||'';
+  const cpf=document.getElementById('inp-cpf-'+gi)?.value.trim()||'';
   const valor=parseFloat(document.getElementById('inp-valor-'+gi)?.value)||dados[gi].bruto;
-  dados[gi].nomeCliente=nome;dados[gi].telefone=tel;dados[gi].bruto=valor;
+  dados[gi].nomeCliente=nome;dados[gi].telefone=tel;dados[gi].cpf=cpf;dados[gi].bruto=valor;
   if(window.fbSave&&dados[gi].fbId)window.fbSave('dados',dados[gi].fbId,dados[gi]);
   renderRegistrosDia();toast('Venda atualizada!');
 }
 function mascaraTel(el){let v=el.value.replace(/\D/g,'');if(v.length>11)v=v.substring(0,11);if(v.length>6)v='('+v.substring(0,2)+') '+v.substring(2,7)+'-'+v.substring(7);else if(v.length>2)v='('+v.substring(0,2)+') '+v.substring(2);else if(v.length>0)v='('+v;el.value=v;}
+function mascaraCpf(el){let v=el.value.replace(/\D/g,'');if(v.length>11)v=v.substring(0,11);if(v.length>9)v=v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6,9)+'-'+v.substring(9);else if(v.length>6)v=v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6);else if(v.length>3)v=v.substring(0,3)+'.'+v.substring(3);el.value=v;}
+// Detecta a transportadora pelo formato do código de rastreio: Correios usa
+// duas letras + 9 dígitos + "BR" (ex: AA123456789BR); J&T Express usa só
+// números, geralmente entre 10 e 18 dígitos (ex: 888030841811344).
+function labelTransportadora(codigo){return detectarTransportadora(codigo)==='jt'?'J&T':'Correios';}
+function detectarTransportadora(codigo){
+  if(!codigo) return 'correios';
+  const c=codigo.trim().toUpperCase().replace(/\s/g,'');
+  if(/^[A-Z]{2}\d{9}BR$/.test(c)) return 'correios';
+  if(/^\d{10,18}$/.test(c)) return 'jt';
+  return 'correios';
+}
 
 function openModal(){editIdx=-1;document.getElementById('modal-title').textContent='Novo registro';['m-dia','m-bruto','m-qtdv'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-ano').value='2026';document.getElementById('modal').classList.add('open');}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
@@ -4001,7 +4021,7 @@ const CORES_STATUS_PAD={
 
 function openPadModal(){
   padOfertaSelecionada=null;padValorEditado=null;
-  ['pad-dia','pad-nome','pad-tel','pad-negociacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pad-dia','pad-nome','pad-tel','pad-cpf','pad-negociacao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('pad-ano').value='2026';
   initAllSelects();
   document.getElementById('pad-atend').disabled=false;
@@ -4054,7 +4074,7 @@ function salvarPad(){
   const atendente=document.getElementById('pad-atend').value;
   const nome=document.getElementById('pad-nome').value.trim();
   if(!dia){toast('Informe o dia!');return;}if(!mes){toast('Informe o mês!');return;}if(!atendente){toast('Selecione o atendente!');return;}if(!nome){toast('Informe o nome do cliente!');return;}if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
-  const rec={dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0,status:'Aguardando postagem',rastreamento:'',id:Date.now()};
+  const rec={dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),cpf:document.getElementById('pad-cpf').value.trim(),negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0,status:'Aguardando postagem',rastreamento:'',id:Date.now()};
   rec.fbId='pad_'+Date.now();
   pads.push(rec);
   if(window.fbSave)window.fbSave('pads',rec.fbId,rec);
@@ -4069,7 +4089,7 @@ function renderPad(){
   const buscaPad=(document.getElementById('pad-busca')?.value||'').toLowerCase();
   let rows=[...pads];
   if(atendFil)rows=rows.filter(p=>p.atendente===atendFil);
-  if(buscaPad)rows=rows.filter(p=>{const s=((p.nomeCliente||'')+(p.telefone||'')+(p.rastreamento||'')).toLowerCase();return s.includes(buscaPad);});
+  if(buscaPad)rows=rows.filter(p=>{const s=((p.nomeCliente||'')+(p.telefone||'')+(p.cpf||'')+(p.rastreamento||'')).toLowerCase();return s.includes(buscaPad);});
   rows.sort((a,b)=>{if(a.ano!==b.ano)return a.ano-b.ano;const mi=MESES.indexOf(a.mes),mj=MESES.indexOf(b.mes);if(mi!==mj)return mi-mj;return a.dia-b.dia;});
   const abertos=rows.filter(p=>['Aguardando postagem','Em rota','Aguardando pagamento'].includes(p.status));
   const pendentesReceber=rows.filter(p=>{
@@ -4101,10 +4121,10 @@ function renderPad(){
     let rastrCol='';
     if(adminLogado){
       const rval=p.rastreamento||'';
-      rastrCol='<td><div id="prview-'+gi+'" style="display:flex;align-items:center;gap:6px">'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Sem código</span>')+'<button class="btn btn-sm" onclick="editarRastPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button></div><div id="predit-'+gi+'" style="display:none;gap:6px;align-items:center"><input type="text" id="prinp-'+gi+'" value="'+rval+'" placeholder="Código..." style="width:110px;font-size:12px;padding:4px 7px"><button class="btn btn-success btn-sm" onclick="salvarRastPad('+gi+')"><i class="ti ti-check"></i></button><button class="btn btn-sm" onclick="cancelarRastPad('+gi+')"><i class="ti ti-x"></i></button></div></td>';
+      rastrCol='<td><div id="prview-'+gi+'" style="display:flex;align-items:center;gap:6px">'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span><span style="font-size:9px;color:var(--t3)">'+labelTransportadora(rval)+'</span>':'<span style="font-size:11px;color:var(--t3)">Sem código</span>')+'<button class="btn btn-sm" onclick="editarRastPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button></div><div id="predit-'+gi+'" style="display:none;gap:6px;align-items:center"><input type="text" id="prinp-'+gi+'" value="'+rval+'" placeholder="Código..." style="width:110px;font-size:12px;padding:4px 7px"><button class="btn btn-success btn-sm" onclick="salvarRastPad('+gi+')"><i class="ti ti-check"></i></button><button class="btn btn-sm" onclick="cancelarRastPad('+gi+')"><i class="ti ti-x"></i></button></div></td>';
     }else{
       const rval=p.rastreamento||'';
-      rastrCol='<td>'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span>':'<span style="font-size:11px;color:var(--t3)">Aguardando</span>')+'</td>';
+      rastrCol='<td>'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span> <span style="font-size:9px;color:var(--t3)">'+labelTransportadora(rval)+'</span>':'<span style="font-size:11px;color:var(--t3)">Aguardando</span>')+'</td>';
     }
     const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${p.trackInvalido?`<div style="font-weight:600;font-size:11px;color:var(--red);margin-bottom:3px">⚠️ Código inválido</div>`:p.trackStatus?`<div style="font-weight:600;font-size:11px;color:var(--neon);margin-bottom:2px">${p.trackStatus}</div><div style="font-size:9px;color:var(--t3);margin-bottom:3px">${p.trackData||''}</div>`:`<div style="font-size:10px;color:var(--t3);margin-bottom:3px;font-style:italic">Aguardando busca</div>`}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
     const pagamentos = p.pagamentos||[];
@@ -4127,7 +4147,7 @@ function renderPad(){
     const previsaoCol = '<td style="font-size:11px;white-space:nowrap">'+(p.previsaoEntrega?'<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> '+new Date(p.previsaoEntrega).toLocaleDateString('pt-BR')+'</span>':'<span style="color:var(--t3)">—</span>')+'</td>';
     const marcadoHoje = p.apuradoData===isoHojeMatrix();
     const apuradoCol = '<td style="text-align:center"><button onclick="toggleApuradoPad('+gi+')" title="'+(marcadoHoje?'Já apurado hoje — clique pra desmarcar':'Marcar como apurado hoje')+'" style="width:26px;height:26px;border-radius:50%;border:2px solid '+(marcadoHoje?'var(--neon)':'var(--border2)')+';background:'+(marcadoHoje?'var(--neon)':'transparent')+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s"><i class="ti ti-check" style="font-size:14px;color:'+(marcadoHoje?'#000':'transparent')+'"></i></button></td>';
-    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+previsaoCol+apuradoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
+    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+(p.cpf?' · CPF '+p.cpf:'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+previsaoCol+apuradoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
   });
   if(!tb)tb='<tr><td colspan="12" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
   const tbody=document.getElementById('pad-tbody');
@@ -4140,7 +4160,7 @@ function mudarStatusPad(gi,novoStatus){
   if(novoStatus==='Pago'){
     tocarSomVenda();
     const p=pads[gi];
-    const rec={mes:p.mes,ano:p.ano,atendente:p.atendente,dia:p.dia,ofertaId:p.ofertaId,bruto:p.bruto,qtd_vendas:1,nomeCliente:p.nomeCliente+' (PAD)',telefone:p.telefone,recuperacao:false,rastreamento:p.rastreamento||'',isPad:true};
+    const rec={mes:p.mes,ano:p.ano,atendente:p.atendente,dia:p.dia,ofertaId:p.ofertaId,bruto:p.bruto,qtd_vendas:1,nomeCliente:p.nomeCliente+' (PAD)',telefone:p.telefone,cpf:p.cpf||'',recuperacao:false,rastreamento:p.rastreamento||'',isPad:true};
     rec.fbId='dado_pad_'+Date.now();
     dados.push(rec);
     if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
@@ -4196,7 +4216,7 @@ function cancelarRastPad(gi){document.getElementById('prview-'+gi).style.display
 function salvarRastPad(gi){const codigo=document.getElementById('prinp-'+gi).value.trim();pads[gi].rastreamento=codigo;if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);renderPad();toast('Código salvo!');if(codigo)buscarRastreio(gi,'pad');}
 function editarPad(gi){
   const p=pads[gi];
-  document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
+  document.getElementById('pad-dia').value=p.dia;document.getElementById('pad-mes').value=p.mes;document.getElementById('pad-ano').value=p.ano;document.getElementById('pad-atend').value=p.atendente;document.getElementById('pad-nome').value=p.nomeCliente||'';document.getElementById('pad-tel').value=p.telefone||'';document.getElementById('pad-cpf').value=p.cpf||'';document.getElementById('pad-negociacao').value=p.negociacao||'';
   document.getElementById('pad-atend').disabled=!adminLogado;
   buildPadOfertasGrid();padOfertaSelecionada=p.ofertaId;padValorEditado=p.bruto;
   setTimeout(()=>{const item=document.querySelector('#pad-ofertas-grid .oferta-item[data-id="'+p.ofertaId+'"]');if(item){item.classList.add('selected');const inp=document.getElementById('padoval-'+p.ofertaId);if(inp)inp.value=p.bruto;const conf=document.getElementById('padoconf-'+p.ofertaId);if(conf){conf.textContent='✓ Valor: '+fmt(p.bruto);conf.style.display='block';}}},50);
@@ -4208,7 +4228,7 @@ function editarPad(gi){
 function salvarEdicaoPad(gi){
   const dia=parseInt(document.getElementById('pad-dia').value);const mes=document.getElementById('pad-mes').value;const ano=parseInt(document.getElementById('pad-ano').value)||2026;const atendente=document.getElementById('pad-atend').value;const nome=document.getElementById('pad-nome').value.trim();
   if(!dia){toast('Informe o dia!');return;}if(!mes){toast('Informe o mês!');return;}if(!atendente){toast('Selecione o atendente!');return;}if(!nome){toast('Informe o nome do cliente!');return;}if(!padOfertaSelecionada){toast('Selecione uma oferta!');return;}
-  pads[gi]={...pads[gi],dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0};
+  pads[gi]={...pads[gi],dia,mes,ano,atendente,nomeCliente:nome,telefone:document.getElementById('pad-tel').value.trim(),cpf:document.getElementById('pad-cpf').value.trim(),negociacao:document.getElementById('pad-negociacao').value.trim(),ofertaId:padOfertaSelecionada,bruto:padValorEditado||0};
   if(window.fbSave&&pads[gi].fbId)window.fbSave('pads',pads[gi].fbId,pads[gi]);
   closePadModal();renderPad();toast('PAD atualizado!');
 }
@@ -4356,8 +4376,8 @@ function renderRastreamento(){
     const temRastreio=rastreio.length>0;
     let rastreioCell='';
     if(adminLogado){
-      rastreioCell=`<td><div id="rview-${gi}" style="display:flex;align-items:center;gap:6px">${temRastreio?`<span class="badge b-green" style="font-size:11px">${rastreio}</span>`:`<span style="font-size:11px;color:var(--t3)">Sem código</span>`}<button class="btn btn-sm" onclick="editarRastreio(${gi})" title="Editar código"><i class="ti ti-edit"></i></button></div><div id="redit-${gi}" style="display:none;gap:6px;align-items:center"><input type="text" id="rinp-${gi}" value="${rastreio}" placeholder="Código..." style="width:130px;font-size:12px;padding:4px 8px"><button class="btn btn-success btn-sm" onclick="salvarRastreio(${gi})"><i class="ti ti-check"></i></button><button class="btn btn-sm" onclick="cancelarRastreio(${gi})"><i class="ti ti-x"></i></button></div></td>`;
-    }else{rastreioCell=`<td>${temRastreio?`<span class="badge b-green" style="font-size:11px">${rastreio}</span>`:`<span style="font-size:11px;color:var(--t3)">Aguardando</span>`}</td>`;}
+      rastreioCell=`<td><div id="rview-${gi}" style="display:flex;align-items:center;gap:6px">${temRastreio?`<span class="badge b-green" style="font-size:11px">${rastreio}</span><span style="font-size:9px;color:var(--t3)">${labelTransportadora(rastreio)}</span>`:`<span style="font-size:11px;color:var(--t3)">Sem código</span>`}<button class="btn btn-sm" onclick="editarRastreio(${gi})" title="Editar código"><i class="ti ti-edit"></i></button></div><div id="redit-${gi}" style="display:none;gap:6px;align-items:center"><input type="text" id="rinp-${gi}" value="${rastreio}" placeholder="Código..." style="width:130px;font-size:12px;padding:4px 8px"><button class="btn btn-success btn-sm" onclick="salvarRastreio(${gi})"><i class="ti ti-check"></i></button><button class="btn btn-sm" onclick="cancelarRastreio(${gi})"><i class="ti ti-x"></i></button></div></td>`;
+    }else{rastreioCell=`<td>${temRastreio?`<span class="badge b-green" style="font-size:11px">${rastreio}</span> <span style="font-size:9px;color:var(--t3)">${labelTransportadora(rastreio)}</span>`:`<span style="font-size:11px;color:var(--t3)">Aguardando</span>`}</td>`;}
     tb+=`<tr>
       <td style="color:var(--t3);font-weight:600">${i+1}</td>
       <td style="white-space:nowrap"><span style="font-weight:600">${r.dia}</span> <span style="color:var(--t2);font-size:11px">${r.mes.substring(0,3)} ${r.ano}</span></td>
@@ -4386,23 +4406,46 @@ function salvarRastreio(gi){
   if(codigo) buscarRastreio(gi,'rast');
 }
 
+// Chama a Netlify Function correta conforme a transportadora detectada pelo
+// formato do código (Correios via SeuRastreio.com.br, J&T Express via
+// jtjms-br). Retorna sempre o mesmo formato { success, status, historico,
+// eventoMaisRecente, previsaoEntrega } pra quem chama não precisar diferenciar.
+async function consultarRastreioApi(codigo, obj){
+  const transportadora = detectarTransportadora(codigo);
+  if(transportadora==='jt'){
+    const cpf=(obj.cpf||'').replace(/\D/g,'');
+    if(!cpf){
+      return {success:false, status:'error', erro:'cpf_ausente', transportadora};
+    }
+    const res=await fetch('/.netlify/functions/rastrear-jt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo,cpf})});
+    const data=await res.json();
+    return {...data, transportadora, ok:res.ok};
+  }
+  const res=await fetch('/.netlify/functions/rastrear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
+  const data=await res.json();
+  return {...data, transportadora, ok:res.ok};
+}
+
 async function buscarRastreio(gi,tipo){
   const obj=tipo==='pad'?pads[gi]:dados[gi];
   if(!obj||!obj.rastreamento){toast('Sem código de rastreamento!');return;}
   // Limpa trackInvalido antes de buscar — permite re-consultar mesmo que estivesse marcado como inválido
   if(obj.trackInvalido){obj.trackInvalido=false;if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,{...obj,trackInvalido:false});}
   const codigo=obj.rastreamento.trim().toUpperCase();
+  const transportadoraDetectada=detectarTransportadora(codigo);
+  if(transportadoraDetectada==='jt'&&!(obj.cpf||'').trim()){toast('Este código parece ser da J&T Express — informe o CPF do pedido pra conseguir rastrear!');return;}
   toast('Buscando rastreamento...');
   try{
-    const res=await fetch('/.netlify/functions/rastrear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
-    if(!res.ok){toast('Erro na função. Código: '+res.status);return;}
-    const data=await res.json();
-    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){toast('Nenhum evento encontrado. Verifique o código.');return;}
+    const data=await consultarRastreioApi(codigo, obj);
+    if(!data.ok){toast('Erro na função. Código: '+(data.status||'desconhecido'));return;}
+    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){toast('Nenhum evento encontrado. Verifique o código'+(data.transportadora==='jt'?' e o CPF':'')+'.');return;}
     const eventos=[];
-    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});});}
-    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});}
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});});}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});}
     if(eventos.length===0){toast('Nenhum evento encontrado.');return;}
+    obj.transportadora=data.transportadora;
     obj.trackStatus=eventos[0]?.descricao||'—';
+    obj.trackStatusBruto=eventos[0]?.statusBruto||'';
     obj.trackData=(eventos[0]?.data||'')+(eventos[0]?.hora?' '+eventos[0].hora:'')+(eventos[0]?.local?' — '+eventos[0].local:'');
     obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;
     marcarInicioRetiradaSeNecessario(obj);
@@ -4467,12 +4510,17 @@ async function buscarRastreioSilent(gi,tipo){
   const obj=tipo==='pad'?pads[gi]:dados[gi];
   if(!obj||!obj.rastreamento)return;
   const codigo=obj.rastreamento.trim().toUpperCase();
+  const transportadoraDetectada=detectarTransportadora(codigo);
+  if(transportadoraDetectada==='jt'&&!(obj.cpf||'').trim()){
+    // Sem CPF cadastrado não dá nem pra tentar consultar a J&T — não marca como
+    // inválido (o código pode estar certo, só falta o CPF), só ignora por ora.
+    return;
+  }
   try{
-    const res=await fetch('/.netlify/functions/rastrear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
+    const data=await consultarRastreioApi(codigo, obj);
     // Erro de rede/servidor: NÃO marca como inválido — pode ser instabilidade momentânea.
     // Só marca como inválido quando a API confirmar explicitamente que o código não existe.
-    if(!res.ok){console.warn('Rastreio API error para '+codigo+': HTTP '+res.status);return;}
-    const data=await res.json();
+    if(!data.ok){console.warn('Rastreio API error para '+codigo+': '+(data.status||'?'));return;}
     // Rate limited: não marca como inválido, só ignora e tenta na próxima sincronização
     if(data.status==='rate_limited'||data.status==='error'){console.warn('Rate limited/error para '+codigo+', tentando depois.');return;}
     if(!data.success||data.status==='not_found'||data.status==='invalid_format'){
@@ -4483,13 +4531,44 @@ async function buscarRastreioSilent(gi,tipo){
       return;
     }
     const eventos=[];
-    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''}));}
-    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||''});}
-    if(eventos.length>0){obj.trackStatus=eventos[0].descricao;obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''}));}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});}
+    if(eventos.length>0){obj.transportadora=data.transportadora;obj.trackStatus=eventos[0].descricao;obj.trackStatusBruto=eventos[0].statusBruto||'';obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
   }catch(e){console.error('Silent track error:',e);}
 }
 
+// Classificação de status para a J&T Express. Baseado nos textos reais vistos
+// até agora ("Coletado", "Em transferencia" no campo bruto de status, e frases
+// como "Saída/Chegada da encomenda expressa [...]" no texto detalhado). Os
+// textos de "entregue" e "devolução" ainda são uma estimativa — ainda não
+// vimos um exemplo real desses status; assim que aparecer o primeiro pedido
+// entregue ou devolvido pela J&T, vale conferir o texto exato aqui.
+function getStatusJT(r){
+  if(!r.rastreamento)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
+  if(!r.trackStatus)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
+  const s=r.trackStatus.toLowerCase();
+  const bruto=(r.trackStatusBruto||'').toLowerCase();
+  // Devolução — verificado antes de "entregue" pra evitar falso positivo
+  if(s.includes('devolv')||s.includes('recusad')||s.includes('extravi')||bruto.includes('devolv')||bruto.includes('recusa'))
+    return{label:'Devolução',cor:'var(--red)',icon:'ti-arrow-back-up',tipo:'devolucao'};
+  // Entregue
+  if(s.includes('entregue ao destinatário')||s.includes('encomenda entregue')||bruto.includes('entregue')||bruto.includes('finalizado')||bruto.includes('concluíd'))
+    return{label:'Entregue',cor:'var(--neon)',icon:'ti-circle-check',tipo:'entregue'};
+  // Aguardando retirada / tentativa sem sucesso
+  if(s.includes('aguardando retirada')||s.includes('tentativa de entrega')||s.includes('destinatário ausente')||s.includes('não atendeu'))
+    return{label:'Aguardando retirada',cor:'var(--amber)',icon:'ti-building-store',tipo:'retirada'};
+  // Coletado / em trânsito / saída-chegada de unidade = em rota
+  if(bruto.includes('coletad')||bruto.includes('transferen')||s.includes('retirou a encomenda')||s.includes('saída da encomenda')||s.includes('chegada da encomenda')||s.includes('saiu para entrega'))
+    return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
+  if(r.trackInvalido)return{label:'Código inválido',cor:'var(--red)',icon:'ti-alert-triangle',tipo:'invalido'};
+  return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
+}
+
 function getStatusCorreios(r){
+  // Roteia pra classificação certa conforme a transportadora do envio. Se ainda
+  // não sabemos (nunca buscou), tenta detectar pelo formato do próprio código.
+  const transportadora = r.transportadora || detectarTransportadora(r.rastreamento);
+  if(transportadora==='jt') return getStatusJT(r);
   if(!r.rastreamento)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   if(!r.trackStatus)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   const s=r.trackStatus.toLowerCase();
