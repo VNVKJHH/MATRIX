@@ -4413,7 +4413,7 @@ function salvarRastreio(gi){
 async function consultarRastreioApi(codigo, obj){
   const transportadora = detectarTransportadora(codigo);
   if(transportadora==='jt'){
-    const res=await fetch('/.netlify/functions/rastrear-jt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
+    const res=await fetch('/.netlify/functions/rastrear-jt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo,telefone:obj.telefone||''})});
     const data=await res.json();
     return {...data, transportadora, ok:res.ok};
   }
