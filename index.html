@@ -847,7 +847,7 @@ tr:hover td{background:var(--neon-glow)}
     <span id="rast-update-status" style="font-size:12px;color:var(--t3)"></span>
   </div>
   <div class="filters" id="rast-filters-adm" style="display:none">
-    <div><label>Atendente</label><select id="rast-atend" onchange="renderRastreamento()"><option value="">Todos</option></select></div>
+    <div><label>Atendente</label><select id="rast-atend" onchange="renderRastreamento();atualizarBadgeNotificacoes();"><option value="">Todos</option></select></div>
     <div>
       <label>Período</label>
       <div id="rast-periodo-card" onclick="abrirCalendarioPeriodo('rastreamentoPeriodo')" style="cursor:pointer;border:1px solid var(--border2);background:var(--bg2);border-radius:var(--r-md);padding:7px 12px;min-width:150px;display:flex;align-items:center;gap:8px">
@@ -891,7 +891,7 @@ tr:hover td{background:var(--neon-glow)}
   </div>
   <div id="pad-filters-adm" style="display:none;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
     <div><label style="font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px">Atendente</label>
-      <select id="pad-atend-fil" onchange="renderPad()"><option value="">Todos</option></select>
+      <select id="pad-atend-fil" onchange="renderPad();atualizarBadgeNotificacoes();"><option value="">Todos</option></select>
     </div>
   </div>
   <div style="margin-bottom:1rem">
@@ -3886,23 +3886,23 @@ function aplicarFiltroStatusEDesenharPontos(){
     .htmlLat('lat').htmlLng('lng').htmlAltitude(0.015)
     .htmlElement(d=>{
       const el=document.createElement('div');
-      if(_pedidoSelecionadoGlobo && _pedidoSelecionadoGlobo.id===d.id){
-        // O pedido selecionado mostra o MAXIMUS 3D no lugar — esconde o pontinho
+      // Esconde o pontinho exato do pedido selecionado (o MAXIMUS aparece no
+      // lugar dele) E os que estão bem perto — mesma cidade, geralmente
+      // espalhados em círculo ao redor do mesmo ponto — pra não disputar
+      // espaço visual com o MAXIMUS. Todos os outros continuam aparecendo
+      // normalmente, em qualquer outro lugar do globo.
+      if(_pedidoSelecionadoGlobo && (_pedidoSelecionadoGlobo.id===d.id || (_pedidoSelecionadoGlobo.local && _pedidoSelecionadoGlobo.local===d.local))){
         el.style.width='0';el.style.height='0';
         return el;
       }
       el.className='globo-ponto-neon';
       el.style.setProperty('--cor-neon-ponto', d.cor);
       el.style.pointerEvents='auto';
-      // Com um pedido selecionado, os outros pontinhos ficam bem apagados —
-      // como eles são camada HTML (sempre por cima do 3D), isso evita que
-      // fiquem "brigando" visualmente com o MAXIMUS e atrapalhando ele.
-      if(_pedidoSelecionadoGlobo) el.style.opacity='0.12';
       el.title=d.nome+' — '+d.status+'\n📍 '+d.local+'\n📦 '+d.cod+' ('+d.origem+')';
       el.onclick=(ev)=>{ ev.stopPropagation(); selecionarPedidoGlobo(d); };
       return el;
     })
-    .onGlobeClick(()=>{ fecharModalPedidoGlobo(); });
+    .onGlobeClick(()=>{ fecharDetalhePedidoGlobo(); });
 }
 
 // Mostra o MAXIMUS 3D pulsando na posição exata do pedido selecionado. Gerido
@@ -4338,7 +4338,7 @@ function renderPad(){
         <div class="metric-card"><div class="metric-label">Valor perdido (frustrados)</div><div class="metric-value mv-red">${fmt(valorPerdido)}</div></div>
         <div class="metric-card"><div class="metric-label">Pedidos frustrados</div><div class="metric-value">${frustradosConsiderados.length}</div></div>
         <div class="metric-card"><div class="metric-label">Taxa de frustração</div><div class="metric-value mv-amber">${taxaFrustracao}%</div></div>
-        ${qtdExcluidos>0?`<div class="metric-card"><div class="metric-label">Desconsiderados</div><div class="metric-value" style="color:var(--t3);font-size:15px">${qtdExcluidos} <span style="font-size:10px;font-weight:400">(recuperado/pago &gt;50%)</span></div></div>`:''}
+        ${qtdExcluidos>0?`<div class="metric-card"><div class="metric-label">Desconsiderados</div><div class="metric-value" style="color:var(--t3);font-size:15px">${qtdExcluidos} <span style="font-size:10px;font-weight:400">(recuperado ou pago +50%)</span></div></div>`:''}
       `;
     } else {
       resumoEl.innerHTML=`
@@ -4370,12 +4370,12 @@ function renderPad(){
     const totalPago = pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
     const pagoMaisMetade = p.bruto>0 && totalPago > p.bruto*0.5;
     const controlesFrustradoHtml = p.status==='Frustrado' ? `
-      <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
-        <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2);cursor:pointer" title="Marca esse pedido como recuperado (material voltou) — ele deixa de contar nas estatísticas de frustração">
-          <input type="checkbox" ${p.materialRecuperado?'checked':''} onchange="toggleMaterialRecuperadoPad(${gi})" style="width:13px;height:13px;cursor:pointer">
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:5px;align-items:flex-start">
+        <button onclick="toggleMaterialRecuperadoPad(${gi})" title="Marca esse pedido como recuperado (material voltou) — ele deixa de contar nas estatísticas de frustração" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;border:1.5px solid ${p.materialRecuperado?'var(--neon)':'var(--border2)'};background:${p.materialRecuperado?'var(--neon-glow)':'var(--bg2)'};color:${p.materialRecuperado?'var(--neon)':'var(--t2)'};transition:all .15s;white-space:nowrap">
+          <i class="ti ${p.materialRecuperado?'ti-square-rounded-check-filled':'ti-square-rounded'}" style="font-size:14px"></i>
           Material recuperado
-        </label>
-        ${pagoMaisMetade?`<span class="badge b-green" style="font-size:9px;align-self:flex-start" title="Mais de 50% do valor já foi pago antes de frustrar — não conta nas estatísticas de frustração">Pago &gt;50% — não conta</span>`:''}
+        </button>
+        ${pagoMaisMetade?`<span class="badge b-amber" style="font-size:9px" title="Mais de 50% do valor já foi pago antes de frustrar — esse pedido não entra na taxa de frustração">Pago +50% — excluído da taxa</span>`:''}
       </div>
     ` : '';
     const pagamentoCol = `<td style="min-width:170px">
@@ -5033,10 +5033,28 @@ function gerarNotificacoes(){
   atualizarBadgeNotificacoes();
 }
 
+// Decide qual atendente usar pra filtrar as notificações: pro atendente comum
+// é sempre o próprio nome; pro ADM, respeita o filtro de atendente que ele
+// escolheu na tela de PAD/Rastreamento (se estiver em "Todos", não filtra).
+function getAtendenteFiltroNotif(tipo){
+  if(!adminLogado && usuarioLogado) return usuarioLogado.nome;
+  if(adminLogado){
+    if(tipo==='rast'){
+      const el=document.getElementById('rast-atend');
+      if(el && el.value) return el.value;
+    } else if(tipo==='pad'){
+      const el=document.getElementById('pad-atend-fil');
+      if(el && el.value) return el.value;
+    }
+  }
+  return null;
+}
+
 function atualizarBadgeNotificacoes(){
-  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
-  const naoLidasRast=notificacoesRast.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
-  const naoLidasPad=notificacoesPad.filter(n=>!n.lida&&(!meuNome||n.atendente===meuNome)).length;
+  const filtroRast=getAtendenteFiltroNotif('rast');
+  const filtroPad=getAtendenteFiltroNotif('pad');
+  const naoLidasRast=notificacoesRast.filter(n=>!n.lida&&(!filtroRast||n.atendente===filtroRast)).length;
+  const naoLidasPad=notificacoesPad.filter(n=>!n.lida&&(!filtroPad||n.atendente===filtroPad)).length;
   const badgeRast=document.getElementById('notif-badge-rastreamento');
   if(badgeRast){ if(naoLidasRast>0){badgeRast.style.display='inline-block';badgeRast.textContent=naoLidasRast>99?'99+':naoLidasRast;}else{badgeRast.style.display='none';} }
   const badgePad=document.getElementById('notif-badge-pad');
@@ -5065,8 +5083,8 @@ function renderNotificacoes(){
     else{ btn.style.color='var(--t2)'; btn.style.borderBottomColor='transparent'; }
   });
   const lista = _notifAbaTipo==='pad' ? notificacoesPad : notificacoesRast;
-  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
-  let filtradas = lista.filter(n=> !meuNome || n.atendente===meuNome);
+  const filtroAtend=getAtendenteFiltroNotif(_notifAbaTipo);
+  let filtradas = lista.filter(n=> !filtroAtend || n.atendente===filtroAtend);
   filtradas = filtradas.filter(n=> _notifSubaba==='lidos' ? n.lida : !n.lida);
   filtradas.sort((a,b)=>(b.criadoEm||0)-(a.criadoEm||0));
   if(filtradas.length===0){
@@ -5096,8 +5114,8 @@ function marcarNotifComoLida(tipo, fbId){
 }
 function marcarTodasNotifComoLidas(){
   const lista = _notifAbaTipo==='pad' ? notificacoesPad : notificacoesRast;
-  const meuNome=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:null;
-  const alvo=lista.filter(n=>!n.lida && (!meuNome||n.atendente===meuNome));
+  const filtroAtend=getAtendenteFiltroNotif(_notifAbaTipo);
+  const alvo=lista.filter(n=>!n.lida && (!filtroAtend||n.atendente===filtroAtend));
   if(alvo.length===0){ toast('Nenhuma notificação pendente.'); return; }
   alvo.forEach(n=>{
     n.lida=true;
