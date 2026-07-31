@@ -4773,21 +4773,26 @@ function formatarAcompanhamentoJT(r){
   const atual = hist[0];
   const p = parseEventoBracketsJT(atual.descricao);
   const st = getStatusCorreios(r);
-  const dataHora = (atual.data||'')+(atual.hora?' às '+atual.hora:'');
-  if(!p) return { linha1: st.label, linha2: dataHora };
-  const origemUf = ufDoCodigoAcomp(p.codigos[0]);
-  const origemTxt = origemUf ? `${p.cidade}/${origemUf}` : p.cidade;
+  const dataHora = (atual.data||'')+(atual.hora?' '+atual.hora:'');
+  // Local pra linha de baixo: igual o padrão dos Correios ("data — cidade/UF")
+  const origemUf = p ? ufDoCodigoAcomp(p.codigos[0]) : '';
+  const origemTxt = p ? (origemUf ? `${p.cidade}/${origemUf}` : p.cidade) : '';
+  const linha2 = origemTxt ? `${dataHora} — ${origemTxt}` : dataHora;
+  if(!p) return { linha1: st.label, linha2 };
+  // Linha de cima: só a movimentação em si, sem local (igual "Objeto em
+  // transferência - por favor aguarde" dos Correios)
   if(st.tipo==='rota' && p.codigos[1]){
     const destCidade = mapaCidade[p.codigos[1]];
     const destUf = ufDoCodigoAcomp(p.codigos[1]);
     const destTxt = destCidade ? `${destCidade}/${destUf}` : (destUf?`unidade em ${destUf}`:'próxima unidade');
-    return { linha1: `Saiu de ${origemTxt} → ${destTxt}`, linha2: dataHora };
+    return { linha1: `Em trânsito — a caminho de ${destTxt}`, linha2 };
   }
-  if(st.tipo==='entregue') return { linha1:`Entregue em ${origemTxt}`, linha2:dataHora };
-  if(st.tipo==='devolucao') return { linha1:`Em devolução — últ. local: ${origemTxt}`, linha2:dataHora };
-  if(st.tipo==='retirada') return { linha1:`Aguardando retirada em ${origemTxt}`, linha2:dataHora };
-  if(st.tipo==='postagem') return { linha1:'Aguardando postagem', linha2:dataHora };
-  return { linha1: `${st.label} — ${origemTxt}`, linha2: dataHora };
+  if(st.tipo==='rota') return { linha1:'Em trânsito', linha2 };
+  if(st.tipo==='entregue') return { linha1:'Entregue', linha2 };
+  if(st.tipo==='devolucao') return { linha1:'Em devolução', linha2 };
+  if(st.tipo==='retirada') return { linha1:'Aguardando retirada', linha2 };
+  if(st.tipo==='postagem') return { linha1:'Aguardando postagem', linha2 };
+  return { linha1: st.label, linha2 };
 }
 
 // Monta o HTML da célula de "Acompanhamento" — usa a frase formatada pelo
