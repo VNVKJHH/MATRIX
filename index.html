@@ -3691,6 +3691,10 @@ function iniciarRotacaoCaixaGlobo(caixa){
 const CONTORNOS_LOGO_MAXIMUS = {"largura_total":3.2875399361022364,"altura_total":1.0,"formas":[{"pontos":[[1.1022,0.7188],[1.0703,0.7572],[1.0479,0.77],[0.9744,0.7093],[1.0032,0.6965],[1.0256,0.6741],[1.0383,0.6454],[1.0319,0.6006],[0.9968,0.5623],[0.9681,0.5527],[0.7827,0.5527],[0.6805,0.4665],[0.9521,0.4665],[1.0064,0.4728],[1.0383,0.4856],[1.0863,0.524],[1.1118,0.5623],[1.1214,0.5879],[1.1246,0.6581]],"area":4735.5,"pai":-1},{"pontos":[[1.1054,0.7732],[1.2428,0.6358],[1.3131,0.6965],[1.2524,0.7604],[1.2332,0.77]],"area":1393.5,"pai":-1},{"pontos":[[2.1406,0.7859],[2.1438,0.5911],[2.1629,0.5431],[2.1981,0.5016],[2.262,0.4696],[2.3259,0.4665],[2.3866,0.4888],[2.4217,0.5176],[2.4441,0.5495],[2.4601,0.5911],[2.4601,0.7859],[2.3898,0.7859],[2.3866,0.6038],[2.377,0.5815],[2.3482,0.5527],[2.3195,0.5399],[2.2843,0.5399],[2.2556,0.5527],[2.2204,0.5942],[2.2141,0.6198],[2.2141,0.7859]],"area":5127.5,"pai":-1},{"pontos":[[2.5399,0.7891],[2.5112,0.7732],[2.4888,0.7476],[2.4792,0.7125],[2.4824,0.6805],[2.4952,0.655],[2.5304,0.6262],[2.6358,0.5847],[2.6518,0.5687],[2.655,0.5495],[2.6294,0.5272],[2.5815,0.524],[2.524,0.5367],[2.4824,0.5591],[2.4824,0.492],[2.5623,0.4665],[2.639,0.4665],[2.6741,0.476],[2.7093,0.5016],[2.722,0.5272],[2.7252,0.5751],[2.7125,0.607],[2.6773,0.639],[2.5655,0.6837],[2.5527,0.6997],[2.5527,0.7157],[2.5751,0.7348],[2.6198,0.738],[2.6709,0.7252],[2.6997,0.7093],[2.6997,0.7732],[2.6358,0.7955],[2.5655,0.7955]],"area":4492.5,"pai":-1},{"pontos":[[1.7157,0.8019],[1.7157,0.4665],[1.7891,0.4665],[1.7923,0.6166],[1.8051,0.6102],[1.9105,0.5048],[2.0319,0.6166],[2.0351,0.4665],[2.1118,0.4665],[2.1118,0.8019],[1.9169,0.6134],[1.9105,0.6134]],"area":6999.0,"pai":-1},{"pontos":[[1.6901,0.8019],[1.5783,0.6933],[1.5783,0.4665],[1.6901,0.4665]],"area":3097.0,"pai":-1},{"pontos":[[0.3355,0.4696],[0.4249,0.4665],[0.4281,0.6102],[0.6006,0.4728],[0.8562,0.6869],[0.8562,0.7955],[0.6038,0.5879],[0.5942,0.5879],[0.3387,0.8019]],"area":7430.5,"pai":-1},{"pontos":[[1.77,0.9712],[1.6486,0.9712],[1.623,0.9585],[1.1054,0.476],[1.2332,0.4792],[1.2556,0.492],[1.3163,0.5495],[1.3259,0.5527],[1.4952,0.3866],[1.5208,0.377],[1.6358,0.377],[1.3962,0.6166],[1.3962,0.623]],"area":9242.5,"pai":-1}]};
 
 const logoExtrusaoCacheGlobo = {};
+function hexParaRgb(hex){
+  const h=(hex||'#888888').replace('#','');
+  return {r:parseInt(h.substring(0,2),16),g:parseInt(h.substring(2,4),16),b:parseInt(h.substring(4,6),16)};
+}
 function escurecerCor(corHex, fator){
   const hex = corHex.replace('#','');
   const r = Math.round(parseInt(hex.substring(0,2),16) * (1-fator));
@@ -3841,10 +3845,18 @@ function aplicarFiltroStatusEDesenharPontos(){
     // mesma cor usada nos filtros de status logo abaixo do globo.
     .pointsData(pontos)
     .pointLat('lat').pointLng('lng').pointAltitude(0.012)
-    .pointRadius(d=>_pedidoSelecionadoGlobo&&_pedidoSelecionadoGlobo.id===d.id?0:0.32)
+    .pointRadius(d=>_pedidoSelecionadoGlobo&&_pedidoSelecionadoGlobo.id===d.id?0:0.14)
     .pointColor('cor')
     .pointLabel(tooltip)
     .onPointClick(pt=>selecionarPedidoGlobo(pt))
+    // Anéis pulsantes em volta de cada ponto — dão o efeito de "brilho
+    // intenso" sem deixar o ponto em si grande.
+    .ringsData(pontos)
+    .ringLat('lat').ringLng('lng').ringAltitude(0.012)
+    .ringColor(d=>{const rgb=hexParaRgb(d.cor);return t=>`rgba(${rgb.r},${rgb.g},${rgb.b},${Math.max(0,1-t)})`;})
+    .ringMaxRadius(1.6)
+    .ringPropagationSpeed(1.5)
+    .ringRepeatPeriod(1400)
     // Camada de "objetos 3D" — só usada pro pedido selecionado, mostrando o
     // logo MAXIMUS grande pulsando exatamente na posição dele.
     .objectsData(_pedidoSelecionadoGlobo?[_pedidoSelecionadoGlobo]:[])
@@ -3852,12 +3864,16 @@ function aplicarFiltroStatusEDesenharPontos(){
     .objectThreeObject(d=>criarCaixaPedidoGlobo(d.cor))
     .objectLabel(tooltip)
     .onObjectClick(pt=>selecionarPedidoGlobo(pt))
-    .ringsData([]);
+    .onGlobeClick(()=>{ if(_pedidoSelecionadoGlobo) fecharDetalhePedidoGlobo(); });
 }
 
 // Quando clica num pontinho (ou no logo já selecionado), mostra o MAXIMUS
 // pulsando ali e abre os detalhes completos do pedido com o histórico.
 function selecionarPedidoGlobo(pt){
+  if(_pedidoSelecionadoGlobo && _pedidoSelecionadoGlobo.id===pt.id){
+    fecharDetalhePedidoGlobo();
+    return;
+  }
   _pedidoSelecionadoGlobo = pt;
   aplicarFiltroStatusEDesenharPontos();
   mostrarDetalhePedidoGlobo(pt);
