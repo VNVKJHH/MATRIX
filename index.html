@@ -618,7 +618,7 @@ tr:hover td{background:var(--neon-glow)}
           <div class="form-group"><label>Mês</label><select id="f-mes" onchange="renderRegistrosDia()"></select></div>
           <div class="form-group"><label>Ano</label><input type="number" id="f-ano" value="2026" oninput="renderRegistrosDia()"></div>
           <div class="form-group"><label>Atendente</label><select id="f-atend" onchange="renderRegistrosDia()"></select></div>
-          <div class="form-group"><label>Nome do cliente</label><input type="text" id="f-nome-cliente" placeholder="Ex: João Silva"></div>
+          <div class="form-group"><label>Nome do cliente</label><input type="text" id="f-nome-cliente" placeholder="Ex: João Silva" onblur="this.value=formatarNomeProprio(this.value)"></div>
           <div class="form-group"><label>Telefone</label><input type="text" id="f-telefone" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
           <div class="form-group"><label>CPF <span style="font-size:10px;color:var(--t2)">— necessário p/ rastreio J&amp;T Express</span></label><input type="text" id="f-cpf" placeholder="000.000.000-00" oninput="mascaraCpf(this)"></div>
         </div>
@@ -867,7 +867,7 @@ tr:hover td{background:var(--neon-glow)}
         <thead><tr>
           <th>#</th><th>Data</th><th>Atendente</th><th>Cliente</th><th>Telefone</th>
           <th>Oferta</th><th>Valor</th><th>Rastreamento</th><th>Acompanhamento</th>
-          <th>Previsão</th><th>Tempo</th>
+          <th>Previsão</th><th>Tempo</th><th></th>
         </tr></thead>
         <tbody id="rast-tbody"></tbody>
       </table>
@@ -1165,6 +1165,9 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Oferta</label><select id="m-oferta"></select></div>
       <div class="form-group"><label>Valor (R$)</label><input type="number" id="m-bruto" step="0.01"></div>
       <div class="form-group"><label>Qtd. vendas</label><input type="number" id="m-qtdv"></div>
+      <div class="form-group"><label>Nome do cliente</label><input type="text" id="m-nome" placeholder="Ex: João Silva" onblur="this.value=formatarNomeProprio(this.value)"></div>
+      <div class="form-group"><label>Telefone</label><input type="text" id="m-telefone" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+      <div class="form-group"><label>CPF <span style="font-size:10px;color:var(--t2)">— necessário p/ rastreio J&amp;T Express</span></label><input type="text" id="m-cpf" placeholder="000.000.000-00" oninput="mascaraCpf(this)"></div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal()">Cancelar</button>
@@ -1322,12 +1325,12 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Mês</label><select id="pad-mes"></select></div>
       <div class="form-group"><label>Ano</label><input type="number" id="pad-ano" value="2026"></div>
       <div class="form-group"><label>Atendente</label><select id="pad-atend"></select></div>
-      <div class="form-group"><label>Nome do cliente</label><input type="text" id="pad-nome" placeholder="Ex: João Silva"></div>
+      <div class="form-group"><label>Nome do cliente</label><input type="text" id="pad-nome" placeholder="Ex: João Silva" onblur="this.value=formatarNomeProprio(this.value)"></div>
       <div class="form-group"><label>Telefone</label><input type="text" id="pad-tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
       <div class="form-group"><label>CPF <span style="font-size:10px;color:var(--t2)">— necessário p/ rastreio J&amp;T Express</span></label><input type="text" id="pad-cpf" placeholder="000.000.000-00" oninput="mascaraCpf(this)"></div>
       <div class="form-group full">
         <label>Negociação <span style="font-size:11px;color:var(--t2)">— como ficou acordado</span></label>
-        <textarea id="pad-negociacao" placeholder="Ex: Cliente aceitou pagar na entrega..." style="width:100%;font-size:13px;padding:8px 10px;border-radius:var(--r-md);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1);resize:vertical;min-height:70px;font-family:inherit"></textarea>
+        <textarea id="pad-negociacao" placeholder="Ex: Cliente aceitou pagar na entrega..." style="width:100%;font-size:13px;padding:8px 10px;border-radius:var(--r-md);border:.5px solid var(--border2);background:var(--bg1);color:var(--t1);resize:vertical;min-height:70px;font-family:inherit" onblur="this.value=formatarNegociacao(this.value)"></textarea>
       </div>
     </div>
     <div style="margin:1rem 0 .5rem">
@@ -3346,7 +3349,7 @@ function renderRegistrosDia(){
       <td style="font-weight:700;color:var(--t2)">${i+1}</td>
       <td>
         <div id="view-nome-${gi}" style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;flex-wrap:wrap">${r.nomeCliente||'<span style="color:var(--t3)">—</span>'}${r.recuperacao?'<span class="badge b-amber" style="font-size:9px;padding:1px 5px">RECUP.</span>':''}${marcacaoAtendente}${marcacaoOrigem}</div>
-        <div id="edit-nome-${gi}" style="display:none"><input type="text" value="${r.nomeCliente||''}" id="inp-nome-${gi}" style="width:110px;font-size:12px;padding:3px 6px"></div>
+        <div id="edit-nome-${gi}" style="display:none"><input type="text" value="${r.nomeCliente||''}" id="inp-nome-${gi}" style="width:110px;font-size:12px;padding:3px 6px" onblur="this.value=formatarNomeProprio(this.value)"></div>
         <div id="view-cpf-${gi}" style="font-size:11px;color:var(--t3)">${r.telefone||''}${r.cpf?' · CPF '+r.cpf:''}</div>
         ${r.rastreamento?`<div style="margin-top:3px"><span class="badge b-green" style="font-size:9px"><i class="ti ti-truck-delivery" style="font-size:9px"></i> ${r.rastreamento}</span></div>`:''}
         <div id="edit-tel-${gi}" style="display:none"><input type="text" value="${r.telefone||''}" id="inp-tel-${gi}" style="width:110px;font-size:12px;padding:3px 6px;margin-bottom:4px" oninput="mascaraTel(this)" placeholder="Telefone"></div>
@@ -3400,6 +3403,44 @@ function salvarEditVenda(gi){
   renderRegistrosDia();toast('Venda atualizada!');
 }
 function mascaraTel(el){let v=el.value.replace(/\D/g,'');if(v.length>11)v=v.substring(0,11);if(v.length>6)v='('+v.substring(0,2)+') '+v.substring(2,7)+'-'+v.substring(7);else if(v.length>2)v='('+v.substring(0,2)+') '+v.substring(2);else if(v.length>0)v='('+v;el.value=v;}
+
+// Corrige automaticamente o nome do cliente pra "Nome Próprio" quando o
+// vendedor digita tudo em maiúsculo ou tudo em minúsculo — preposições comuns
+// (de, da, do, dos, das, e) ficam minúsculas, exceto se forem a primeira palavra.
+const PREPOSICOES_NOME = ['de','da','do','dos','das','e','di','du','von','van'];
+function formatarNomeProprio(nome){
+  if(!nome) return nome;
+  const partes = nome.trim().toLowerCase().split(/\s+/);
+  return partes.map((p,i)=>{
+    if(i>0 && PREPOSICOES_NOME.includes(p)) return p;
+    // Capitaliza cada pedaço separado por hífen ou apóstrofo (ex: jean-pierre, d'avila)
+    return p.split(/([-'])/).map(pedaco=>{
+      if(pedaco==='-'||pedaco==="'") return pedaco;
+      return pedaco.charAt(0).toUpperCase()+pedaco.slice(1);
+    }).join('');
+  }).join(' ');
+}
+
+// Corrige o campo de negociação (texto livre) pra "frase normal" quando o
+// vendedor digitou tudo em maiúsculo ou tudo em minúsculo. Só mexe quando
+// detecta esses dois casos extremos — se já tiver maiúsculas e minúsculas
+// misturadas, assume que foi digitado de propósito e não mexe.
+const SIGLAS_NEGOCIACAO = {'pix':'PIX','cpf':'CPF','cnpj':'CNPJ','whatsapp':'WhatsApp','whats':'Whats'};
+function formatarNegociacao(texto){
+  if(!texto) return texto;
+  const temMaiuscula = /[A-ZÀ-Ú]/.test(texto);
+  const temMinuscula = /[a-zà-ú]/.test(texto);
+  if(temMaiuscula && temMinuscula) return texto; // já misturado, não mexe
+  let corrigido = texto.toLowerCase();
+  // Capitaliza a primeira letra do texto e depois de . ! ?
+  corrigido = corrigido.replace(/(^\s*[a-zà-ú])|([.!?]\s+[a-zà-ú])/g, m=>m.toUpperCase());
+  // Recoloca siglas conhecidas no formato certo
+  Object.keys(SIGLAS_NEGOCIACAO).forEach(sigla=>{
+    const regex = new RegExp('\\b'+sigla+'\\b','gi');
+    corrigido = corrigido.replace(regex, SIGLAS_NEGOCIACAO[sigla]);
+  });
+  return corrigido;
+}
 function mascaraCpf(el){let v=el.value.replace(/\D/g,'');if(v.length>11)v=v.substring(0,11);if(v.length>9)v=v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6,9)+'-'+v.substring(9);else if(v.length>6)v=v.substring(0,3)+'.'+v.substring(3,6)+'.'+v.substring(6);else if(v.length>3)v=v.substring(0,3)+'.'+v.substring(3);el.value=v;}
 // Detecta a transportadora pelo formato do código de rastreio: Correios usa
 // duas letras + 9 dígitos + "BR" (ex: AA123456789BR); J&T Express usa só
@@ -3413,16 +3454,21 @@ function detectarTransportadora(codigo){
   return 'correios';
 }
 
-function openModal(){editIdx=-1;document.getElementById('modal-title').textContent='Novo registro';['m-dia','m-bruto','m-qtdv'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-ano').value='2026';document.getElementById('modal').classList.add('open');}
+function openModal(){editIdx=-1;document.getElementById('modal-title').textContent='Novo registro';['m-dia','m-bruto','m-qtdv','m-nome','m-telefone','m-cpf'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-ano').value='2026';document.getElementById('modal').classList.add('open');}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 function editRow(idx){
   editIdx=idx;const r=dados[idx];
   document.getElementById('modal-title').textContent='Editar registro';
   document.getElementById('m-dia').value=r.dia;document.getElementById('m-mes').value=r.mes;document.getElementById('m-ano').value=r.ano;document.getElementById('m-atend').value=r.atendente;document.getElementById('m-oferta').value=r.ofertaId;document.getElementById('m-bruto').value=r.bruto||0;document.getElementById('m-qtdv').value=r.qtd_vendas||0;
+  document.getElementById('m-nome').value=r.nomeCliente||'';document.getElementById('m-telefone').value=r.telefone||'';document.getElementById('m-cpf').value=r.cpf||'';
   document.getElementById('modal').classList.add('open');
 }
 function salvarModal(){
-  const rec={dia:parseInt(document.getElementById('m-dia').value)||0,mes:document.getElementById('m-mes').value,ano:parseInt(document.getElementById('m-ano').value)||2026,atendente:document.getElementById('m-atend').value,ofertaId:parseInt(document.getElementById('m-oferta').value)||1,bruto:parseFloat(document.getElementById('m-bruto').value)||0,qtd_vendas:parseInt(document.getElementById('m-qtdv').value)||0};
+  // Preserva o registro original (rastreamento, histórico de rastreio, etc.)
+  // e só sobrescreve os campos editados no formulário — criar um objeto do
+  // zero aqui apagaria o rastreio já vinculado a essa venda.
+  const original = editIdx>=0 ? dados[editIdx] : {};
+  const rec={...original,dia:parseInt(document.getElementById('m-dia').value)||0,mes:document.getElementById('m-mes').value,ano:parseInt(document.getElementById('m-ano').value)||2026,atendente:document.getElementById('m-atend').value,ofertaId:parseInt(document.getElementById('m-oferta').value)||1,bruto:parseFloat(document.getElementById('m-bruto').value)||0,qtd_vendas:parseInt(document.getElementById('m-qtdv').value)||0,nomeCliente:document.getElementById('m-nome').value.trim(),telefone:document.getElementById('m-telefone').value.trim(),cpf:document.getElementById('m-cpf').value.trim()};
   if(editIdx>=0){
     rec.fbId=dados[editIdx].fbId||('dado_'+Date.now());
     dados[editIdx]=rec;
@@ -3431,7 +3477,7 @@ function salvarModal(){
     dados.push(rec);
   }
   if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
-  closeModal();initAllSelects();renderDados();toast(editIdx>=0?'Atualizado!':'Adicionado!');
+  closeModal();initAllSelects();renderDados();renderRastreamento();toast(editIdx>=0?'Atualizado!':'Adicionado!');
 }
 function deleteRow(idx){
   if(confirm('Remover?')){
@@ -4148,7 +4194,7 @@ function renderPad(){
     const previsaoCol = '<td style="font-size:11px;white-space:nowrap">'+(p.previsaoEntrega?'<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> '+new Date(p.previsaoEntrega).toLocaleDateString('pt-BR')+'</span>':'<span style="color:var(--t3)">—</span>')+'</td>';
     const marcadoHoje = p.apuradoData===isoHojeMatrix();
     const apuradoCol = '<td style="text-align:center"><button onclick="toggleApuradoPad('+gi+')" title="'+(marcadoHoje?'Já apurado hoje — clique pra desmarcar':'Marcar como apurado hoje')+'" style="width:26px;height:26px;border-radius:50%;border:2px solid '+(marcadoHoje?'var(--neon)':'var(--border2)')+';background:'+(marcadoHoje?'var(--neon)':'transparent')+';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s"><i class="ti ti-check" style="font-size:14px;color:'+(marcadoHoje?'#000':'transparent')+'"></i></button></td>';
-    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+(p.cpf?' · CPF '+p.cpf:'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+previsaoCol+apuradoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
+    tb+='<tr><td style="color:var(--t3);font-weight:600">'+(i+1)+'</td><td style="white-space:nowrap"><span style="font-weight:600">'+p.dia+'</span> <span style="font-size:11px;color:var(--t2)">'+p.mes.substring(0,3)+' '+p.ano+'</span></td><td style="font-size:12px">'+p.atendente.split(' ')[0]+'</td><td><div style="font-weight:600;font-size:12px'+(podeEditar?';cursor:pointer" onclick="editarPad('+gi+')" title="Clique para editar':'')+'">'+p.nomeCliente+'</div><div style="font-size:11px;color:var(--t2)">'+(p.telefone||'')+(p.cpf?' · CPF '+p.cpf:'')+'</div>'+cidade+neg+'</td><td style="font-size:11px">'+nomeCurto+'<br><span style="font-weight:600;color:var(--green)">'+fmt(p.bruto)+'</span></td>'+pagamentoCol+rastrCol+acompanhamentoCol+previsaoCol+apuradoCol+'<td>'+statusCell+'</td>'+acoes+'</tr>';
   });
   if(!tb)tb='<tr><td colspan="12" class="empty" style="padding:1.5rem"><i class="ti ti-credit-card"></i>Nenhum registro nesta aba</td></tr>';
   const tbody=document.getElementById('pad-tbody');
@@ -4383,7 +4429,7 @@ function renderRastreamento(){
       <td style="color:var(--t3);font-weight:600">${i+1}</td>
       <td style="white-space:nowrap"><span style="font-weight:600">${r.dia}</span> <span style="color:var(--t2);font-size:11px">${r.mes.substring(0,3)} ${r.ano}</span></td>
       <td style="font-size:12px">${r.atendente.split(' ')[0]}</td>
-      <td style="font-weight:600;font-size:12px">${r.nomeCliente||'<span style="color:var(--t3)">—</span>'}</td>
+      <td style="font-weight:600;font-size:12px;${adminLogado?'cursor:pointer':''}" ${adminLogado?`onclick="editRow(${gi})" title="Clique para editar"`:''}>${r.nomeCliente||'<span style="color:var(--t3)">—</span>'}</td>
       <td style="font-size:12px;color:var(--t2)">${r.telefone||'—'}</td>
       <td style="font-size:11px;color:var(--t2)">${nomeCurto}</td>
       <td style="font-weight:600;color:var(--green)">${fmt(r.bruto)}</td>
@@ -4391,9 +4437,10 @@ function renderRastreamento(){
       <td id="track-cell-${gi}" style="min-width:200px">${r.rastreamento?`<div>${r.trackInvalido?`<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>`:r.trackStatus?`<div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>`:`<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`}${r.trackHistorico&&r.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'rast')" style="font-size:11px;padding:3px 8px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>
       <td style="font-size:11px;white-space:nowrap">${r.previsaoEntrega?`<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> ${new Date(r.previsaoEntrega).toLocaleDateString('pt-BR')}</span>`:'<span style="color:var(--t3)">—</span>'}</td>
       <td style="font-size:11px;white-space:nowrap;min-width:120px">${(()=>{const hoje=new Date();const lancado=new Date(r.ano,MESES.indexOf(r.mes),r.dia);const diasTotal=Math.floor((hoje-lancado)/86400000);return'<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há '+diasTotal+'d</div>';})()}</td>
+      <td>${adminLogado?`<button class="btn btn-sm" onclick="editRow(${gi})" title="Editar pedido"><i class="ti ti-edit"></i></button>`:''}</td>
     </tr>`;
   });
-  if(!tb)tb='<tr><td colspan="11" class="empty"><i class="ti ti-truck-delivery"></i>Nenhum registro encontrado</td></tr>';
+  if(!tb)tb='<tr><td colspan="12" class="empty"><i class="ti ti-truck-delivery"></i>Nenhum registro encontrado</td></tr>';
   document.getElementById('rast-tbody').innerHTML=tb;
 }
 
@@ -4436,12 +4483,13 @@ async function buscarRastreio(gi,tipo){
     if(!data.ok){toast('Erro na função. Código: '+(data.status||'desconhecido'));return;}
     if(!data.success||data.status==='not_found'||data.status==='invalid_format'){toast(data.transportadora==='jt'?'Nenhum evento encontrado ainda. Se o código é novo, aguarde alguns minutos e tente de novo.':'Nenhum evento encontrado. Verifique o código.');return;}
     const eventos=[];
-    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});});}
-    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});}
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});});}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});}
     if(eventos.length===0){toast('Nenhum evento encontrado.');return;}
     obj.transportadora=data.transportadora;
     obj.trackStatus=eventos[0]?.descricao||'—';
     obj.trackStatusBruto=eventos[0]?.statusBruto||'';
+    obj.trackSubstatusBruto=eventos[0]?.substatusBruto||'';
     obj.trackData=(eventos[0]?.data||'')+(eventos[0]?.hora?' '+eventos[0].hora:'')+(eventos[0]?.local?' — '+eventos[0].local:'');
     obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;
     marcarInicioRetiradaSeNecessario(obj);
@@ -4544,35 +4592,45 @@ async function buscarRastreioSilent(gi,tipo){
       return;
     }
     const eventos=[];
-    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''}));}
-    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});}
-    if(eventos.length>0){obj.transportadora=data.transportadora;obj.trackStatus=eventos[0].descricao;obj.trackStatusBruto=eventos[0].statusBruto||'';obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''}));}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});}
+    if(eventos.length>0){obj.transportadora=data.transportadora;obj.trackStatus=eventos[0].descricao;obj.trackStatusBruto=eventos[0].statusBruto||'';obj.trackSubstatusBruto=eventos[0].substatusBruto||'';obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
   }catch(e){console.error('Silent track error:',e);}
 }
 
-// Classificação de status para a J&T Express, agora vinda da API oficial do
-// TrackingMore. O campo "statusBruto" vem do checkpoint_delivery_status deles
-// (valores padronizados tipo: pending, transit, pickup, delivered, exception,
-// undelivered, expired, notfound) — bem mais confiável que adivinhar por
-// texto livre, mas mantemos uma checagem de texto como reforço/fallback.
+// Classificação de status para a J&T Express, baseada na lista OFICIAL de
+// status/sub-status do TrackingMore ("Courier Delivery Status" na doc deles):
+//   inforeceived → aguardando coleta          | transit → em trânsito
+//   pickup       → saiu p/ entrega/retirada    | undelivered → tentativa falhou
+//   delivered    → entregue                    | exception → problema/devolução
+//   expired      → 30 dias sem atualização     | notfound/pending → aguardando
 function getStatusJT(r){
   if(!r.rastreamento)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   if(!r.trackStatus)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
-  const s=r.trackStatus.toLowerCase();
   const bruto=(r.trackStatusBruto||'').toLowerCase();
-  // Devolução/exceção — verificado antes de "entregue" pra evitar falso positivo
-  if(bruto.includes('undeliver')||bruto.includes('exception')||bruto.includes('return')||bruto.includes('expired')||s.includes('devolv')||s.includes('recusad')||s.includes('extravi'))
-    return{label:'Devolução',cor:'var(--red)',icon:'ti-arrow-back-up',tipo:'devolucao'};
-  // Entregue
-  if(bruto.includes('deliver')||s.includes('entregue ao destinatário')||s.includes('encomenda entregue'))
-    return{label:'Entregue',cor:'var(--neon)',icon:'ti-circle-check',tipo:'entregue'};
-  // Aguardando retirada / tentativa sem sucesso
-  if(s.includes('aguardando retirada')||s.includes('tentativa de entrega')||s.includes('destinatário ausente')||s.includes('não atendeu'))
+  const sub=(r.trackSubstatusBruto||'').toLowerCase();
+
+  // Exception: a maioria é devolução, mas alguns sub-status específicos são
+  // outra coisa (ex: "unclaimed" é mais parecido com aguardando retirada).
+  if(bruto.includes('exception')){
+    if(sub==='exception004') return{label:'Aguardando retirada',cor:'var(--amber)',icon:'ti-building-store',tipo:'retirada'}; // não reclamado/retirado
+    return{label:sub==='exception011'?'Em devolução':'Devolução',cor:'var(--red)',icon:'ti-arrow-back-up',tipo:'devolucao'};
+  }
+  if(bruto.includes('undeliver')) // tentativa de entrega falhou — volta pro remetente ou tenta de novo
     return{label:'Aguardando retirada',cor:'var(--amber)',icon:'ti-building-store',tipo:'retirada'};
-  // Coletado / em trânsito / saída-chegada de unidade = em rota
-  if(bruto.includes('pickup')||bruto.includes('transit')||bruto.includes('inforeceived')||s.includes('retirou a encomenda')||s.includes('saída da encomenda')||s.includes('chegada da encomenda')||s.includes('saiu para entrega'))
+  if(bruto.includes('deliver'))
+    return{label:'Entregue',cor:'var(--neon)',icon:'ti-circle-check',tipo:'entregue'};
+  if(bruto.includes('pickup')){
+    // pickup002/003 = pronto/aguardando retirada ou contato; pickup001 = já saiu pra entrega (rota)
+    if(sub==='pickup002'||sub==='pickup003') return{label:'Aguardando retirada',cor:'var(--amber)',icon:'ti-building-store',tipo:'retirada'};
     return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
-  // Aguardando processamento inicial
+  }
+  if(bruto.includes('transit'))
+    return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
+  if(bruto.includes('inforeceived'))
+    return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
+  if(bruto.includes('expired'))
+    return{label:'Sem atualização há 30d',cor:'var(--amber)',icon:'ti-alert-triangle',tipo:'retirada'};
   if(bruto.includes('pending')||bruto.includes('notfound'))
     return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   if(r.trackInvalido)return{label:'Código inválido',cor:'var(--red)',icon:'ti-alert-triangle',tipo:'invalido'};
@@ -4613,6 +4671,10 @@ function diasEmStatusRetirada(r){
   return Math.floor((hoje-d0)/86400000);
 }
 function isDevolvidoFinal(r){
+  if((r.transportadora||detectarTransportadora(r.rastreamento))==='jt'){
+    // exception010 = "já foi devolvido" (final) vs exception011 = "está sendo devolvido" (em andamento)
+    return (r.trackSubstatusBruto||'')==='exception010';
+  }
   const s=(r.trackStatus||'').toLowerCase();
   return s.includes('devolvido ao remetente')||s.includes('entregue ao remetente');
 }
@@ -4625,10 +4687,19 @@ function marcarInicioRetiradaSeNecessario(obj){
 }
 
 function temCarteiroNaoAtendeu(obj){
+  if((obj.transportadora||detectarTransportadora(obj.rastreamento))==='jt'){
+    // undelivered002 = destinatário ausente, undelivered003 = não conseguiu contato
+    const sub=(obj.trackSubstatusBruto||'');
+    return sub==='undelivered002'||sub==='undelivered003';
+  }
   const s=(obj.trackStatus||'').toLowerCase();
   return s.includes('carteiro')&&(s.includes('não atendeu')||s.includes('nao atendeu')||s.includes('não atendido')||s.includes('nao atendido'));
 }
 function temPrazoRetiradaEncerrado(obj){
+  if((obj.transportadora||detectarTransportadora(obj.rastreamento))==='jt'){
+    // exception004 = pacote não reclamado/retirado a tempo
+    return (obj.trackSubstatusBruto||'')==='exception004';
+  }
   return (obj.trackStatus||'').toLowerCase().includes('prazo de retirada encerrado');
 }
 
@@ -4650,7 +4721,7 @@ const REGRAS_NOTIF_PAD=[
   {chave:'carteiro_nao_atendeu', testa:p=>temCarteiroNaoAtendeu(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi entregue — o carteiro tentou entregar mas não foi atendido.`},
   {chave:'prazo_retirada_encerrado', testa:p=>temPrazoRetiradaEncerrado(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi retirado a tempo — o prazo de retirada na agência foi encerrado.`},
   {chave:'atraso_10d', testa:p=>getStatusCorreios(p).tipo!=='entregue' && diasDesdeLancamentoNotif(p.dia,p.mes,p.ano)>=10, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} passou de 10 dias e ainda não foi entregue.`},
-  {chave:'saiu_entrega', testa:p=>(p.trackStatus||'').toLowerCase().includes('saiu para entrega'), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
+  {chave:'saiu_entrega', testa:p=>(p.trackStatus||'').toLowerCase().includes('saiu para entrega')||(p.trackSubstatusBruto||'')==='pickup001', msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
 ];
 
 function gerarNotificacoes(){
