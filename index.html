@@ -4408,16 +4408,12 @@ function salvarRastreio(gi){
 
 // Chama a Netlify Function correta conforme a transportadora detectada pelo
 // formato do código (Correios via SeuRastreio.com.br, J&T Express via
-// jtjms-br). Retorna sempre o mesmo formato { success, status, historico,
+// TrackingMore). Retorna sempre o mesmo formato { success, status, historico,
 // eventoMaisRecente, previsaoEntrega } pra quem chama não precisar diferenciar.
 async function consultarRastreioApi(codigo, obj){
   const transportadora = detectarTransportadora(codigo);
   if(transportadora==='jt'){
-    const cpf=(obj.cpf||'').replace(/\D/g,'');
-    if(!cpf){
-      return {success:false, status:'error', erro:'cpf_ausente', transportadora};
-    }
-    const res=await fetch('/.netlify/functions/rastrear-jt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo,cpf})});
+    const res=await fetch('/.netlify/functions/rastrear-jt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({codigo})});
     const data=await res.json();
     return {...data, transportadora, ok:res.ok};
   }
@@ -4433,12 +4429,11 @@ async function buscarRastreio(gi,tipo){
   if(obj.trackInvalido){obj.trackInvalido=false;if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,{...obj,trackInvalido:false});}
   const codigo=obj.rastreamento.trim().toUpperCase();
   const transportadoraDetectada=detectarTransportadora(codigo);
-  if(transportadoraDetectada==='jt'&&!(obj.cpf||'').trim()){toast('Este código parece ser da J&T Express — informe o CPF do pedido pra conseguir rastrear!');return;}
   toast('Buscando rastreamento...');
   try{
     const data=await consultarRastreioApi(codigo, obj);
     if(!data.ok){toast('Erro na função. Código: '+(data.status||'desconhecido'));return;}
-    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){toast('Nenhum evento encontrado. Verifique o código'+(data.transportadora==='jt'?' e o CPF':'')+'.');return;}
+    if(!data.success||data.status==='not_found'||data.status==='invalid_format'){toast(data.transportadora==='jt'?'Nenhum evento encontrado ainda. Se o código é novo, aguarde alguns minutos e tente de novo.':'Nenhum evento encontrado. Verifique o código.');return;}
     const eventos=[];
     if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});});}
     else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||''});}
@@ -4522,12 +4517,6 @@ async function buscarRastreioSilent(gi,tipo){
   const obj=tipo==='pad'?pads[gi]:dados[gi];
   if(!obj||!obj.rastreamento)return;
   const codigo=obj.rastreamento.trim().toUpperCase();
-  const transportadoraDetectada=detectarTransportadora(codigo);
-  if(transportadoraDetectada==='jt'&&!(obj.cpf||'').trim()){
-    // Sem CPF cadastrado não dá nem pra tentar consultar a J&T — não marca como
-    // inválido (o código pode estar certo, só falta o CPF), só ignora por ora.
-    return;
-  }
   try{
     const data=await consultarRastreioApi(codigo, obj);
     // Erro de rede/servidor: NÃO marca como inválido — pode ser instabilidade momentânea.
@@ -4549,29 +4538,31 @@ async function buscarRastreioSilent(gi,tipo){
   }catch(e){console.error('Silent track error:',e);}
 }
 
-// Classificação de status para a J&T Express. Baseado nos textos reais vistos
-// até agora ("Coletado", "Em transferencia" no campo bruto de status, e frases
-// como "Saída/Chegada da encomenda expressa [...]" no texto detalhado). Os
-// textos de "entregue" e "devolução" ainda são uma estimativa — ainda não
-// vimos um exemplo real desses status; assim que aparecer o primeiro pedido
-// entregue ou devolvido pela J&T, vale conferir o texto exato aqui.
+// Classificação de status para a J&T Express, agora vinda da API oficial do
+// TrackingMore. O campo "statusBruto" vem do checkpoint_delivery_status deles
+// (valores padronizados tipo: pending, transit, pickup, delivered, exception,
+// undelivered, expired, notfound) — bem mais confiável que adivinhar por
+// texto livre, mas mantemos uma checagem de texto como reforço/fallback.
 function getStatusJT(r){
   if(!r.rastreamento)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   if(!r.trackStatus)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   const s=r.trackStatus.toLowerCase();
   const bruto=(r.trackStatusBruto||'').toLowerCase();
-  // Devolução — verificado antes de "entregue" pra evitar falso positivo
-  if(s.includes('devolv')||s.includes('recusad')||s.includes('extravi')||bruto.includes('devolv')||bruto.includes('recusa'))
+  // Devolução/exceção — verificado antes de "entregue" pra evitar falso positivo
+  if(bruto.includes('undeliver')||bruto.includes('exception')||bruto.includes('return')||bruto.includes('expired')||s.includes('devolv')||s.includes('recusad')||s.includes('extravi'))
     return{label:'Devolução',cor:'var(--red)',icon:'ti-arrow-back-up',tipo:'devolucao'};
   // Entregue
-  if(s.includes('entregue ao destinatário')||s.includes('encomenda entregue')||bruto.includes('entregue')||bruto.includes('finalizado')||bruto.includes('concluíd'))
+  if(bruto.includes('deliver')||s.includes('entregue ao destinatário')||s.includes('encomenda entregue'))
     return{label:'Entregue',cor:'var(--neon)',icon:'ti-circle-check',tipo:'entregue'};
   // Aguardando retirada / tentativa sem sucesso
   if(s.includes('aguardando retirada')||s.includes('tentativa de entrega')||s.includes('destinatário ausente')||s.includes('não atendeu'))
     return{label:'Aguardando retirada',cor:'var(--amber)',icon:'ti-building-store',tipo:'retirada'};
   // Coletado / em trânsito / saída-chegada de unidade = em rota
-  if(bruto.includes('coletad')||bruto.includes('transferen')||s.includes('retirou a encomenda')||s.includes('saída da encomenda')||s.includes('chegada da encomenda')||s.includes('saiu para entrega'))
+  if(bruto.includes('pickup')||bruto.includes('transit')||bruto.includes('inforeceived')||s.includes('retirou a encomenda')||s.includes('saída da encomenda')||s.includes('chegada da encomenda')||s.includes('saiu para entrega'))
     return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
+  // Aguardando processamento inicial
+  if(bruto.includes('pending')||bruto.includes('notfound'))
+    return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   if(r.trackInvalido)return{label:'Código inválido',cor:'var(--red)',icon:'ti-alert-triangle',tipo:'invalido'};
   return{label:'Em rota',cor:'var(--blue)',icon:'ti-truck-delivery',tipo:'rota'};
 }
