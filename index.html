@@ -1168,6 +1168,11 @@ tr:hover td{background:var(--neon-glow)}
       <div class="form-group"><label>Nome do cliente</label><input type="text" id="m-nome" placeholder="Ex: João Silva" onblur="this.value=formatarNomeProprio(this.value)"></div>
       <div class="form-group"><label>Telefone</label><input type="text" id="m-telefone" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
       <div class="form-group"><label>CPF <span style="font-size:10px;color:var(--t2)">— necessário p/ rastreio J&amp;T Express</span></label><input type="text" id="m-cpf" placeholder="000.000.000-00" oninput="mascaraCpf(this)"></div>
+      <div class="form-group full" id="m-rastreio-wrap" style="display:none">
+        <label>Código de rastreio</label>
+        <input type="text" id="m-rastreio" placeholder="Cole o código dos Correios ou da J&amp;T aqui">
+        <p style="font-size:11px;color:var(--t3);margin-top:6px">Disponível só depois que o pedido já foi lançado. Ao salvar com um código novo, a busca de rastreamento é disparada automaticamente.</p>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal()">Cancelar</button>
@@ -1366,12 +1371,12 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-track" onclick="if(event.target===this)document.getElementById('modal-track').classList.remove('open')">
+<div class="modal-overlay" id="modal-track" onclick="if(event.target===this)fecharDetalhePedidoGlobo()">
   <div class="modal" style="width:560px;max-height:85vh;overflow-y:auto">
     <p class="modal-title" id="track-modal-title">Histórico de rastreamento</p>
     <div id="track-modal-content"></div>
     <div class="modal-footer">
-      <button class="btn btn-primary" onclick="document.getElementById('modal-track').classList.remove('open')">Fechar</button>
+      <button class="btn btn-primary" onclick="fecharDetalhePedidoGlobo()">Fechar</button>
     </div>
   </div>
 </div>
@@ -3454,13 +3459,14 @@ function detectarTransportadora(codigo){
   return 'correios';
 }
 
-function openModal(){editIdx=-1;document.getElementById('modal-title').textContent='Novo registro';['m-dia','m-bruto','m-qtdv','m-nome','m-telefone','m-cpf'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-ano').value='2026';document.getElementById('modal').classList.add('open');}
+function openModal(){editIdx=-1;document.getElementById('modal-title').textContent='Novo registro';['m-dia','m-bruto','m-qtdv','m-nome','m-telefone','m-cpf'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-ano').value='2026';document.getElementById('m-rastreio-wrap').style.display='none';document.getElementById('modal').classList.add('open');}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 function editRow(idx){
   editIdx=idx;const r=dados[idx];
   document.getElementById('modal-title').textContent='Editar registro';
   document.getElementById('m-dia').value=r.dia;document.getElementById('m-mes').value=r.mes;document.getElementById('m-ano').value=r.ano;document.getElementById('m-atend').value=r.atendente;document.getElementById('m-oferta').value=r.ofertaId;document.getElementById('m-bruto').value=r.bruto||0;document.getElementById('m-qtdv').value=r.qtd_vendas||0;
   document.getElementById('m-nome').value=r.nomeCliente||'';document.getElementById('m-telefone').value=r.telefone||'';document.getElementById('m-cpf').value=r.cpf||'';
+  document.getElementById('m-rastreio-wrap').style.display='block';document.getElementById('m-rastreio').value=r.rastreamento||'';
   document.getElementById('modal').classList.add('open');
 }
 function salvarModal(){
@@ -3468,7 +3474,15 @@ function salvarModal(){
   // e só sobrescreve os campos editados no formulário — criar um objeto do
   // zero aqui apagaria o rastreio já vinculado a essa venda.
   const original = editIdx>=0 ? dados[editIdx] : {};
+  const rastreioAntigo = original.rastreamento||'';
   const rec={...original,dia:parseInt(document.getElementById('m-dia').value)||0,mes:document.getElementById('m-mes').value,ano:parseInt(document.getElementById('m-ano').value)||2026,atendente:document.getElementById('m-atend').value,ofertaId:parseInt(document.getElementById('m-oferta').value)||1,bruto:parseFloat(document.getElementById('m-bruto').value)||0,qtd_vendas:parseInt(document.getElementById('m-qtdv').value)||0,nomeCliente:document.getElementById('m-nome').value.trim(),telefone:document.getElementById('m-telefone').value.trim(),cpf:document.getElementById('m-cpf').value.trim()};
+  // Código de rastreio só existe no formulário quando está editando (campo
+  // fica escondido na criação de um registro novo).
+  let rastreioNovo=null;
+  if(editIdx>=0){
+    rastreioNovo=(document.getElementById('m-rastreio').value||'').trim().toUpperCase();
+    rec.rastreamento=rastreioNovo;
+  }
   if(editIdx>=0){
     rec.fbId=dados[editIdx].fbId||('dado_'+Date.now());
     dados[editIdx]=rec;
@@ -3477,7 +3491,11 @@ function salvarModal(){
     dados.push(rec);
   }
   if(window.fbSave)window.fbSave('dados',rec.fbId,rec);
+  const giSalvo = editIdx>=0 ? editIdx : dados.length-1;
   closeModal();initAllSelects();renderDados();renderRastreamento();toast(editIdx>=0?'Atualizado!':'Adicionado!');
+  // Se um código de rastreio novo/diferente foi informado nessa edição,
+  // dispara a busca automaticamente — igual já acontece na tela de Rastreamento.
+  if(rastreioNovo && rastreioNovo!==rastreioAntigo) buscarRastreio(giSalvo,'rast');
 }
 function deleteRow(idx){
   if(confirm('Remover?')){
@@ -3725,7 +3743,7 @@ function criarCaixaPedidoGlobo(cor){
 async function atualizarPontosDashGlobo(){
   if(!dashGloboInstance)return;
   pararTodasRotacoesCaixaGlobo();
-  const atend=document.getElementById('adm-dash-atend')?.value||'';
+  _pedidoSelecionadoGlobo = null;  const atend=document.getElementById('adm-dash-atend')?.value||'';
   const userAtend=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:'';
   const cores={postagem:'#888888',rota:'#0EA5E9',retirada:'#F59E0B',entregue:'#00FF80',devolucao:'#EF4444',invalido:'#EF4444'};
   const labels={postagem:'Aguardando postagem',rota:'Em rota',retirada:'Aguardando retirada',entregue:'Entregue',devolucao:'Devolução'};
@@ -3748,7 +3766,9 @@ async function atualizarPontosDashGlobo(){
     todosPontos.push({
       lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,
       cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,
-      local,cod:r.rastreamento,atend:r.atendente.split(' ')[0],origem:r._origemGlobo
+      local,cod:r.rastreamento,atend:r.atendente.split(' ')[0],origem:r._origemGlobo,
+      historico:r.trackHistorico||[],telefone:r.telefone||'',transportadora:r.transportadora||detectarTransportadora(r.rastreamento),
+      id:(r.fbId||'')+'_'+r._origemGlobo
     });
   }
 
@@ -3802,18 +3822,69 @@ function toggleFiltroStatusDashAdm(tipo){
   aplicarFiltroStatusEDesenharPontos();
 }
 
+let _pedidoSelecionadoGlobo = null;
+
 function aplicarFiltroStatusEDesenharPontos(){
+  if(!dashGloboInstance) return;
+  pararTodasRotacoesCaixaGlobo();
   const pontos = _statusGloboSelecionados.size===0
     ? _pontosGloboTodos
     : _pontosGloboTodos.filter(p => _statusGloboSelecionados.has(p.tipo));
 
   const sub=document.getElementById('dash-globo-subtitle');
-  if(sub)sub.textContent=pontos.length+' envio'+(pontos.length!==1?'s':'')+' no mapa';
+  if(sub)sub.textContent=pontos.length+' envio'+(pontos.length!==1?'s':'')+' no mapa'+(_pedidoSelecionadoGlobo?' — clique em outro ponto ou feche o painel pra voltar':'');
+
+  const tooltip = d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-weight:700;color:'+d.cor+'">'+d.nome+'</span><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;background:'+(d.origem==="PAD"?"rgba(14,165,233,.2);color:#7DD3FC":"rgba(0,255,128,.15);color:#00FF80")+'">'+d.origem+'</span></div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div><div style="color:#7DD3FC;font-size:10px;margin-top:4px">Clique pra ver detalhes</div></div>';
+
   dashGloboInstance
-    .objectsData(pontos).objectLat('lat').objectLng('lng').objectAltitude(0.02)
+    // Camada de pontinhos — um ponto pequeno colorido pra cada pedido, na
+    // mesma cor usada nos filtros de status logo abaixo do globo.
+    .pointsData(pontos)
+    .pointLat('lat').pointLng('lng').pointAltitude(0.012)
+    .pointRadius(d=>_pedidoSelecionadoGlobo&&_pedidoSelecionadoGlobo.id===d.id?0:0.32)
+    .pointColor('cor')
+    .pointLabel(tooltip)
+    .onPointClick(pt=>selecionarPedidoGlobo(pt))
+    // Camada de "objetos 3D" — só usada pro pedido selecionado, mostrando o
+    // logo MAXIMUS grande pulsando exatamente na posição dele.
+    .objectsData(_pedidoSelecionadoGlobo?[_pedidoSelecionadoGlobo]:[])
+    .objectLat('lat').objectLng('lng').objectAltitude(0.02)
     .objectThreeObject(d=>criarCaixaPedidoGlobo(d.cor))
-    .objectLabel(d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-weight:700;color:'+d.cor+'">'+d.nome+'</span><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;background:'+(d.origem==="PAD"?"rgba(14,165,233,.2);color:#7DD3FC":"rgba(0,255,128,.15);color:#00FF80")+'">'+d.origem+'</span></div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div></div>')
+    .objectLabel(tooltip)
+    .onObjectClick(pt=>selecionarPedidoGlobo(pt))
     .ringsData([]);
+}
+
+// Quando clica num pontinho (ou no logo já selecionado), mostra o MAXIMUS
+// pulsando ali e abre os detalhes completos do pedido com o histórico.
+function selecionarPedidoGlobo(pt){
+  _pedidoSelecionadoGlobo = pt;
+  aplicarFiltroStatusEDesenharPontos();
+  mostrarDetalhePedidoGlobo(pt);
+}
+
+function fecharDetalhePedidoGlobo(){
+  _pedidoSelecionadoGlobo = null;
+  aplicarFiltroStatusEDesenharPontos();
+  document.getElementById('modal-track').classList.remove('open');
+}
+
+function mostrarDetalhePedidoGlobo(pt){
+  document.getElementById('track-modal-title').innerHTML=`${pt.nome} <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${pt.origem==='PAD'?'rgba(14,165,233,.2);color:#7DD3FC':'rgba(0,255,128,.15);color:#00FF80'};margin-left:6px;text-transform:none;letter-spacing:0">${pt.origem}</span>`;
+  const cabecalho=`
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
+      <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Status</div><div class="metric-value" style="color:${pt.cor};font-size:14px">${pt.status}</div></div>
+      <div class="metric-card" style="flex:1;min-width:120px"><div class="metric-label">Atendente</div><div class="metric-value" style="font-size:14px">${pt.atend}</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:1rem;display:flex;flex-direction:column;gap:4px">
+      <div><i class="ti ti-map-pin" style="font-size:12px"></i> ${pt.local}</div>
+      <div><i class="ti ti-package" style="font-size:12px"></i> ${pt.cod} <span style="color:var(--t3)">(${labelTransportadora(pt.cod)})</span></div>
+      ${pt.telefone?`<div><i class="ti ti-phone" style="font-size:12px"></i> ${pt.telefone}</div>`:''}
+    </div>
+    <p style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Histórico de rastreio</p>
+  `;
+  document.getElementById('track-modal-content').innerHTML = cabecalho + (pt.historico&&pt.historico.length>0?construirTimelineHtml(pt.historico):'<div class="empty" style="padding:1rem"><i class="ti ti-inbox"></i>Sem eventos ainda</div>');
+  document.getElementById('modal-track').classList.add('open');
 }
 
 function toggleDespesasDashAdm(){
@@ -4828,8 +4899,7 @@ function verHistorico(gi, tipo){
   if(!obj||!obj.trackHistorico||obj.trackHistorico.length===0){toast('Sem histórico ainda.');return;}
   mostrarModalHistorico(obj.rastreamento,obj.trackHistorico);
 }
-function mostrarModalHistorico(codigo,eventos){
-  document.getElementById('track-modal-title').textContent='Rastreamento — '+codigo;
+function construirTimelineHtml(eventos){
   let html='<div style="display:flex;flex-direction:column;gap:0">';
   eventos.forEach((e,i)=>{
     const isFirst=i===0;
@@ -4837,9 +4907,14 @@ function mostrarModalHistorico(codigo,eventos){
     html+=`<div style="display:flex;gap:12px;padding-bottom:16px;position:relative"><div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0"><div style="width:12px;height:12px;border-radius:50%;background:${cor};border:2px solid ${cor};margin-top:3px;flex-shrink:0;${isFirst?'box-shadow:0 0 8px rgba(0,255,128,.5)':''}"></div>${i<eventos.length-1?'<div style="width:2px;flex:1;background:var(--border2);margin-top:4px"></div>':''}</div><div style="flex:1;padding-bottom:4px"><div style="font-weight:600;font-size:13px;color:${isFirst?'var(--neon)':'var(--t1)'}">${e.descricao||e.status||'—'}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${e.data||''} ${e.hora||''}</div>${e.local?`<div style="font-size:11px;color:var(--t2);margin-top:2px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${e.local}</div>`:''}</div></div>`;
   });
   html+='</div>';
-  document.getElementById('track-modal-content').innerHTML=html;
+  return html;
+}
+function mostrarModalHistorico(codigo,eventos){
+  document.getElementById('track-modal-title').textContent='Rastreamento — '+codigo;
+  document.getElementById('track-modal-content').innerHTML=construirTimelineHtml(eventos);
   document.getElementById('modal-track').classList.add('open');
 }
+
 
 async function migrarParaFirebase(){
   if(!window.fbSave){toast('Firebase não conectado!');return;}
