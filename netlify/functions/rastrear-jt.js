@@ -18,6 +18,30 @@
 
 const TRACKINGMORE_BASE = 'https://api.trackingmore.com/v4';
 const COURIER_CODE = 'jtexpress-br'; // confirmado com teste real: bate com jtexpress.com.br
+const IDIOMA = 'pt'; // a jtexpress-br suporta "en","cn","pt" — pedimos pt pra vir traduzido
+
+const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+
+// O texto de cada evento da J&T vem no formato "[Cidade] Descrição [UF CÓDIGO]
+// enviada para [UF CÓDIGO]" — por exemplo:
+// "[Barueri] Saída da encomenda expressa [SP BRE] enviada para [ES SRR]".
+// Essa função extrai "Cidade/UF" a partir disso, no mesmo formato que o resto
+// do MATRIX já usa (ex: pro globo 3D localizar o envio no mapa).
+function extrairLocalJT(texto) {
+  if (!texto) return '';
+  const colchetes = [...texto.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]);
+  if (colchetes.length === 0) return '';
+  const cidade = colchetes[0];
+  for (let i = 1; i < colchetes.length; i++) {
+    // Os códigos das unidades vêm separados por espaço (ex: "SP BRE") ou
+    // hífen (ex: "INDTB-SP") — quebramos pelos dois pra achar a sigla da UF.
+    const tokens = colchetes[i].split(/[\s-]+/).map((t) => t.toUpperCase());
+    const uf = tokens.find((t) => UFS.includes(t));
+    if (uf) return cidade + '/' + uf;
+  }
+  return '';
+}
+
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
@@ -61,7 +85,7 @@ exports.handler = async function (event) {
     // iniciais), a API recusa o create — nesse caso vamos tentar corrigir com
     // um update logo abaixo.
     console.log('[rastrear-jt] Registrando/criando rastreio...');
-    const corpoCreate = { tracking_number: codigo, courier_code: COURIER_CODE };
+    const corpoCreate = { tracking_number: codigo, courier_code: COURIER_CODE, lang: IDIOMA };
     if (cpf) corpoCreate.tracking_key = cpf;
     const resCreate = await fetch(`${TRACKINGMORE_BASE}/trackings/create`, {
       method: 'POST',
@@ -80,7 +104,7 @@ exports.handler = async function (event) {
     // PUT /trackings/update/{id} pra corrigir.
     if (!resCreate.ok && cpf) {
       console.log('[rastrear-jt] Create falhou — tentando localizar registro existente pra corrigir via update...');
-      const resGetPrevio = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}`, {
+      const resGetPrevio = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}&lang=${IDIOMA}`, {
         method: 'GET',
         headers,
       });
@@ -104,7 +128,7 @@ exports.handler = async function (event) {
 
     // 2) Busca o status/eventos atuais desse rastreio.
     console.log('[rastrear-jt] Buscando eventos do rastreio...');
-    const resGet = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}`, {
+    const resGet = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}&lang=${IDIOMA}`, {
       method: 'GET',
       headers,
     });
@@ -148,7 +172,10 @@ exports.handler = async function (event) {
     const historico = trackinfo.map((t) => ({
       descricao: t.tracking_detail || '—',
       data: t.checkpoint_date || '', // já vem em formato ISO com "T"
-      local: t.location || '',
+      // O texto da J&T embute a cidade/UF entre colchetes (ex: "[Barueri]...
+      // [SP BRE]") — extraímos "Cidade/UF" daí; se não achar, usa o campo
+      // "location" que o TrackingMore às vezes já traz separado.
+      local: extrairLocalJT(t.tracking_detail) || t.location || '',
       // checkpoint_delivery_status é o campo padronizado do TrackingMore
       // (valores tipo: pending, transit, pickup, delivered, exception,
       // undelivered, expired, notfound) — mais confiável que tentar
