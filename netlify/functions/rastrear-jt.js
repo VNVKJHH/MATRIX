@@ -18,6 +18,26 @@
 const URL_DETALHE = 'https://official.jtjms-br.com/official/logisticsTracking/v2';
 const URL_PREVISAO = 'https://official.jtjms-br.com/official/logisticsTracking/trace';
 
+// Headers extras que o site oficial da J&T envia em toda chamada (capturados
+// via DevTools > Network > Request Headers). "appid" e "key" parecem ser
+// valores fixos do app cliente web (não mudam entre requisições). "nonce" é
+// um número aleatório novo a cada chamada. "sign" é uma assinatura calculada
+// que AINDA NÃO conseguimos reproduzir (escondida em JS minificado) — por
+// enquanto tentamos sem ela, pra ver se o erro muda e nos dá mais pistas.
+function montarHeadersExtras() {
+  return {
+    appid: '3B29A9C5728BF3E1DB0C4D66B79748B7',
+    key: '94bbcac67ab47c736d530efe3e1dc358',
+    clientsource: 'web',
+    countryid: '1',
+    langtype: 'PT',
+    timezone: 'GMT-0300',
+    nonce: String(Math.random()),
+    timestamp: String(Date.now()),
+    token: '',
+  };
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
     return resposta(405, { success: false, status: 'error', erro: 'Método não permitido' });
@@ -46,6 +66,8 @@ exports.handler = async function (event) {
   }
 
   const payload = JSON.stringify({ cpf, waybillNo: codigo, langType: 'PT' });
+  const headersExtras = montarHeadersExtras();
+  console.log('[rastrear-jt] Headers extras enviados:', JSON.stringify(headersExtras));
 
   try {
     console.log('[rastrear-jt] Chamando', URL_DETALHE);
@@ -57,6 +79,7 @@ exports.handler = async function (event) {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Origin': 'https://www.jtexpress.com.br',
         'Referer': 'https://www.jtexpress.com.br/',
+        ...headersExtras,
       },
       body: payload,
     });
@@ -113,6 +136,7 @@ exports.handler = async function (event) {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
           'Origin': 'https://www.jtexpress.com.br',
           'Referer': 'https://www.jtexpress.com.br/',
+          ...montarHeadersExtras(),
         },
         body: payload,
       });
