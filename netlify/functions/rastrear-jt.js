@@ -236,6 +236,27 @@ exports.handler = async function (event) {
           previsaoEntrega: '',
         });
       }
+      // Se o status geral vier explicitamente como "pending" (a J&T ainda não
+      // confirmou nem sequer que recebeu o pacote pra postar), isso é uma
+      // informação real e confirmada — não é "ainda não tentamos buscar", é
+      // "já perguntamos e a resposta é: ainda não foi postado".
+      if (tracking.delivery_status === 'pending') {
+        console.log('[rastrear-jt] Confirmado pela API: ainda aguardando postagem.');
+        const historicoPostagem = [{
+          descricao: 'Aguardando postagem pela transportadora',
+          data: tracking.created_at || '',
+          local: '',
+          statusBruto: 'pending',
+          substatusBruto: '',
+        }];
+        return resposta(200, {
+          success: true,
+          status: 'ok',
+          historico: historicoPostagem,
+          eventoMaisRecente: historicoPostagem[0],
+          previsaoEntrega: '',
+        });
+      }
       // A criação do rastreio dispara uma busca em segundo plano no
       // TrackingMore — pode levar de alguns segundos a poucos minutos pra
       // popular o histórico na primeira consulta de um código novo.
