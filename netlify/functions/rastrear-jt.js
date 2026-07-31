@@ -30,10 +30,11 @@ exports.handler = async function (event) {
     return resposta(200, { success: false, status: 'error', erro: 'TRACKINGMORE_API_KEY não configurado.' });
   }
 
-  let codigo;
+  let codigo, telefone;
   try {
     const body = JSON.parse(event.body || '{}');
     codigo = (body.codigo || '').trim().replace(/\s/g, '');
+    telefone = (body.telefone || '').replace(/\D/g, '');
   } catch (e) {
     return resposta(200, { success: false, status: 'invalid_format', erro: 'Corpo da requisição inválido' });
   }
@@ -42,7 +43,12 @@ exports.handler = async function (event) {
     return resposta(200, { success: false, status: 'invalid_format', erro: 'Código de rastreio ausente' });
   }
 
-  console.log('[rastrear-jt] Consultando código:', codigo, '| courier_code:', COURIER_CODE);
+  // A J&T Brasil (assim como as outras variantes regionais da J&T no
+  // TrackingMore — México, Tailândia, Vietnã) exige um campo extra pra
+  // liberar o rastreio. Seguindo o mesmo padrão delas, mandamos os últimos 4
+  // dígitos do telefone do destinatário no campo "tracking_postal_code".
+  const ultimosDigitosTelefone = telefone.slice(-4);
+  console.log('[rastrear-jt] Consultando código:', codigo, '| courier_code:', COURIER_CODE, '| últimos 4 dígitos do telefone:', ultimosDigitosTelefone || '(nenhum)');
 
   const headers = {
     'Content-Type': 'application/json',
@@ -55,10 +61,12 @@ exports.handler = async function (event) {
     // antes), a API retorna um erro de duplicidade — não é um problema real,
     // só significa que já está sendo rastreado, então seguimos pro passo 2.
     console.log('[rastrear-jt] Registrando/criando rastreio...');
+    const corpoCreate = { tracking_number: codigo, courier_code: COURIER_CODE };
+    if (ultimosDigitosTelefone) corpoCreate.tracking_postal_code = ultimosDigitosTelefone;
     const resCreate = await fetch(`${TRACKINGMORE_BASE}/trackings/create`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ tracking_number: codigo, courier_code: COURIER_CODE }),
+      body: JSON.stringify(corpoCreate),
     });
     const textoCreate = await resCreate.text();
     console.log('[rastrear-jt] Resposta do create (status ' + resCreate.status + '):', textoCreate.substring(0, 300));
