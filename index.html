@@ -1784,9 +1784,11 @@ function showPage(p){
   if(p === 'dashboard-adm'){
     if(mainEl) mainEl.style.padding = '0';
     if(window.matrixStop) window.matrixStop();
+    if(window.billsStop) window.billsStop();
   } else {
     if(mainEl) mainEl.style.padding = '2rem';
-    if(!document.body.classList.contains('tema-claro') && window.matrixStart) window.matrixStart();
+    if(document.body.classList.contains('tema-claro')){ if(window.billsStart) window.billsStart(); }
+    else if(window.matrixStart) window.matrixStart();
     // Saindo da tela do Dashboard: garante que o MAXIMUS selecionado (se
     // tiver algum) suma de vez, em vez de ficar rodando escondido.
     if(typeof fecharDetalhePedidoGlobo==='function') fecharDetalhePedidoGlobo();
@@ -4294,13 +4296,40 @@ function renderPad(){
     const totalPago=(p.pagamentos||[]).reduce((s2,pg)=>s2+(pg.valor||0),0);
     return s+R(p.bruto-totalPago,2);
   },0);
-  const resumoEl=document.getElementById('pad-receber-resumo');
-  if(resumoEl)resumoEl.innerHTML=`
-    <div class="metric-card"><div class="metric-label">Total a receber</div><div class="metric-value mv-amber">${fmt(totalAReceber)}</div></div>
-    <div class="metric-card"><div class="metric-label">Pedidos pendentes</div><div class="metric-value">${pendentesReceber.length}</div></div>
-  `;
   const pagos=rows.filter(p=>p.status==='Pago');
   const frustrados=rows.filter(p=>p.status==='Frustrado');
+  const resumoEl=document.getElementById('pad-receber-resumo');
+  if(resumoEl){
+    if(padTab==='pago'){
+      const totalPago=pagos.reduce((s,p)=>s+(p.bruto||0),0);
+      resumoEl.innerHTML=`
+        <div class="metric-card"><div class="metric-label">Total pago</div><div class="metric-value mv-green">${fmt(totalPago)}</div></div>
+        <div class="metric-card"><div class="metric-label">Pedidos pagos</div><div class="metric-value">${pagos.length}</div></div>
+      `;
+    } else if(padTab==='frustrado'){
+      // Valor que ainda seria "a receber" desses pedidos se não tivessem
+      // frustrado, descontando qualquer parte que já tinha sido paga antes
+      // de frustrar (ex: um sinal pago antes do cliente desistir).
+      const valorPerdido=frustrados.reduce((s,p)=>{
+        const totalPagoAntes=(p.pagamentos||[]).reduce((s2,pg)=>s2+(pg.valor||0),0);
+        return s+R((p.bruto||0)-totalPagoAntes,2);
+      },0);
+      // Taxa de frustração = % de pedidos frustrados entre os já concluídos
+      // (pagos + frustrados) — os que ainda estão em aberto não entram nessa conta.
+      const totalConcluidos=pagos.length+frustrados.length;
+      const taxaFrustracao=totalConcluidos>0?R(frustrados.length/totalConcluidos*100,1):0;
+      resumoEl.innerHTML=`
+        <div class="metric-card"><div class="metric-label">Valor perdido (frustrados)</div><div class="metric-value mv-red">${fmt(valorPerdido)}</div></div>
+        <div class="metric-card"><div class="metric-label">Pedidos frustrados</div><div class="metric-value">${frustrados.length}</div></div>
+        <div class="metric-card"><div class="metric-label">Taxa de frustração</div><div class="metric-value mv-amber">${taxaFrustracao}%</div></div>
+      `;
+    } else {
+      resumoEl.innerHTML=`
+        <div class="metric-card"><div class="metric-label">Total a receber</div><div class="metric-value mv-amber">${fmt(totalAReceber)}</div></div>
+        <div class="metric-card"><div class="metric-label">Pedidos pendentes</div><div class="metric-value">${pendentesReceber.length}</div></div>
+      `;
+    }
+  }
   const setN=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   setN('pad-n-aberto',abertos.length);setN('pad-n-pago',pagos.length);setN('pad-n-frustrado',frustrados.length);
   const lista=padTab==='pago'?pagos:padTab==='frustrado'?frustrados:abertos;
@@ -5104,9 +5133,50 @@ function mobileNav(page,btnId){
 function toggleTema(){
   const body=document.body;const isClaro=body.classList.toggle('tema-claro');
   const icon=document.getElementById('tema-icon');const label=document.getElementById('tema-label');const ball=document.getElementById('tema-ball');const toggle=document.getElementById('tema-toggle');
-  if(isClaro){if(icon)icon.className='ti ti-moon';if(label)label.textContent='Modo escuro';if(ball)ball.style.transform='translateX(16px)';if(toggle)toggle.style.background='var(--neon-glow)';if(window.matrixStop)window.matrixStop();}
-  else{if(icon)icon.className='ti ti-sun';if(label)label.textContent='Modo claro';if(ball)ball.style.transform='translateX(0)';if(toggle)toggle.style.background='var(--border2)';if(window.matrixStart)window.matrixStart();}
+  if(isClaro){if(icon)icon.className='ti ti-moon';if(label)label.textContent='Modo escuro';if(ball)ball.style.transform='translateX(16px)';if(toggle)toggle.style.background='var(--neon-glow)';if(window.matrixStop)window.matrixStop();if(window.billsStart)window.billsStart();}
+  else{if(icon)icon.className='ti ti-sun';if(label)label.textContent='Modo claro';if(ball)ball.style.transform='translateX(0)';if(toggle)toggle.style.background='var(--border2)';if(window.billsStop)window.billsStop();if(window.matrixStart)window.matrixStart();}
 }
+
+(function(){
+  const canvas=document.getElementById('matrix-canvas');const ctx=canvas.getContext('2d');
+  const emojisNota=['💵','💴','💶','💷'];
+  let notas=[];let animId=null;let running=false;
+  function criarNotas(){
+    const qtd=Math.max(6,Math.floor(window.innerWidth/160));
+    notas=Array(qtd).fill(0).map(()=>({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      tam:14+Math.random()*10,
+      vel:0.12+Math.random()*0.22,
+      fase:Math.random()*Math.PI*2,
+      amplitude:8+Math.random()*10,
+      emoji:emojisNota[Math.floor(Math.random()*emojisNota.length)],
+      rot:(Math.random()-0.5)*0.35
+    }));
+  }
+  function resizeNotas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;criarNotas();}
+  function desenharNotas(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    notas.forEach(n=>{
+      n.y-=n.vel;
+      n.fase+=0.008;
+      if(n.y<-40){n.y=canvas.height+40;n.x=Math.random()*canvas.width;}
+      const xOsc=n.x+Math.sin(n.fase)*n.amplitude;
+      ctx.save();
+      ctx.globalAlpha=0.16;
+      ctx.font=n.tam+'px sans-serif';
+      ctx.translate(xOsc,n.y);
+      ctx.rotate(n.rot);
+      ctx.fillText(n.emoji,0,0);
+      ctx.restore();
+    });
+    animId=requestAnimationFrame(desenharNotas);
+  }
+  function start(){if(running)return;running=true;resizeNotas();canvas.style.opacity='0.55';desenharNotas();}
+  function stop(){if(!running)return;running=false;cancelAnimationFrame(animId);canvas.style.opacity='0';setTimeout(()=>ctx.clearRect(0,0,canvas.width,canvas.height),1000);}
+  window.addEventListener('resize',()=>{if(running)resizeNotas();});
+  window.billsStart=start;window.billsStop=stop;
+})();
 
 (function(){
   const canvas=document.getElementById('matrix-canvas');const ctx=canvas.getContext('2d');
@@ -5120,7 +5190,7 @@ function toggleTema(){
   window.matrixStart=start;window.matrixStop=stop;
 })();
 
-if(!document.body.classList.contains('tema-claro')){if(window.matrixStart)window.matrixStart();}
+if(document.body.classList.contains('tema-claro')){if(window.billsStart)window.billsStart();}else{if(window.matrixStart)window.matrixStart();}
 
 initAllSelects();
 buildOfertasGrid();
