@@ -4311,7 +4311,7 @@ function renderPad(){
       const rval=p.rastreamento||'';
       rastrCol='<td>'+(rval?'<span class="badge b-green" style="font-size:11px">'+rval+'</span> <span style="font-size:9px;color:var(--t3)">'+labelTransportadora(rval)+'</span>':'<span style="font-size:11px;color:var(--t3)">Aguardando</span>')+'</td>';
     }
-    const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${p.trackInvalido?`<div style="font-weight:600;font-size:11px;color:var(--red);margin-bottom:3px">⚠️ Código inválido</div>`:p.trackStatus?`<div style="font-weight:600;font-size:11px;color:var(--neon);margin-bottom:2px">${p.trackStatus}</div><div style="font-size:9px;color:var(--t3);margin-bottom:3px">${p.trackData||''}</div>`:`<div style="font-size:10px;color:var(--t3);margin-bottom:3px;font-style:italic">Aguardando busca</div>`}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
+    const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${htmlAcompanhamento(p)}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
     const pagamentos = p.pagamentos||[];
     const totalPago = pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
     const pagamentoCol = `<td style="min-width:170px">
@@ -4572,7 +4572,7 @@ function renderRastreamento(){
       <td style="font-size:11px;color:var(--t2)">${nomeCurto}</td>
       <td style="font-weight:600;color:var(--green)">${fmt(r.bruto)}</td>
       ${rastreioCell}
-      <td id="track-cell-${gi}" style="min-width:200px">${r.rastreamento?`<div>${r.trackInvalido?`<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>`:r.trackStatus?`<div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>`:`<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`}${r.trackHistorico&&r.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'rast')" style="font-size:11px;padding:3px 8px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>
+      <td id="track-cell-${gi}" style="min-width:200px">${r.rastreamento?`<div>${htmlAcompanhamento(r)}${r.trackHistorico&&r.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'rast')" style="font-size:11px;padding:3px 8px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>
       <td style="font-size:11px;white-space:nowrap">${r.previsaoEntrega?`<span style="color:var(--blue-t);font-weight:600"><i class="ti ti-calendar" style="font-size:11px"></i> ${new Date(r.previsaoEntrega).toLocaleDateString('pt-BR')}</span>`:'<span style="color:var(--t3)">—</span>'}</td>
       <td style="font-size:11px;white-space:nowrap;min-width:120px">${(()=>{const hoje=new Date();const lancado=new Date(r.ano,MESES.indexOf(r.mes),r.dia);const diasTotal=Math.floor((hoje-lancado)/86400000);return'<div style="color:var(--t2)"><i class="ti ti-clock" style="font-size:10px"></i> Criado há '+diasTotal+'d</div>';})()}</td>
       <td>${adminLogado?`<button class="btn btn-sm" onclick="editRow(${gi})" title="Editar pedido"><i class="ti ti-edit"></i></button>`:''}</td>
@@ -4742,6 +4742,67 @@ async function buscarRastreioSilent(gi,tipo){
 //   pickup       → saiu p/ entrega/retirada    | undelivered → tentativa falhou
 //   delivered    → entregue                    | exception → problema/devolução
 //   expired      → 30 dias sem atualização     | notfound/pending → aguardando
+// Formatação própria do MATRIX pro "Acompanhamento" da J&T — o texto original
+// deles vem cheio de colchetes/códigos de unidade, confuso de ler rápido. Essa
+// função monta uma frase simples (de onde saiu → pra onde foi, com horário),
+// igual ao estilo já usado nos Correios. O botão "Histórico" continua
+// mostrando o texto original de cada transportadora, sem mexer em nada.
+const UFS_ACOMP = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+function parseEventoBracketsJT(texto){
+  if(!texto) return null;
+  const grupos=[...texto.matchAll(/\[([^\]]+)\]/g)].map(m=>m[1]);
+  if(grupos.length===0) return null;
+  return {cidade:grupos[0], codigos:grupos.slice(1)};
+}
+function ufDoCodigoAcomp(codigo){
+  if(!codigo) return '';
+  const tokens=codigo.split(/[\s-]+/).map(t=>t.toUpperCase());
+  return tokens.find(t=>UFS_ACOMP.includes(t))||'';
+}
+function formatarAcompanhamentoJT(r){
+  const hist = r.trackHistorico||[];
+  if(hist.length===0) return null;
+  // Monta um mapa "código da unidade" → "cidade", olhando todo o histórico —
+  // assim, quando um evento diz "enviado pra unidade X", às vezes já sabemos
+  // de qual cidade se trata (porque apareceu em outro evento mais recente).
+  const mapaCidade = {};
+  hist.forEach(ev=>{
+    const p=parseEventoBracketsJT(ev.descricao);
+    if(p && p.codigos[0]) mapaCidade[p.codigos[0]] = p.cidade;
+  });
+  const atual = hist[0];
+  const p = parseEventoBracketsJT(atual.descricao);
+  const st = getStatusCorreios(r);
+  const dataHora = (atual.data||'')+(atual.hora?' às '+atual.hora:'');
+  if(!p) return { linha1: st.label, linha2: dataHora };
+  const origemUf = ufDoCodigoAcomp(p.codigos[0]);
+  const origemTxt = origemUf ? `${p.cidade}/${origemUf}` : p.cidade;
+  if(st.tipo==='rota' && p.codigos[1]){
+    const destCidade = mapaCidade[p.codigos[1]];
+    const destUf = ufDoCodigoAcomp(p.codigos[1]);
+    const destTxt = destCidade ? `${destCidade}/${destUf}` : (destUf?`unidade em ${destUf}`:'próxima unidade');
+    return { linha1: `Saiu de ${origemTxt} → ${destTxt}`, linha2: dataHora };
+  }
+  if(st.tipo==='entregue') return { linha1:`Entregue em ${origemTxt}`, linha2:dataHora };
+  if(st.tipo==='devolucao') return { linha1:`Em devolução — últ. local: ${origemTxt}`, linha2:dataHora };
+  if(st.tipo==='retirada') return { linha1:`Aguardando retirada em ${origemTxt}`, linha2:dataHora };
+  if(st.tipo==='postagem') return { linha1:'Aguardando postagem', linha2:dataHora };
+  return { linha1: `${st.label} — ${origemTxt}`, linha2: dataHora };
+}
+
+// Monta o HTML da célula de "Acompanhamento" — usa a frase formatada pelo
+// MATRIX pra J&T, e o texto original (já limpo) pros Correios.
+function htmlAcompanhamento(r){
+  if(r.trackInvalido) return `<div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">⚠️ Código inválido</div>`;
+  if(!r.trackStatus) return `<div style="font-size:11px;color:var(--t3);margin-bottom:4px;font-style:italic">Aguardando busca</div>`;
+  const transportadora = r.transportadora||detectarTransportadora(r.rastreamento);
+  if(transportadora==='jt'){
+    const f = formatarAcompanhamentoJT(r);
+    if(f) return `<div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${f.linha1}</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">${f.linha2}</div>`;
+  }
+  return `<div style="font-weight:600;font-size:12px;color:var(--neon);margin-bottom:2px">${r.trackStatus}</div><div style="font-size:10px;color:var(--t3);margin-bottom:4px">${r.trackData||''}</div>`;
+}
+
 function getStatusJT(r){
   if(!r.rastreamento)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
   if(!r.trackStatus)return{label:'Aguardando postagem',cor:'var(--t3)',icon:'ti-clock',tipo:'postagem'};
