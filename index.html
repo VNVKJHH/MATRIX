@@ -844,7 +844,6 @@ tr:hover td{background:var(--neon-glow)}
     </button>
   </div>
   <div style="display:flex;gap:12px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
-    <button class="btn btn-primary btn-sm" onclick="forcarSincronizacaoTotal()" id="btn-forcar-sync"><i class="ti ti-refresh"></i> Forçar sincronização agora</button>
     <span id="rast-update-status" style="font-size:12px;color:var(--t3)"></span>
   </div>
   <div class="filters" id="rast-filters-adm" style="display:none">
@@ -1477,6 +1476,14 @@ function entrarComoUsuario(user){
     if(typeof gerarNotificacoes==='function')gerarNotificacoes();
     if(typeof atualizarBadgeNotificacoes==='function')atualizarBadgeNotificacoes();
   },100);
+  // Sincronização de rastreamento roda sozinha a partir daqui — não depende
+  // mais de o usuário entrar na tela de PAD/Rastreamento pra começar. Um
+  // pequeno atraso inicial dá tempo dos dados chegarem do Firebase antes da
+  // primeira tentativa; depois disso, repete sozinha em segundo plano.
+  if(!window._intervaloSincronizacaoGlobal){
+    setTimeout(()=>{ atualizarTodosRastreios(true); }, 4000);
+    window._intervaloSincronizacaoGlobal = setInterval(()=>{ atualizarTodosRastreios(true); }, 5*60*1000);
+  }
   toast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
 }
 
@@ -1501,6 +1508,7 @@ function fazerLogout(){
   document.getElementById('login-erro').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('sidebar-user').innerHTML='';
+  if(window._intervaloSincronizacaoGlobal){ clearInterval(window._intervaloSincronizacaoGlobal); window._intervaloSincronizacaoGlobal=null; }
   try{ localStorage.removeItem('matrixSessaoEmail'); }catch(e){}
 }
 const CUSTO_FRASCO=10;
@@ -1798,8 +1806,8 @@ function showPage(p){
     atendentes:renderAtendentes,
     admin:()=>{atualizarLabelPeriodo('metaPeriodo','adm-periodo-label');renderAdmin();initContaMetaSelect();autoSyncMetaAds();},
     lancamentos:renderRegistrosDia,
-    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');autoSyncRastreamento();renderRastreamento();gerarNotificacoes();},
-    pad:()=>{setPadTab('aberto');autoSyncRastreamento();gerarNotificacoes();}
+    rastreamento:()=>{atualizarLabelPeriodo('rastreamentoPeriodo','rast-periodo-label','Máximo');renderRastreamento();gerarNotificacoes();},
+    pad:()=>{setPadTab('aberto');gerarNotificacoes();}
   };
   window.allRenders=fns;
   if(fns[p])fns[p]();
@@ -4676,16 +4684,6 @@ async function atualizarTodosRastreios(silencioso){
 // que ficava chamando a function de rastreio dezenas de vezes por minuto
 // enquanto a tela do PAD/Rastreamento ficasse aberta.
 const RASTREIO_AUTOSYNC_COOLDOWN_MS = 3 * 60 * 1000;
-// Botão manual "Forçar sincronização agora" — ignora o cooldown de 3 minutos
-// e roda a sincronização completa imediatamente, mostrando o progresso real
-// (diferente do autoSyncRastreamento silencioso).
-async function forcarSincronizacaoTotal(){
-  const btn=document.getElementById('btn-forcar-sync');
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2"></i> Sincronizando...';}
-  sessionStorage.setItem('rastreioAutoSyncTs', String(Date.now()));
-  await atualizarTodosRastreios(false);
-  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Forçar sincronização agora';}
-}
 
 function autoSyncRastreamento(){
   const ultima = parseInt(sessionStorage.getItem('rastreioAutoSyncTs') || '0', 10);
