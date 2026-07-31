@@ -27,6 +27,43 @@ const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','P
 // "[Barueri] Saída da encomenda expressa [SP BRE] enviada para [ES SRR]".
 // Essa função extrai "Cidade/UF" a partir disso, no mesmo formato que o resto
 // do MATRIX já usa (ex: pro globo 3D localizar o envio no mapa).
+// O parâmetro lang=pt do TrackingMore nem sempre traduz o texto bruto da J&T
+// (às vezes o rastreio já foi criado antes desse pedido de idioma, ou o dado
+// simplesmente vem sempre em inglês pra essa transportadora). Pra garantir
+// que o operador sempre veja em português, aplicamos nossa própria tradução
+// por dicionário de termos comuns, em vez de depender só da tradução deles.
+const DICIONARIO_PT_JT = [
+  [/if there is any exception or complaint,?\s*please contact the network:?/gi, 'se houver qualquer problema ou reclamação, entre em contato com a unidade:'],
+  [/shipped for/gi, 'enviado para'],
+  [/picked up by/gi, 'retirado por'],
+  [/picked up/gi, 'coletado'],
+  [/pick[- ]?up/gi, 'coleta'],
+  [/departed/gi, 'saída de'],
+  [/arrival/gi, 'chegada em'],
+  [/arrived/gi, 'chegou em'],
+  [/out for delivery/gi, 'saiu para entrega'],
+  [/delivering/gi, 'em rota de entrega'],
+  [/delivered/gi, 'entregue'],
+  [/undelivered/gi, 'não entregue'],
+  [/returned to sender/gi, 'devolvido ao remetente'],
+  [/returning to sender/gi, 'sendo devolvido ao remetente'],
+  [/refused by/gi, 'recusado por'],
+  [/customs/gi, 'alfândega'],
+  [/received/gi, 'recebido'],
+  [/collected/gi, 'coletado'],
+  [/consignee/gi, 'destinatário'],
+  [/addressee/gi, 'destinatário'],
+  [/warehouse/gi, 'depósito'],
+  [/sorting center/gi, 'centro de triagem'],
+  [/in transit/gi, 'em trânsito'],
+];
+function traduzirTextoJT(texto){
+  if(!texto) return texto;
+  let t = texto;
+  DICIONARIO_PT_JT.forEach(([regex, sub]) => { t = t.replace(regex, sub); });
+  return t;
+}
+
 function extrairLocalJT(texto) {
   if (!texto) return '';
   const colchetes = [...texto.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]);
@@ -170,7 +207,7 @@ exports.handler = async function (event) {
 
     // O TrackingMore já retorna do evento mais recente para o mais antigo.
     const historico = trackinfo.map((t) => ({
-      descricao: t.tracking_detail || '—',
+      descricao: traduzirTextoJT(t.tracking_detail) || '—',
       data: t.checkpoint_date || '', // já vem em formato ISO com "T"
       // O texto da J&T embute a cidade/UF entre colchetes (ex: "[Barueri]...
       // [SP BRE]") — extraímos "Cidade/UF" daí; se não achar, usa o campo
