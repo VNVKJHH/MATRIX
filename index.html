@@ -1378,12 +1378,12 @@ tr:hover td{background:var(--neon-glow)}
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-track" onclick="if(event.target===this)fecharDetalhePedidoGlobo()">
+<div class="modal-overlay" id="modal-track" onclick="if(event.target===this)fecharModalPedidoGlobo()">
   <div class="modal" style="width:560px;max-height:85vh;overflow-y:auto">
     <p class="modal-title" id="track-modal-title">Histórico de rastreamento</p>
     <div id="track-modal-content"></div>
     <div class="modal-footer">
-      <button class="btn btn-primary" onclick="fecharDetalhePedidoGlobo()">Fechar</button>
+      <button class="btn btn-primary" onclick="fecharModalPedidoGlobo()">Fechar</button>
     </div>
   </div>
 </div>
@@ -3790,15 +3790,18 @@ async function atualizarPontosDashGlobo(){
 
   // Pedidos que caíram exatamente na mesma cidade/local ficariam empilhados
   // um em cima do outro — em vez de deslocar aleatoriamente (que ainda podia
-  // dar sobreposição por sorte), espalha cada grupo em círculo ao redor do
-  // ponto real, então nunca fica dois exatamente no mesmo lugar.
+  // dar sobreposição por sorte), espalha cada grupo ao redor do ponto real
+  // de forma orgânica (ângulo e distância com uma variação aleatória, não um
+  // círculo perfeito e simétrico) — só garante uma distância mínima entre eles.
   const gruposPorLocal = {};
   todosPontos.forEach(p=>{ (gruposPorLocal[p.local]=gruposPorLocal[p.local]||[]).push(p); });
   Object.values(gruposPorLocal).forEach(grupo=>{
     if(grupo.length<=1) return;
-    const raio = 0.05 + Math.min(grupo.length,15)*0.008;
+    const raioBase = 0.06 + Math.min(grupo.length,15)*0.01;
     grupo.forEach((p,i)=>{
-      const angulo = (2*Math.PI*i)/grupo.length;
+      const anguloBase = (2*Math.PI*i)/grupo.length;
+      const angulo = anguloBase + (Math.random()-0.5)*(Math.PI/grupo.length);
+      const raio = raioBase * (0.65 + Math.random()*0.7);
       p.lat += Math.cos(angulo)*raio;
       p.lng += Math.sin(angulo)*raio;
     });
@@ -3885,7 +3888,7 @@ function aplicarFiltroStatusEDesenharPontos(){
       el.onclick=(ev)=>{ ev.stopPropagation(); selecionarPedidoGlobo(d); };
       return el;
     })
-    .onGlobeClick(()=>{ if(_pedidoSelecionadoGlobo) fecharDetalhePedidoGlobo(); });
+    .onGlobeClick(()=>{ fecharModalPedidoGlobo(); });
 }
 
 // Mostra o MAXIMUS 3D pulsando na posição exata do pedido selecionado. Gerido
@@ -3909,19 +3912,23 @@ function removerMaximusSelecionadoGlobo(){
   _maximusMeshAtivo = null;
 }
 
-// Quando clica num pontinho (ou de novo no MAXIMUS já selecionado), mostra o
-// MAXIMUS pulsando ali e abre os detalhes completos do pedido com o histórico.
+// Quando clica num pontinho, mostra o MAXIMUS pulsando ali (fica visível até
+// você clicar em outro pedido ou sair da tela) e abre os detalhes completos.
 function selecionarPedidoGlobo(pt){
-  if(_pedidoSelecionadoGlobo && _pedidoSelecionadoGlobo.id===pt.id){
-    fecharDetalhePedidoGlobo();
-    return;
-  }
   _pedidoSelecionadoGlobo = pt;
   aplicarFiltroStatusEDesenharPontos();
   mostrarMaximusSelecionadoGlobo(pt);
   mostrarDetalhePedidoGlobo(pt);
 }
 
+// Fecha só o painel de detalhes — o MAXIMUS continua pulsando no globo.
+// Usado no botão "Fechar" do modal e ao clicar em área vazia do globo.
+function fecharModalPedidoGlobo(){
+  document.getElementById('modal-track').classList.remove('open');
+}
+
+// Reset completo — some com o MAXIMUS de vez. Usado só quando sai da tela
+// do Dashboard (ou quando os dados são recarregados do zero).
 function fecharDetalhePedidoGlobo(){
   _pedidoSelecionadoGlobo = null;
   removerMaximusSelecionadoGlobo();
