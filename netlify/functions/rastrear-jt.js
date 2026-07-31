@@ -68,6 +68,16 @@ function traduzirTextoJT(texto){
   return t;
 }
 
+function rotuloStatusGeral(status){
+  const rotulos = {
+    delivered: 'Pacote entregue ao destinatário',
+    undelivered: 'Tentativa de entrega sem sucesso',
+    exception: 'Problema com a encomenda — verifique com a transportadora',
+    expired: 'Sem atualização há 30 dias — verifique com a transportadora',
+  };
+  return rotulos[status] || status || 'Status atualizado';
+}
+
 function extrairLocalJT(texto) {
   if (!texto) return '';
   const colchetes = [...texto.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]);
@@ -202,6 +212,30 @@ exports.handler = async function (event) {
     const trackinfo = (tracking.origin_info && tracking.origin_info.trackinfo) || [];
 
     if (trackinfo.length === 0) {
+      // Se o status GERAL já é final (entregue, devolvido, etc.) mas o
+      // TrackingMore ainda não sincronizou o detalhamento evento a evento,
+      // não dá pra tratar como "ainda processando" — o pedido já tem uma
+      // situação real e precisa aparecer certinho no MATRIX, não como
+      // "código inválido". Monta um evento único com o que já temos.
+      const statusFinal = ['delivered', 'undelivered', 'exception', 'expired'].includes(tracking.delivery_status);
+      if (statusFinal) {
+        console.log('[rastrear-jt] Sem detalhamento de eventos, mas status geral já é final:', tracking.delivery_status);
+        const dataEvento = tracking.update_at || tracking.created_at || '';
+        const historicoResumido = [{
+          descricao: traduzirTextoJT(rotuloStatusGeral(tracking.delivery_status)),
+          data: dataEvento,
+          local: '',
+          statusBruto: tracking.delivery_status,
+          substatusBruto: '',
+        }];
+        return resposta(200, {
+          success: true,
+          status: 'ok',
+          historico: historicoResumido,
+          eventoMaisRecente: historicoResumido[0],
+          previsaoEntrega: '',
+        });
+      }
       // A criação do rastreio dispara uma busca em segundo plano no
       // TrackingMore — pode levar de alguns segundos a poucos minutos pra
       // popular o histórico na primeira consulta de um código novo.
