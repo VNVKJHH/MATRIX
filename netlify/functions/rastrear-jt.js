@@ -68,6 +68,15 @@ function traduzirTextoJT(texto){
   return t;
 }
 
+// O TrackingMore às vezes retorna uma previsão de entrega em
+// "scheduled_delivery_date" (nem sempre vem preenchido — depende de a
+// transportadora ter informado isso pra esse pedido específico).
+function extrairPrevisaoEntrega(tracking){
+  const bruta = tracking && tracking.scheduled_delivery_date;
+  if(!bruta) return '';
+  return String(bruta).replace(' ', 'T');
+}
+
 function rotuloStatusGeral(status){
   const rotulos = {
     delivered: 'Pacote entregue ao destinatário',
@@ -233,7 +242,7 @@ exports.handler = async function (event) {
           status: 'ok',
           historico: historicoResumido,
           eventoMaisRecente: historicoResumido[0],
-          previsaoEntrega: '',
+          previsaoEntrega: extrairPrevisaoEntrega(tracking),
         });
       }
       // Se o status geral vier explicitamente como "pending" (a J&T ainda não
@@ -254,7 +263,7 @@ exports.handler = async function (event) {
           status: 'ok',
           historico: historicoPostagem,
           eventoMaisRecente: historicoPostagem[0],
-          previsaoEntrega: '',
+          previsaoEntrega: extrairPrevisaoEntrega(tracking),
         });
       }
       // A criação do rastreio dispara uma busca em segundo plano no
@@ -289,7 +298,7 @@ exports.handler = async function (event) {
       status: 'ok',
       historico,
       eventoMaisRecente: historico[0],
-      previsaoEntrega: '', // TrackingMore não retorna previsão de entrega estimada para este courier
+      previsaoEntrega: extrairPrevisaoEntrega(tracking), // usa scheduled_delivery_date quando disponível
     });
   } catch (e) {
     console.error('[rastrear-jt] Exceção não tratada para código', codigo, ':', e.name, '-', e.message);
