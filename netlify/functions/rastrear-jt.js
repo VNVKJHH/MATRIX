@@ -58,8 +58,9 @@ exports.handler = async function (event) {
 
   try {
     // 1) Tenta registrar o rastreio. Se já existir (código já foi consultado
-    // antes), a API retorna um erro de duplicidade — não é um problema real,
-    // só significa que já está sendo rastreado, então seguimos pro passo 2.
+    // antes SEM o campo extra do telefone, como aconteceu nos testes
+    // iniciais), a API recusa o create — nesse caso vamos tentar corrigir com
+    // um update logo abaixo.
     console.log('[rastrear-jt] Registrando/criando rastreio...');
     const corpoCreate = { tracking_number: codigo, courier_code: COURIER_CODE };
     if (ultimosDigitosTelefone) corpoCreate.tracking_postal_code = ultimosDigitosTelefone;
@@ -70,6 +71,37 @@ exports.handler = async function (event) {
     });
     const textoCreate = await resCreate.text();
     console.log('[rastrear-jt] Resposta do create (status ' + resCreate.status + '):', textoCreate.substring(0, 300));
+
+    let dataCreate = null;
+    try { dataCreate = JSON.parse(textoCreate); } catch (e) { /* ignora */ }
+
+    // Se o create falhou e temos os últimos dígitos do telefone, é bem
+    // provável que o motivo seja um registro antigo (de antes de sabermos
+    // desse campo extra) já existir sem ele. Buscamos o "id" desse registro
+    // existente e usamos PUT /trackings/update/{id} pra corrigir.
+    if (!resCreate.ok && ultimosDigitosTelefone) {
+      console.log('[rastrear-jt] Create falhou — tentando localizar registro existente pra corrigir via update...');
+      const resGetPrevio = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}`, {
+        method: 'GET',
+        headers,
+      });
+      if (resGetPrevio.ok) {
+        const dataGetPrevio = await resGetPrevio.json().catch(() => null);
+        const trackingPrevio = dataGetPrevio && dataGetPrevio.data && dataGetPrevio.data[0];
+        if (trackingPrevio && trackingPrevio.id) {
+          console.log('[rastrear-jt] Registro existente encontrado, id:', trackingPrevio.id, '— enviando update com tracking_postal_code...');
+          const resUpdate = await fetch(`${TRACKINGMORE_BASE}/trackings/update/${trackingPrevio.id}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ tracking_postal_code: ultimosDigitosTelefone }),
+          });
+          const textoUpdate = await resUpdate.text();
+          console.log('[rastrear-jt] Resposta do update (status ' + resUpdate.status + '):', textoUpdate.substring(0, 300));
+        } else {
+          console.warn('[rastrear-jt] Não encontrou registro existente pra atualizar.');
+        }
+      }
+    }
 
     // 2) Busca o status/eventos atuais desse rastreio.
     console.log('[rastrear-jt] Buscando eventos do rastreio...');
