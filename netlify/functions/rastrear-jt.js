@@ -30,11 +30,11 @@ exports.handler = async function (event) {
     return resposta(200, { success: false, status: 'error', erro: 'TRACKINGMORE_API_KEY não configurado.' });
   }
 
-  let codigo, telefone;
+  let codigo, cpf;
   try {
     const body = JSON.parse(event.body || '{}');
     codigo = (body.codigo || '').trim().replace(/\s/g, '');
-    telefone = (body.telefone || '').replace(/\D/g, '');
+    cpf = (body.cpf || '').replace(/\D/g, '');
   } catch (e) {
     return resposta(200, { success: false, status: 'invalid_format', erro: 'Corpo da requisição inválido' });
   }
@@ -43,12 +43,11 @@ exports.handler = async function (event) {
     return resposta(200, { success: false, status: 'invalid_format', erro: 'Código de rastreio ausente' });
   }
 
-  // A J&T Brasil (assim como as outras variantes regionais da J&T no
-  // TrackingMore — México, Tailândia, Vietnã) exige um campo extra pra
-  // liberar o rastreio. Seguindo o mesmo padrão delas, mandamos os últimos 4
-  // dígitos do telefone do destinatário no campo "tracking_postal_code".
-  const ultimosDigitosTelefone = telefone.slice(-4);
-  console.log('[rastrear-jt] Consultando código:', codigo, '| courier_code:', COURIER_CODE, '| últimos 4 dígitos do telefone:', ultimosDigitosTelefone || '(nenhum)');
+  // A "Get All Couriers API" do TrackingMore confirma que a jtexpress-br exige
+  // o campo extra "tracking_key". Baseado no próprio site oficial da J&T (que
+  // exige CPF junto do código pra liberar a consulta), o valor esperado aqui é
+  // o CPF do destinatário.
+  console.log('[rastrear-jt] Consultando código:', codigo, '| courier_code:', COURIER_CODE, '| CPF informado:', cpf ? 'sim ('+cpf.length+' dígitos)' : 'não');
 
   const headers = {
     'Content-Type': 'application/json',
@@ -63,7 +62,7 @@ exports.handler = async function (event) {
     // um update logo abaixo.
     console.log('[rastrear-jt] Registrando/criando rastreio...');
     const corpoCreate = { tracking_number: codigo, courier_code: COURIER_CODE };
-    if (ultimosDigitosTelefone) corpoCreate.tracking_postal_code = ultimosDigitosTelefone;
+    if (cpf) corpoCreate.tracking_key = cpf;
     const resCreate = await fetch(`${TRACKINGMORE_BASE}/trackings/create`, {
       method: 'POST',
       headers,
@@ -75,11 +74,11 @@ exports.handler = async function (event) {
     let dataCreate = null;
     try { dataCreate = JSON.parse(textoCreate); } catch (e) { /* ignora */ }
 
-    // Se o create falhou e temos os últimos dígitos do telefone, é bem
-    // provável que o motivo seja um registro antigo (de antes de sabermos
-    // desse campo extra) já existir sem ele. Buscamos o "id" desse registro
-    // existente e usamos PUT /trackings/update/{id} pra corrigir.
-    if (!resCreate.ok && ultimosDigitosTelefone) {
+    // Se o create falhou e temos o CPF, é bem provável que o motivo seja um
+    // registro antigo (de antes de sabermos desse campo extra) já existir sem
+    // ele. Buscamos o "id" desse registro existente e usamos
+    // PUT /trackings/update/{id} pra corrigir.
+    if (!resCreate.ok && cpf) {
       console.log('[rastrear-jt] Create falhou — tentando localizar registro existente pra corrigir via update...');
       const resGetPrevio = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}`, {
         method: 'GET',
@@ -89,11 +88,11 @@ exports.handler = async function (event) {
         const dataGetPrevio = await resGetPrevio.json().catch(() => null);
         const trackingPrevio = dataGetPrevio && dataGetPrevio.data && dataGetPrevio.data[0];
         if (trackingPrevio && trackingPrevio.id) {
-          console.log('[rastrear-jt] Registro existente encontrado, id:', trackingPrevio.id, '— enviando update com tracking_postal_code...');
+          console.log('[rastrear-jt] Registro existente encontrado, id:', trackingPrevio.id, '— enviando update com tracking_key...');
           const resUpdate = await fetch(`${TRACKINGMORE_BASE}/trackings/update/${trackingPrevio.id}`, {
             method: 'PUT',
             headers,
-            body: JSON.stringify({ tracking_postal_code: ultimosDigitosTelefone }),
+            body: JSON.stringify({ tracking_key: cpf }),
           });
           const textoUpdate = await resUpdate.text();
           console.log('[rastrear-jt] Resposta do update (status ' + resUpdate.status + '):', textoUpdate.substring(0, 300));
