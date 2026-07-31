@@ -3894,6 +3894,10 @@ function aplicarFiltroStatusEDesenharPontos(){
       el.className='globo-ponto-neon';
       el.style.setProperty('--cor-neon-ponto', d.cor);
       el.style.pointerEvents='auto';
+      // Com um pedido selecionado, os outros pontinhos ficam bem apagados —
+      // como eles são camada HTML (sempre por cima do 3D), isso evita que
+      // fiquem "brigando" visualmente com o MAXIMUS e atrapalhando ele.
+      if(_pedidoSelecionadoGlobo) el.style.opacity='0.12';
       el.title=d.nome+' — '+d.status+'\n📍 '+d.local+'\n📦 '+d.cod+' ('+d.origem+')';
       el.onclick=(ev)=>{ ev.stopPropagation(); selecionarPedidoGlobo(d); };
       return el;
@@ -4307,21 +4311,34 @@ function renderPad(){
         <div class="metric-card"><div class="metric-label">Pedidos pagos</div><div class="metric-value">${pagos.length}</div></div>
       `;
     } else if(padTab==='frustrado'){
+      // Pedidos que já tiveram o material recuperado, ou que já receberam
+      // mais de 50% do valor antes de frustrar, não entram nas estatísticas
+      // de frustração — continuam aparecendo na lista normalmente, só não
+      // pesam no "valor perdido" nem na "taxa de frustração".
+      const frustradosConsiderados = frustrados.filter(p=>{
+        if(p.materialRecuperado) return false;
+        const totalPagoAntes=(p.pagamentos||[]).reduce((s,pg)=>s+(pg.valor||0),0);
+        if(p.bruto>0 && totalPagoAntes > p.bruto*0.5) return false;
+        return true;
+      });
       // Valor que ainda seria "a receber" desses pedidos se não tivessem
       // frustrado, descontando qualquer parte que já tinha sido paga antes
       // de frustrar (ex: um sinal pago antes do cliente desistir).
-      const valorPerdido=frustrados.reduce((s,p)=>{
+      const valorPerdido=frustradosConsiderados.reduce((s,p)=>{
         const totalPagoAntes=(p.pagamentos||[]).reduce((s2,pg)=>s2+(pg.valor||0),0);
         return s+R((p.bruto||0)-totalPagoAntes,2);
       },0);
       // Taxa de frustração = % de pedidos frustrados entre os já concluídos
-      // (pagos + frustrados) — os que ainda estão em aberto não entram nessa conta.
-      const totalConcluidos=pagos.length+frustrados.length;
-      const taxaFrustracao=totalConcluidos>0?R(frustrados.length/totalConcluidos*100,1):0;
+      // (pagos + frustrados considerados) — os que ainda estão em aberto, com
+      // material recuperado, ou já pagos >50% não entram nessa conta.
+      const totalConcluidos=pagos.length+frustradosConsiderados.length;
+      const taxaFrustracao=totalConcluidos>0?R(frustradosConsiderados.length/totalConcluidos*100,1):0;
+      const qtdExcluidos = frustrados.length - frustradosConsiderados.length;
       resumoEl.innerHTML=`
         <div class="metric-card"><div class="metric-label">Valor perdido (frustrados)</div><div class="metric-value mv-red">${fmt(valorPerdido)}</div></div>
-        <div class="metric-card"><div class="metric-label">Pedidos frustrados</div><div class="metric-value">${frustrados.length}</div></div>
+        <div class="metric-card"><div class="metric-label">Pedidos frustrados</div><div class="metric-value">${frustradosConsiderados.length}</div></div>
         <div class="metric-card"><div class="metric-label">Taxa de frustração</div><div class="metric-value mv-amber">${taxaFrustracao}%</div></div>
+        ${qtdExcluidos>0?`<div class="metric-card"><div class="metric-label">Desconsiderados</div><div class="metric-value" style="color:var(--t3);font-size:15px">${qtdExcluidos} <span style="font-size:10px;font-weight:400">(recuperado/pago &gt;50%)</span></div></div>`:''}
       `;
     } else {
       resumoEl.innerHTML=`
@@ -4351,6 +4368,16 @@ function renderPad(){
     const acompanhamentoCol = `<td style="min-width:180px">${p.rastreamento?`<div>${htmlAcompanhamento(p)}${p.trackHistorico&&p.trackHistorico.length>0?`<button class="btn btn-sm" onclick="verHistorico(${gi},'pad')" style="font-size:10px;padding:2px 7px"><i class="ti ti-list"></i> Histórico</button>`:''}</div>`:'<span style="font-size:11px;color:var(--t3)">—</span>'}</td>`;
     const pagamentos = p.pagamentos||[];
     const totalPago = pagamentos.reduce((s,pg)=>s+(pg.valor||0),0);
+    const pagoMaisMetade = p.bruto>0 && totalPago > p.bruto*0.5;
+    const controlesFrustradoHtml = p.status==='Frustrado' ? `
+      <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2);cursor:pointer" title="Marca esse pedido como recuperado (material voltou) — ele deixa de contar nas estatísticas de frustração">
+          <input type="checkbox" ${p.materialRecuperado?'checked':''} onchange="toggleMaterialRecuperadoPad(${gi})" style="width:13px;height:13px;cursor:pointer">
+          Material recuperado
+        </label>
+        ${pagoMaisMetade?`<span class="badge b-green" style="font-size:9px;align-self:flex-start" title="Mais de 50% do valor já foi pago antes de frustrar — não conta nas estatísticas de frustração">Pago &gt;50% — não conta</span>`:''}
+      </div>
+    ` : '';
     const pagamentoCol = `<td style="min-width:170px">
       <div style="font-size:12px;font-weight:700;color:${totalPago>0?'var(--green)':'var(--t3)'}">${fmt(totalPago)} <span style="font-weight:400;color:var(--t3)">/ ${fmt(p.bruto)}</span></div>
       ${pagamentos.length>0?`<div style="font-size:9px;color:var(--t3);margin-top:3px;max-width:170px;display:flex;flex-direction:column;gap:2px">${pagamentos.map((pg,pgi)=>`<div style="display:flex;align-items:center;gap:4px;justify-content:space-between">
@@ -4361,6 +4388,7 @@ function renderPad(){
         </span>
       </div>`).join('')}</div>`:''}
       <button class="btn btn-sm" onclick="openPadPagamentoModal(${gi})" style="margin-top:4px;padding:2px 8px;font-size:10px"><i class="ti ti-plus"></i> Pagamento</button>
+      ${controlesFrustradoHtml}
     </td>`;
     const podeEditar = adminLogado || (usuarioLogado && p.atendente===usuarioLogado.nome);
     const acoes=adminLogado?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-edit"></i></button> <button class="btn btn-danger btn-sm" onclick="deletarPad('+gi+')" style="padding:3px 6px"><i class="ti ti-trash"></i></button></td>':(podeEditar?'<td><button class="btn btn-sm" onclick="editarPad('+gi+')" style="padding:3px 6px" title="Editar meu lançamento"><i class="ti ti-edit"></i></button></td>':'<td></td>');
@@ -4535,6 +4563,18 @@ function toggleApuradoPad(gi){
     toast('Marcado como apurado hoje!');
   }
   if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
+  renderPad();
+}
+
+// Marca um PAD frustrado como "material recuperado" — quando marcado, esse
+// pedido deixa de contar nas estatísticas de frustração (valor perdido e
+// taxa de frustração), mas continua aparecendo normalmente na aba Frustrados.
+function toggleMaterialRecuperadoPad(gi){
+  const p=pads[gi];
+  if(!p)return;
+  p.materialRecuperado=!p.materialRecuperado;
+  if(window.fbSave&&p.fbId)window.fbSave('pads',p.fbId,p);
+  toast(p.materialRecuperado?'Marcado como material recuperado.':'Marcação removida.');
   renderPad();
 }
 
