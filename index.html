@@ -4961,6 +4961,12 @@ const REGRAS_NOTIF_PAD=[
     if(transportadora==='jt') return false;
     return (p.trackStatus||'').toLowerCase().includes('saiu para entrega');
   }, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
+  {chave:'previsao_chegando', testa:p=>{
+    if(!p.previsaoEntrega) return false;
+    if(getStatusCorreios(p).tipo==='entregue') return false; // já entregue, esse alerta não faz mais sentido
+    const dataPrevista = p.previsaoEntrega.split('T')[0];
+    return isoHojeMatrix() >= dataPrevista;
+  }, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} está previsto pra chegar — fique de olho no rastreamento pra confirmar a entrega.`},
 ];
 
 function gerarNotificacoes(){
