@@ -181,6 +181,9 @@ exports.handler = async function (event) {
       // undelivered, expired, notfound) — mais confiável que tentar
       // classificar só pelo texto livre.
       statusBruto: t.checkpoint_delivery_status || tracking.delivery_status || '',
+      // Sub-status dá mais detalhe (ex: diferenciar "aguardando retirada" de
+      // "tentativa de entrega falhou", ou "devolvido" de "em devolução").
+      substatusBruto: t.checkpoint_delivery_substatus || '',
     }));
 
     console.log('[rastrear-jt] Sucesso —', historico.length, 'evento(s) encontrados para', codigo, '| delivery_status geral:', tracking.delivery_status);
