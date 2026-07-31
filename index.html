@@ -8,14 +8,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes pulseNeonGlobo{
-  0%,100%{box-shadow:0 0 6px 2px var(--cor-neon-ponto),0 0 12px 4px color-mix(in srgb, var(--cor-neon-ponto) 55%, transparent);opacity:.85}
-  50%{box-shadow:0 0 10px 4px var(--cor-neon-ponto),0 0 22px 8px color-mix(in srgb, var(--cor-neon-ponto) 55%, transparent);opacity:1}
-}
 .globo-ponto-neon{
   width:7px;height:7px;border-radius:50%;
   background:var(--cor-neon-ponto);
-  animation:pulseNeonGlobo 1.6s ease-in-out infinite;
+  box-shadow:0 0 8px 3px var(--cor-neon-ponto),0 0 16px 6px color-mix(in srgb, var(--cor-neon-ponto) 55%, transparent);
   cursor:pointer;
   transform:translate(-50%,-50%);
 }
@@ -1783,6 +1779,9 @@ function showPage(p){
   } else {
     if(mainEl) mainEl.style.padding = '2rem';
     if(!document.body.classList.contains('tema-claro') && window.matrixStart) window.matrixStart();
+    // Saindo da tela do Dashboard: garante que o MAXIMUS selecionado (se
+    // tiver algum) suma de vez, em vez de ficar rodando escondido.
+    if(typeof fecharDetalhePedidoGlobo==='function') fecharDetalhePedidoGlobo();
   }
 
   const atualizarLabelPeriodo=(chave,elId,padrao)=>{const lbl=document.getElementById(elId);if(lbl)lbl.textContent=getPeriodoSalvo(chave,padrao).label;};
