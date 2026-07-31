@@ -4952,7 +4952,15 @@ const REGRAS_NOTIF_PAD=[
   {chave:'carteiro_nao_atendeu', testa:p=>temCarteiroNaoAtendeu(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi entregue — o carteiro tentou entregar mas não foi atendido.`},
   {chave:'prazo_retirada_encerrado', testa:p=>temPrazoRetiradaEncerrado(p), msg:p=>`O PAD de ${p.nomeCliente||'cliente'} não foi retirado a tempo — o prazo de retirada na agência foi encerrado.`},
   {chave:'atraso_10d', testa:p=>getStatusCorreios(p).tipo!=='entregue' && diasDesdeLancamentoNotif(p.dia,p.mes,p.ano)>=10, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} passou de 10 dias e ainda não foi entregue.`},
-  {chave:'saiu_entrega', testa:p=>(p.trackStatus||'').toLowerCase().includes('saiu para entrega')||(p.trackSubstatusBruto||'')==='pickup001', msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
+  {chave:'saiu_entrega', testa:p=>{
+    const transportadora=p.transportadora||detectarTransportadora(p.rastreamento);
+    // Restrito aos Correios: na J&T, o sub-status "pickup001" (que a fonte de
+    // dados documenta como "saiu para entrega") vem disparando em pontos
+    // intermediários de trânsito também, não só na entrega final — gerando
+    // alarme falso. Enquanto isso não ficar confiável, não notificamos pra J&T.
+    if(transportadora==='jt') return false;
+    return (p.trackStatus||'').toLowerCase().includes('saiu para entrega');
+  }, msg:p=>`O PAD de ${p.nomeCliente||'cliente'} saiu para entrega.`},
 ];
 
 function gerarNotificacoes(){
