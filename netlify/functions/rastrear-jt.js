@@ -18,7 +18,11 @@
 
 const TRACKINGMORE_BASE = 'https://api.trackingmore.com/v4';
 const COURIER_CODE = 'jtexpress-br'; // confirmado com teste real: bate com jtexpress.com.br
-const IDIOMA = 'pt'; // a jtexpress-br suporta "en","cn","pt" — pedimos pt pra vir traduzido
+// Nota: não usamos mais o parâmetro "lang" da API (o campo "lang" no corpo do
+// /trackings/create causava erro "formato de campo inválido" na J&T Brasil).
+// A tradução pro português agora é feita 100% pelo nosso próprio dicionário
+// (função traduzirTextoJT logo abaixo), que já funciona bem e não depende
+// de nenhum parâmetro extra da API.
 
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
@@ -122,7 +126,7 @@ exports.handler = async function (event) {
     // iniciais), a API recusa o create — nesse caso vamos tentar corrigir com
     // um update logo abaixo.
     console.log('[rastrear-jt] Registrando/criando rastreio...');
-    const corpoCreate = { tracking_number: codigo, courier_code: COURIER_CODE, lang: IDIOMA };
+    const corpoCreate = { tracking_number: codigo, courier_code: COURIER_CODE };
     if (cpf) corpoCreate.tracking_key = cpf;
     const resCreate = await fetch(`${TRACKINGMORE_BASE}/trackings/create`, {
       method: 'POST',
@@ -141,7 +145,7 @@ exports.handler = async function (event) {
     // PUT /trackings/update/{id} pra corrigir.
     if (!resCreate.ok && cpf) {
       console.log('[rastrear-jt] Create falhou — tentando localizar registro existente pra corrigir via update...');
-      const resGetPrevio = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}&lang=${IDIOMA}`, {
+      const resGetPrevio = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}`, {
         method: 'GET',
         headers,
       });
@@ -165,7 +169,7 @@ exports.handler = async function (event) {
 
     // 2) Busca o status/eventos atuais desse rastreio.
     console.log('[rastrear-jt] Buscando eventos do rastreio...');
-    const resGet = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}&lang=${IDIOMA}`, {
+    const resGet = await fetch(`${TRACKINGMORE_BASE}/trackings/get?tracking_numbers=${encodeURIComponent(codigo)}&courier_code=${COURIER_CODE}`, {
       method: 'GET',
       headers,
     });
