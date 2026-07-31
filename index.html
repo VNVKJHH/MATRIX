@@ -8,6 +8,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes pulseNeonGlobo{
+  0%,100%{box-shadow:0 0 6px 2px var(--cor-neon-ponto),0 0 12px 4px color-mix(in srgb, var(--cor-neon-ponto) 55%, transparent);opacity:.85}
+  50%{box-shadow:0 0 10px 4px var(--cor-neon-ponto),0 0 22px 8px color-mix(in srgb, var(--cor-neon-ponto) 55%, transparent);opacity:1}
+}
+.globo-ponto-neon{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--cor-neon-ponto);
+  animation:pulseNeonGlobo 1.6s ease-in-out infinite;
+  cursor:pointer;
+  transform:translate(-50%,-50%);
+}
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -3747,7 +3758,9 @@ function criarCaixaPedidoGlobo(cor){
 async function atualizarPontosDashGlobo(){
   if(!dashGloboInstance)return;
   pararTodasRotacoesCaixaGlobo();
-  _pedidoSelecionadoGlobo = null;  const atend=document.getElementById('adm-dash-atend')?.value||'';
+  _pedidoSelecionadoGlobo = null;
+  removerMaximusSelecionadoGlobo();
+  const atend=document.getElementById('adm-dash-atend')?.value||'';
   const userAtend=(!adminLogado&&usuarioLogado)?usuarioLogado.nome:'';
   const cores={postagem:'#888888',rota:'#0EA5E9',retirada:'#F59E0B',entregue:'#00FF80',devolucao:'#EF4444',invalido:'#EF4444'};
   const labels={postagem:'Aguardando postagem',rota:'Em rota',retirada:'Aguardando retirada',entregue:'Entregue',devolucao:'Devolução'};
@@ -3768,13 +3781,29 @@ async function atualizarPontosDashGlobo(){
 
     const st=getStatusCorreios(r);
     todosPontos.push({
-      lat:coords.lat+(Math.random()-0.5)*0.05,lng:coords.lng+(Math.random()-0.5)*0.05,
+      lat:coords.lat,lng:coords.lng,
       cor:cores[st.tipo]||'#888',tipo:st.tipo,nome:r.nomeCliente||'—',status:labels[st.tipo]||st.label,
       local,cod:r.rastreamento,atend:r.atendente.split(' ')[0],origem:r._origemGlobo,
       historico:r.trackHistorico||[],telefone:r.telefone||'',transportadora:r.transportadora||detectarTransportadora(r.rastreamento),
       id:(r.fbId||'')+'_'+r._origemGlobo
     });
   }
+
+  // Pedidos que caíram exatamente na mesma cidade/local ficariam empilhados
+  // um em cima do outro — em vez de deslocar aleatoriamente (que ainda podia
+  // dar sobreposição por sorte), espalha cada grupo em círculo ao redor do
+  // ponto real, então nunca fica dois exatamente no mesmo lugar.
+  const gruposPorLocal = {};
+  todosPontos.forEach(p=>{ (gruposPorLocal[p.local]=gruposPorLocal[p.local]||[]).push(p); });
+  Object.values(gruposPorLocal).forEach(grupo=>{
+    if(grupo.length<=1) return;
+    const raio = 0.05 + Math.min(grupo.length,15)*0.008;
+    grupo.forEach((p,i)=>{
+      const angulo = (2*Math.PI*i)/grupo.length;
+      p.lat += Math.cos(angulo)*raio;
+      p.lng += Math.sin(angulo)*raio;
+    });
+  });
 
   _pontosGloboTodos = todosPontos;
   renderFiltrosStatusDashAdm(todosPontos);
@@ -3827,10 +3856,10 @@ function toggleFiltroStatusDashAdm(tipo){
 }
 
 let _pedidoSelecionadoGlobo = null;
+let _maximusMeshAtivo = null;
 
 function aplicarFiltroStatusEDesenharPontos(){
   if(!dashGloboInstance) return;
-  pararTodasRotacoesCaixaGlobo();
   const pontos = _statusGloboSelecionados.size===0
     ? _pontosGloboTodos
     : _pontosGloboTodos.filter(p => _statusGloboSelecionados.has(p.tipo));
@@ -3838,37 +3867,51 @@ function aplicarFiltroStatusEDesenharPontos(){
   const sub=document.getElementById('dash-globo-subtitle');
   if(sub)sub.textContent=pontos.length+' envio'+(pontos.length!==1?'s':'')+' no mapa'+(_pedidoSelecionadoGlobo?' — clique em outro ponto ou feche o painel pra voltar':'');
 
-  const tooltip = d=>'<div style="background:rgba(0,0,0,.95);border:1.5px solid '+d.cor+';padding:8px 12px;border-radius:8px;font-size:12px;min-width:160px"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-weight:700;color:'+d.cor+'">'+d.nome+'</span><span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;background:'+(d.origem==="PAD"?"rgba(14,165,233,.2);color:#7DD3FC":"rgba(0,255,128,.15);color:#00FF80")+'">'+d.origem+'</span></div><div style="color:#ddd;margin-bottom:3px">'+d.status+'</div><div style="color:#aaa;font-size:11px">📍 '+d.local+'</div><div style="color:#aaa;font-size:11px">📦 '+d.cod+'</div><div style="color:#7DD3FC;font-size:10px;margin-top:4px">Clique pra ver detalhes</div></div>';
-
+  // Pontos como elementos HTML de verdade (não malha 3D) — ficam sempre
+  // "chapados" na tela, achatados, com brilho neon via CSS/box-shadow.
   dashGloboInstance
-    // Camada de pontinhos — um ponto pequeno colorido pra cada pedido, na
-    // mesma cor usada nos filtros de status logo abaixo do globo.
-    .pointsData(pontos)
-    .pointLat('lat').pointLng('lng').pointAltitude(0.012)
-    .pointRadius(d=>_pedidoSelecionadoGlobo&&_pedidoSelecionadoGlobo.id===d.id?0:0.14)
-    .pointColor('cor')
-    .pointLabel(tooltip)
-    .onPointClick(pt=>selecionarPedidoGlobo(pt))
-    // Anéis pulsantes em volta de cada ponto — dão o efeito de "brilho
-    // intenso" sem deixar o ponto em si grande.
-    .ringsData(pontos)
-    .ringLat('lat').ringLng('lng').ringAltitude(0.012)
-    .ringColor(d=>{const rgb=hexParaRgb(d.cor);return t=>`rgba(${rgb.r},${rgb.g},${rgb.b},${Math.max(0,1-t)})`;})
-    .ringMaxRadius(1.6)
-    .ringPropagationSpeed(1.5)
-    .ringRepeatPeriod(1400)
-    // Camada de "objetos 3D" — só usada pro pedido selecionado, mostrando o
-    // logo MAXIMUS grande pulsando exatamente na posição dele.
-    .objectsData(_pedidoSelecionadoGlobo?[_pedidoSelecionadoGlobo]:[])
-    .objectLat('lat').objectLng('lng').objectAltitude(0.02)
-    .objectThreeObject(d=>criarCaixaPedidoGlobo(d.cor))
-    .objectLabel(tooltip)
-    .onObjectClick(pt=>selecionarPedidoGlobo(pt))
+    .htmlElementsData(pontos)
+    .htmlLat('lat').htmlLng('lng').htmlAltitude(0.015)
+    .htmlElement(d=>{
+      const el=document.createElement('div');
+      if(_pedidoSelecionadoGlobo && _pedidoSelecionadoGlobo.id===d.id){
+        // O pedido selecionado mostra o MAXIMUS 3D no lugar — esconde o pontinho
+        el.style.width='0';el.style.height='0';
+        return el;
+      }
+      el.className='globo-ponto-neon';
+      el.style.setProperty('--cor-neon-ponto', d.cor);
+      el.style.pointerEvents='auto';
+      el.title=d.nome+' — '+d.status+'\n📍 '+d.local+'\n📦 '+d.cod+' ('+d.origem+')';
+      el.onclick=(ev)=>{ ev.stopPropagation(); selecionarPedidoGlobo(d); };
+      return el;
+    })
     .onGlobeClick(()=>{ if(_pedidoSelecionadoGlobo) fecharDetalhePedidoGlobo(); });
 }
 
-// Quando clica num pontinho (ou no logo já selecionado), mostra o MAXIMUS
-// pulsando ali e abre os detalhes completos do pedido com o histórico.
+// Mostra o MAXIMUS 3D pulsando na posição exata do pedido selecionado. Gerido
+// manualmente (adicionado/removido direto na cena) em vez de depender só do
+// objectsData do globo — assim garantimos que ele some de verdade ao fechar.
+function mostrarMaximusSelecionadoGlobo(pt){
+  removerMaximusSelecionadoGlobo();
+  if(!dashGloboInstance) return;
+  const coords = dashGloboInstance.getCoords(pt.lat, pt.lng, 0.025);
+  const mesh = criarCaixaPedidoGlobo(pt.cor);
+  if(!mesh) return;
+  mesh.position.set(coords.x, coords.y, coords.z);
+  dashGloboInstance.scene().add(mesh);
+  _maximusMeshAtivo = mesh;
+}
+function removerMaximusSelecionadoGlobo(){
+  pararTodasRotacoesCaixaGlobo();
+  if(_maximusMeshAtivo && dashGloboInstance){
+    try{ dashGloboInstance.scene().remove(_maximusMeshAtivo); }catch(e){}
+  }
+  _maximusMeshAtivo = null;
+}
+
+// Quando clica num pontinho (ou de novo no MAXIMUS já selecionado), mostra o
+// MAXIMUS pulsando ali e abre os detalhes completos do pedido com o histórico.
 function selecionarPedidoGlobo(pt){
   if(_pedidoSelecionadoGlobo && _pedidoSelecionadoGlobo.id===pt.id){
     fecharDetalhePedidoGlobo();
@@ -3876,11 +3919,13 @@ function selecionarPedidoGlobo(pt){
   }
   _pedidoSelecionadoGlobo = pt;
   aplicarFiltroStatusEDesenharPontos();
+  mostrarMaximusSelecionadoGlobo(pt);
   mostrarDetalhePedidoGlobo(pt);
 }
 
 function fecharDetalhePedidoGlobo(){
   _pedidoSelecionadoGlobo = null;
+  removerMaximusSelecionadoGlobo();
   aplicarFiltroStatusEDesenharPontos();
   document.getElementById('modal-track').classList.remove('open');
 }
