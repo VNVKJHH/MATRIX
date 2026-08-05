@@ -2157,6 +2157,7 @@ function renderPanorama(){
   const atend=document.getElementById('pan-atend').value;
   const rows=filtrarPorPeriodo(dados, periodo, atend);
   let tBruto=0,tVendas=0,tLucro=0,tImpPJ=0,tPct=0,tFrascos=0,tEnvio=0;
+  let tBrutoVendaAntecipada=0,tBrutoPadPago=0,qtdPagamentosPad=0;
   const { investido: tInv, leads: tLeads } = getInvestimentoMetaAds(periodo, atend);
   const byD={};
   rows.filter(r=>!r.isPad).forEach(r=>{
@@ -2165,6 +2166,7 @@ function renderPanorama(){
     if(!byD[chaveDia])byD[chaveDia]={dia:r.dia,mes:r.mes,ano:r.ano,bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
     byD[chaveDia].bruto+=(r.bruto||0);byD[chaveDia].vendas+=(r.qtd_vendas||0);byD[chaveDia].impPJ+=c.impPJ;byD[chaveDia].pct+=c.pctAtend;byD[chaveDia].frascos+=c.frascos;byD[chaveDia].envio+=c.custoEnvTotal;
     tBruto+=(r.bruto||0);tVendas+=(r.qtd_vendas||0);tImpPJ+=c.impPJ;tPct+=c.pctAtend;tFrascos+=c.frascos;tEnvio+=c.custoEnvTotal;
+    tBrutoVendaAntecipada+=(r.bruto||0);
   });
   const admFilPanorama = adminLancs.filter(a=>{
     if(!dataNoPeriodo(a.dia,a.mes,a.ano,periodo)) return false;
@@ -2190,6 +2192,8 @@ function renderPanorama(){
       if(!byD[chaveDia])byD[chaveDia]={dia:dObj.getDate(),mes:MESES[dObj.getMonth()],ano:dObj.getFullYear(),bruto:0,vendas:0,lucro:0,impPJ:0,pct:0,frascos:0,envio:0,investido:0,leads:0};
       byD[chaveDia].bruto+=v;
       tBruto+=v;
+      tBrutoPadPago+=v;
+      qtdPagamentosPad++;
       const comissaoPad=R(v*getComissao(p.atendente),2);
       byD[chaveDia].pct+=comissaoPad;
       tPct+=comissaoPad;
@@ -2201,8 +2205,17 @@ function renderPanorama(){
     });
   });
   Object.keys(byD).forEach(k=>{const dd=byD[k];dd.lucro=calcLucroDia(dd.dia,dd.mes,dd.ano,atend);tLucro+=dd.lucro;});
+  // PAD "agendado" no período — pedidos de PAD que foram lançados dentro do
+  // período escolhido, independente de já terem sido pagos ou não. Isso é
+  // pipeline futuro, não entra na "Receita bruta" (que só conta o que já foi
+  // efetivamente pago), mas ajuda a enxergar o que está a caminho.
+  const padsAgendados = pads.filter(p=>{
+    if(atend && p.atendente!==atend) return false;
+    return dataNoPeriodo(p.dia,p.mes,p.ano,periodo);
+  });
+  const valorPadAgendado = padsAgendados.reduce((s,p)=>s+(p.bruto||0),0);
   document.getElementById('pan-metrics').innerHTML=`
-    <div class="metric-card"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
+    <div class="metric-card" style="cursor:pointer" onclick="abrirDetalheReceitaPanorama(${tBrutoVendaAntecipada},${tBrutoPadPago},${valorPadAgendado},${tVendas},${qtdPagamentosPad},${padsAgendados.length})" title="Clique para ver o detalhamento"><div class="metric-label">Receita bruta</div><div class="metric-value mv-blue">${fmt(tBruto)}</div></div>
     <div class="metric-card"><div class="metric-label">Investimento</div><div class="metric-value mv-amber">${fmt(tInv)}</div></div>
     <div class="metric-card"><div class="metric-label">Lucro líquido</div><div class="metric-value ${tLucro>=0?'mv-green':'mv-red'}">${fmt(tLucro)}</div></div>
     <div class="metric-card"><div class="metric-label">Vendas</div><div class="metric-value">${tVendas}</div></div>
@@ -2319,6 +2332,33 @@ function abrirDetalheAgendamentosHoje(){
       }).join('');
 
   document.getElementById('modal-agendamentos-hoje').classList.add('open');
+}
+
+// Mostra de onde veio a "Receita bruta" do Panorama, separando venda
+// antecipada de PAD pago — e mostra também o PAD agendado no período como
+// informação de "pipeline" (ainda não é receita reconhecida).
+function abrirDetalheReceitaPanorama(vendaAntecipada, padPago, padAgendado, qtdVendaAntecipada, qtdPagamentosPad, qtdPadAgendado){
+  const total = vendaAntecipada + padPago;
+  const linha=(label,qtdTxt,valor,cor)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:.5px solid var(--border)">
+      <div><div style="font-weight:600;font-size:13px">${label}</div><div style="font-size:11px;color:var(--t3)">${qtdTxt}</div></div>
+      <div style="font-weight:700;font-size:15px;color:${cor}">${fmt(valor)}</div>
+    </div>`;
+  document.getElementById('track-modal-title').textContent = 'Receita detalhada';
+  document.getElementById('track-modal-content').innerHTML = `
+    ${linha('Vendas antecipadas', qtdVendaAntecipada+' venda'+(qtdVendaAntecipada!==1?'s':''), vendaAntecipada, 'var(--blue-t)')}
+    ${linha('PAD — pagamentos recebidos', qtdPagamentosPad+' pagamento'+(qtdPagamentosPad!==1?'s':''), padPago, 'var(--neon)')}
+    <div style="margin-top:8px;padding-top:10px;border-top:1.5px solid var(--border2);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:800;font-size:13px">Total (receita bruta do período)</span>
+      <span style="font-weight:800;font-size:17px;color:var(--neon)">${fmt(total)}</span>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:.5px dashed var(--border2)">
+      <p style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Pipeline — ainda não é receita reconhecida</p>
+      ${linha('PAD agendado no período', qtdPadAgendado+' pedido'+(qtdPadAgendado!==1?'s':''), padAgendado, 'var(--amber-t)')}
+      <p style="font-size:10px;color:var(--t3);margin-top:6px">Esse valor só vira receita de verdade quando o cliente pagar — pode incluir pedidos que ainda estão em aberto, ou que já foram pagos em outro dia (por isso pode não bater exatamente com o valor acima).</p>
+    </div>
+  `;
+  document.getElementById('modal-track').classList.add('open');
 }
 
 function abrirDetalheVendasHoje(){
