@@ -316,16 +316,34 @@ tr:hover td{background:var(--neon-glow)}
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  let _ultimoAvisoErroSalvamento = 0;
+  function avisarErroSalvamento(mensagem){
+    const agora = Date.now();
+    // Evita empilhar dezenas de avisos de uma vez (ex: se a sincronização
+    // automática falhar em vários pedidos seguidos) — mostra no máximo 1 a
+    // cada 30 segundos, mas o erro real sempre fica registrado no console.
+    if(agora - _ultimoAvisoErroSalvamento < 30000) return;
+    _ultimoAvisoErroSalvamento = agora;
+    if(window.toast) window.toast(mensagem);
+    else console.warn(mensagem);
+  }
+
   window.fbSave = async (colName, id, data) => {
     try {
       await setDoc(doc(db, colName, String(id)), data);
-    } catch(e) { console.error('fbSave error:', e); }
+    } catch(e) {
+      console.error('fbSave error:', e);
+      avisarErroSalvamento('⚠️ Falha ao salvar no banco de dados! Verifique sua conexão ou o limite do Firebase.');
+    }
   };
 
   window.fbDelete = async (colName, id) => {
     try {
       await deleteDoc(doc(db, colName, String(id)));
-    } catch(e) { console.error('fbDelete error:', e); }
+    } catch(e) {
+      console.error('fbDelete error:', e);
+      avisarErroSalvamento('⚠️ Falha ao excluir no banco de dados! Verifique sua conexão ou o limite do Firebase.');
+    }
   };
 
   let renderTimer = null;
@@ -4839,7 +4857,19 @@ async function buscarRastreioSilent(gi,tipo){
     const eventos=[];
     if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''}));}
     else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});}
-    if(eventos.length>0){obj.transportadora=data.transportadora;obj.trackStatus=eventos[0].descricao;obj.trackStatusBruto=eventos[0].statusBruto||'';obj.trackSubstatusBruto=eventos[0].substatusBruto||'';obj.trackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);if(window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);}
+    if(eventos.length>0){
+      const novoTrackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');
+      // Só grava no Firebase se algo realmente mudou desde a última vez —
+      // sincronizar a cada 5 minutos sem essa checagem gastava a cota de
+      // gravação do Firestore regravando a mesma informação sem necessidade
+      // (foi a causa de estourar o limite diário do plano gratuito).
+      const mudou = obj.trackStatus!==eventos[0].descricao
+        || obj.trackData!==novoTrackData
+        || (obj.trackHistorico||[]).length!==eventos.length
+        || obj.trackInvalido===true;
+      obj.transportadora=data.transportadora;obj.trackStatus=eventos[0].descricao;obj.trackStatusBruto=eventos[0].statusBruto||'';obj.trackSubstatusBruto=eventos[0].substatusBruto||'';obj.trackData=novoTrackData;obj.trackHistorico=eventos;obj.previsaoEntrega=data.previsaoEntrega||'';obj.trackInvalido=false;marcarInicioRetiradaSeNecessario(obj);
+      if(mudou && window.fbSave&&obj.fbId)window.fbSave(tipo==='pad'?'pads':'dados',obj.fbId,obj);
+    }
   }catch(e){console.error('Silent track error:',e);}
 }
 
