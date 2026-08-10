@@ -333,6 +333,31 @@ tr:hover td{background:var(--neon-glow)}
     else console.warn(mensagemCompleta);
   }
 
+  // Trava compartilhada no próprio Firebase: antes de rodar a sincronização
+  // completa de rastreamento, cada sessão (ADM ou atendente, tanto faz)
+  // pergunta "alguém já fez isso recentemente?" — se sim, não repete. Isso
+  // evita que várias pessoas logadas ao mesmo tempo fiquem cada uma
+  // consultando a mesma leva de códigos nas APIs externas de forma redundante,
+  // sem depender de restringir por cargo.
+  window.fbTentarTravarSincronizacao = async (intervaloMinimoMs) => {
+    try {
+      const lockRef = doc(db, 'config', 'syncLock');
+      const snap = await getDoc(lockRef).catch(() => null);
+      const agora = Date.now();
+      if (snap && snap.exists()) {
+        const ultimo = snap.data().ultimoInicioSync || 0;
+        if (agora - ultimo < intervaloMinimoMs) {
+          return false; // outra sessão já cuidou disso recentemente
+        }
+      }
+      await setDoc(lockRef, { ultimoInicioSync: agora }, { merge: true });
+      return true;
+    } catch (e) {
+      console.warn('fbTentarTravarSincronizacao falhou, sincronizando mesmo assim:', e);
+      return true; // em dúvida, prefere sincronizar demais a deixar de sincronizar
+    }
+  };
+
   window.fbSave = async (colName, id, data) => {
     try {
       await setDoc(doc(db, colName, String(id)), data);
@@ -1517,9 +1542,17 @@ function entrarComoUsuario(user){
   // mais de o usuário entrar na tela de PAD/Rastreamento pra começar. Um
   // pequeno atraso inicial dá tempo dos dados chegarem do Firebase antes da
   // primeira tentativa; depois disso, repete sozinha em segundo plano.
+  // Antes de cada ciclo, pergunta pro Firebase se alguma outra sessão (de
+  // qualquer usuário, ADM ou atendente) já sincronizou recentemente — se sim,
+  // pula essa rodada. Isso evita que várias pessoas logadas ao mesmo tempo
+  // fiquem cada uma consultando os mesmos códigos nas APIs externas.
   if(!window._intervaloSincronizacaoGlobal){
-    setTimeout(()=>{ atualizarTodosRastreios(true); }, 4000);
-    window._intervaloSincronizacaoGlobal = setInterval(()=>{ atualizarTodosRastreios(true); }, 5*60*1000);
+    const rodarSincronizacaoComTrava = async () => {
+      const podeRodar = window.fbTentarTravarSincronizacao ? await window.fbTentarTravarSincronizacao(4*60*1000) : true;
+      if(podeRodar) atualizarTodosRastreios(true);
+    };
+    setTimeout(rodarSincronizacaoComTrava, 4000);
+    window._intervaloSincronizacaoGlobal = setInterval(rodarSincronizacaoComTrava, 5*60*1000);
   }
   toast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
 }
