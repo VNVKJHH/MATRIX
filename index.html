@@ -4808,8 +4808,8 @@ async function buscarRastreio(gi,tipo){
     if(!data.ok){toast('Erro na função. Código: '+(data.status||'desconhecido'));return;}
     if(!data.success||data.status==='not_found'||data.status==='invalid_format'){toast(data.transportadora==='jt'?'Nenhum evento encontrado ainda. Se o código é novo, aguarde alguns minutos e tente de novo.':'Nenhum evento encontrado. Verifique o código.');return;}
     const eventos=[];
-    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});});}
-    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});}
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>{eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:(e.data&&e.data.includes('T'))?(e.data.split('T')[1]||'').substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});});}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:(e.data&&e.data.includes('T'))?(e.data.split('T')[1]||'').substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});}
     if(eventos.length===0){toast('Nenhum evento encontrado.');return;}
     obj.transportadora=data.transportadora;
     obj.trackStatus=eventos[0]?.descricao||'—';
@@ -4907,8 +4907,8 @@ async function buscarRastreioSilent(gi,tipo){
       return;
     }
     const eventos=[];
-    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''}));}
-    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:e.data?e.data.split('T')[1]?.substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});}
+    if(data.historico&&data.historico.length>0){data.historico.forEach(e=>eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:(e.data&&e.data.includes('T'))?(e.data.split('T')[1]||'').substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''}));}
+    else if(data.eventoMaisRecente){const e=data.eventoMaisRecente;eventos.push({descricao:e.descricao||'—',data:e.data?e.data.split('T')[0].split('-').reverse().join('/'):'',hora:(e.data&&e.data.includes('T'))?(e.data.split('T')[1]||'').substring(0,5):'',local:e.local||'',statusBruto:e.statusBruto||'',substatusBruto:e.substatusBruto||''});}
     if(eventos.length>0){
       const novoTrackData=(eventos[0].data||'')+(eventos[0].hora?' '+eventos[0].hora:'')+(eventos[0].local?' — '+eventos[0].local:'');
       // Só grava no Firebase se algo realmente mudou desde a última vez —
