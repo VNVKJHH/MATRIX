@@ -317,23 +317,35 @@ tr:hover td{background:var(--neon-glow)}
   const db = getFirestore(app);
 
   let _ultimoAvisoErroSalvamento = 0;
-  function avisarErroSalvamento(mensagem){
+  function avisarErroSalvamento(mensagem, erro){
     const agora = Date.now();
     // Evita empilhar dezenas de avisos de uma vez (ex: se a sincronização
     // automática falhar em vários pedidos seguidos) — mostra no máximo 1 a
     // cada 30 segundos, mas o erro real sempre fica registrado no console.
     if(agora - _ultimoAvisoErroSalvamento < 30000) return;
     _ultimoAvisoErroSalvamento = agora;
-    if(window.toast) window.toast(mensagem);
-    else console.warn(mensagem);
+    // Inclui o código técnico do erro (ex: "resource-exhausted", "permission-denied",
+    // "unavailable") direto na mensagem — assim dá pra identificar a causa só
+    // com um print do aviso, sem precisar abrir o Console do navegador.
+    const codigo = erro && (erro.code || erro.name) ? ' ['+(erro.code||erro.name)+']' : '';
+    const mensagemCompleta = mensagem + codigo;
+    if(window.toast) window.toast(mensagemCompleta, 9000);
+    else console.warn(mensagemCompleta);
   }
 
   window.fbSave = async (colName, id, data) => {
     try {
       await setDoc(doc(db, colName, String(id)), data);
     } catch(e) {
-      console.error('fbSave error:', e);
-      avisarErroSalvamento('⚠️ Falha ao salvar no banco de dados! Verifique sua conexão ou o limite do Firebase.');
+      console.warn('fbSave falhou na 1ª tentativa, tentando de novo em 1,5s...', e);
+      await new Promise(r=>setTimeout(r,1500));
+      try {
+        await setDoc(doc(db, colName, String(id)), data);
+        console.log('fbSave: 2ª tentativa deu certo.');
+      } catch(e2) {
+        console.error('fbSave error (após 2 tentativas):', e2);
+        avisarErroSalvamento('⚠️ Falha ao salvar no banco de dados! Print isso e manda pro suporte:', e2);
+      }
     }
   };
 
@@ -341,8 +353,15 @@ tr:hover td{background:var(--neon-glow)}
     try {
       await deleteDoc(doc(db, colName, String(id)));
     } catch(e) {
-      console.error('fbDelete error:', e);
-      avisarErroSalvamento('⚠️ Falha ao excluir no banco de dados! Verifique sua conexão ou o limite do Firebase.');
+      console.warn('fbDelete falhou na 1ª tentativa, tentando de novo em 1,5s...', e);
+      await new Promise(r=>setTimeout(r,1500));
+      try {
+        await deleteDoc(doc(db, colName, String(id)));
+        console.log('fbDelete: 2ª tentativa deu certo.');
+      } catch(e2) {
+        console.error('fbDelete error (após 2 tentativas):', e2);
+        avisarErroSalvamento('⚠️ Falha ao excluir no banco de dados! Print isso e manda pro suporte:', e2);
+      }
     }
   };
 
@@ -1695,7 +1714,7 @@ function calcLucroDia(dia,mes,ano,atendente){
   return R(totalSub+padLucro-metaAds);
 }
 
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function toast(msg,duracaoMs){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timeoutId);t._timeoutId=setTimeout(()=>t.classList.remove('show'),duracaoMs||2500)}
 function getNomes(){return atendentes.map(a=>a.nome)}
 function getAnos(){return[...new Set([...dados.map(d=>d.ano),...adminLancs.map(a=>a.ano)])].sort()}
 function addOpt(sel,val,label){const o=document.createElement('option');o.value=val;o.textContent=label||val;sel.appendChild(o)}
