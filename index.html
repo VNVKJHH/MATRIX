@@ -1548,13 +1548,26 @@ function entrarComoUsuario(user){
   // fiquem cada uma consultando os mesmos códigos nas APIs externas.
   if(!window._intervaloSincronizacaoGlobal){
     const rodarSincronizacaoComTrava = async () => {
+      console.log('[MATRIX] Ciclo de sincronização — verificando trava...', new Date().toLocaleTimeString('pt-BR'));
       const podeRodar = window.fbTentarTravarSincronizacao ? await window.fbTentarTravarSincronizacao(4*60*1000) : true;
-      if(podeRodar) atualizarTodosRastreios(true);
+      if(podeRodar){
+        console.log('[MATRIX] Trava liberada — rodando sincronização agora.');
+        atualizarTodosRastreios(true);
+      } else {
+        console.log('[MATRIX] Outra sessão já sincronizou recentemente — pulando essa rodada.');
+      }
     };
     setTimeout(rodarSincronizacaoComTrava, 4000);
     window._intervaloSincronizacaoGlobal = setInterval(rodarSincronizacaoComTrava, 5*60*1000);
   }
   toast('Bem-vindo, '+user.nome.split(' ')[0]+'!');
+  // Função de depuração — não aparece em nenhum botão da tela, só é acessível
+  // digitando "matrixForcarSync()" direto no Console (F12), pra testar a
+  // sincronização na hora em vez de esperar até 5 minutos.
+  window.matrixForcarSync = () => {
+    console.log('[MATRIX] Sincronização forçada manualmente via Console.');
+    atualizarTodosRastreios(false);
+  };
 }
 
 // Ao carregar a página, verifica se já existe uma sessão salva e entra
