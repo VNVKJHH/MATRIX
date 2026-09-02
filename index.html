@@ -2694,28 +2694,9 @@ function abrirDetalheMetaDashboard(){
 
   const linhaResumo=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border)"><span style="color:var(--t2);font-size:12px">${label}</span><span style="font-weight:700;font-size:13px;${cor?'color:'+cor:''}">${valor}</span></div>`;
 
-  const semanasHtml=det.semanas.length===0
-    ?`<div class="empty" style="padding:1rem"><i class="ti ti-calendar-off"></i>Nenhum dia útil marcado ainda.</div>`
-    :det.semanas.map((s,i)=>{
-      const desbloqueado=s.bateu||det.bateuMensal;
-      const pctSemana=s.metaSemana>0?Math.min(R(s.receita/s.metaSemana*100,1),100):0;
-      const corSemana=desbloqueado?'var(--green)':pctSemana>=60?'var(--amber)':'var(--red)';
-      const ehAtual=hojeIso>=s.inicio&&hojeIso<=s.fim;
-      const faltaSemana=Math.max(R(s.metaSemana-s.receita,2),0);
-      return`
-        <div style="background:var(--bg2);border:1.5px solid ${ehAtual?'var(--neon)':'var(--border2)'};border-radius:var(--r-md);padding:.75rem;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
-            <span style="font-size:12px;font-weight:700">Semana ${i+1}${ehAtual?' <span style="color:var(--neon);font-weight:800">· atual</span>':''} <span style="color:var(--t3);font-weight:400">(${formatarDataBR(s.inicio)} – ${formatarDataBR(s.fim)})</span></span>
-            <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${desbloqueado?'rgba(0,255,128,.15)':'rgba(255,255,255,.05)'};color:${desbloqueado?'var(--green)':'var(--t3)'}">${desbloqueado?'🔓 R$150':'🔒 R$150'}</span>
-          </div>
-          <div class="progress-bar" style="height:8px"><div class="progress-fill" style="width:${pctSemana}%;background:${corSemana}"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px">
-            <span>Feito: <strong style="color:var(--t1)">${fmt(s.receita)}</strong></span>
-            <span>Meta: <strong style="color:var(--t1)">${fmt(s.metaSemana)}</strong></span>
-            <span>Falta: <strong style="color:${faltaSemana>0?'var(--amber-t)':'var(--green)'}">${faltaSemana>0?fmt(faltaSemana):'Batida!'}</strong></span>
-          </div>
-        </div>`;
-    }).join('');
+  const calendarioHtml = det.semanas.length===0
+    ? `<div class="empty" style="padding:1rem"><i class="ti ti-calendar-off"></i>Nenhum dia útil marcado ainda.</div>`
+    : construirCalendarioMetaHtml(meta, det);
 
   document.getElementById('track-modal-title').textContent=`Meta — ${atendFiltro.split(' ')[0]} — ${meta.mes}/${meta.ano}`;
   document.getElementById('track-modal-content').innerHTML=`
@@ -2728,15 +2709,79 @@ function abrirDetalheMetaDashboard(){
     ${linhaResumo('Realizado até agora', fmt(det.receitaTotalMes), 'var(--green)')}
     ${linhaResumo('Meta total do mês', fmt(meta.metaTotal))}
     ${linhaResumo('Falta pra bater o mês', falta>0?fmt(falta):'Meta batida! 🎉', falta>0?'var(--amber-t)':'var(--green)')}
-    <div style="margin-top:16px;padding-top:10px;border-top:1.5px solid var(--border2);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="margin-top:16px;padding-top:10px;border-top:1.5px solid var(--border2);display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <span style="font-weight:800;font-size:14px">Bônus total até agora</span>
       <span style="font-weight:800;font-size:18px;color:var(--neon)">${fmt(det.bonusTotal)}</span>
     </div>
-    <p style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Semanas</p>
-    ${semanasHtml}
+    <p style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Calendário do mês — dias úteis e meta por semana</p>
+    ${calendarioHtml}
   `;
   document.getElementById('modal-track').classList.add('open');
 }
+
+// Monta um calendário do mês inteiro (com todos os dias, marcando em verde os
+// que foram definidos como dia útil pro vendedor) e, logo abaixo de cada
+// linha/semana, mostra a meta daquela semana específica, o que já foi
+// realizado, e se o bônus de R$150 dela está desbloqueado.
+function construirCalendarioMetaHtml(meta, det){
+  const ano=meta.ano, mesIdx=MESES.indexOf(meta.mes);
+  const totalDias=new Date(ano,mesIdx+1,0).getDate();
+  const primeiroDiaSemana=(new Date(ano,mesIdx,1).getDay()+6)%7;
+  const diasUteisSet=new Set(meta.diasUteis||[]);
+  const hojeIso=isoDate(hojeDate());
+
+  // Alinha cada grupo de dias úteis (usado no cálculo) com a semana do
+  // calendário correspondente, pra saber qual linha mostra qual meta.
+  const gruposReais=diasUteisPorSemana((meta.diasUteis||[]).slice().sort());
+  const semanaIdxPorChave={};
+  gruposReais.forEach((g,i)=>{ semanaIdxPorChave[g.inicioSemana]=i; });
+
+  let celulas=[];
+  for(let i=0;i<primeiroDiaSemana;i++)celulas.push(null);
+  for(let d=1;d<=totalDias;d++)celulas.push(d);
+  while(celulas.length%7!==0)celulas.push(null);
+
+  let html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:9px;color:var(--t3);text-align:center;margin-bottom:4px;font-weight:700;text-transform:uppercase">';
+  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>html+=`<div>${d}</div>`);
+  html+='</div>';
+
+  for(let linha=0; linha<celulas.length/7; linha++){
+    const diasLinha=celulas.slice(linha*7,(linha*7)+7);
+    let weekKey=null;
+    for(const d of diasLinha){ if(d!=null){ weekKey=isoDate(inicioSemana(new Date(ano,mesIdx,d))); break; } }
+    const semanaIdx=weekKey!=null?semanaIdxPorChave[weekKey]:undefined;
+    const semanaDet=semanaIdx!=null?det.semanas[semanaIdx]:null;
+
+    html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px">';
+    diasLinha.forEach(d=>{
+      if(d==null){html+='<div></div>';return;}
+      const iso=diaToISO(d,meta.mes,ano);
+      const marcado=diasUteisSet.has(iso);
+      const ehHoje=iso===hojeIso;
+      html+=`<div style="text-align:center;font-size:11px;padding:6px 0;border-radius:5px;font-weight:${marcado?'800':'400'};background:${marcado?'var(--neon-glow)':'var(--bg2)'};color:${marcado?'var(--neon)':'var(--t3)'};border:1.5px solid ${ehHoje?'var(--blue)':(marcado?'var(--neon)':'var(--border2)')}">${d}</div>`;
+    });
+    html+='</div>';
+
+    if(semanaDet&&semanaDet.metaSemana>0){
+      const desbloqueado=semanaDet.bateu||det.bateuMensal;
+      const pct=semanaDet.metaSemana>0?Math.min(R(semanaDet.receita/semanaDet.metaSemana*100,1),100):0;
+      const corBarra=desbloqueado?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+      html+=`<div style="background:var(--bg2);border-radius:var(--r-sm);padding:6px 8px;margin-bottom:10px">
+        <div class="progress-bar" style="height:5px;margin-bottom:4px"><div class="progress-fill" style="width:${pct}%;background:${corBarra}"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--t3)">
+          <span>Meta: <strong style="color:var(--t1)">${fmt(semanaDet.metaSemana)}</strong> · Feito: <strong style="color:var(--t1)">${fmt(semanaDet.receita)}</strong></span>
+          <span style="font-weight:800;color:${desbloqueado?'var(--green)':'var(--t3)'}">${desbloqueado?'🔓':'🔒'} ${fmt(semanaDet.bonusPotencial)}</span>
+        </div>
+      </div>`;
+    }else{
+      html+='<div style="margin-bottom:10px"></div>';
+    }
+  }
+  return html;
+}
+
+const BONUS_SEMANAL_POOL_TOTAL = 600; // soma máxima possível de bônus semanal no mês
+const BONUS_MENSAL_VALOR = 500;
 
 function calcularMetaSemanalDetalhe(meta){
   const diasUteis=(meta.diasUteis||[]).slice().sort();
@@ -2744,6 +2789,7 @@ function calcularMetaSemanalDetalhe(meta){
   const totalDiasMes=new Date(meta.ano,MESES.indexOf(meta.mes)+1,0).getDate();
   const primeiroDiaMes=diaToISO(1,meta.mes,meta.ano);
   const ultimoDiaMes=diaToISO(totalDiasMes,meta.mes,meta.ano);
+  const totalDiasUteisMes=diasUteis.length;
 
   const semanas=diasUteisPorSemana(diasUteis).map(g=>{
     const metaSemana=R(metaDiaria*g.dias.length,2);
@@ -2751,24 +2797,33 @@ function calcularMetaSemanalDetalhe(meta){
     const semanaFimBruta=isoDate(addDias(new Date(g.inicioSemana+'T00:00:00'),6));
     const semanaFimClip=semanaFimBruta>ultimoDiaMes?ultimoDiaMes:semanaFimBruta;
     const {bruto}=getReceitaTotalPeriodo({inicio:semanaInicioClip,fim:semanaFimClip},meta.atendente);
+    // Bônus dessa semana é uma FATIA proporcional dos R$600 totais possíveis no
+    // mês, de acordo com quantos dias úteis ela tem — assim uma semana parcial
+    // (só 1-2 dias, comum na primeira/última semana do mês) ganha uma fatia
+    // pequena, em vez de um valor fixo desproporcional. A soma de todas as
+    // semanas do mês nunca ultrapassa R$600, não importa quantas "semanas"
+    // (cheias ou parciais) existam.
+    const bonusPotencial=totalDiasUteisMes>0?R(BONUS_SEMANAL_POOL_TOTAL*(g.dias.length/totalDiasUteisMes),2):0;
     return{
       inicio:semanaInicioClip,fim:semanaFimClip,diasUteis:g.dias.length,
       metaSemana,receita:R(bruto,2),
-      bateu:metaSemana>0&&bruto>=metaSemana
+      bateu:metaSemana>0&&bruto>=metaSemana,
+      bonusPotencial
     };
   });
 
   const {bruto:receitaTotalMes}=getReceitaTotalPeriodo({inicio:primeiroDiaMes,fim:ultimoDiaMes},meta.atendente);
   const bateuMensal=meta.metaTotal>0&&receitaTotalMes>=meta.metaTotal;
-  const bonusMensal=bateuMensal?500:0;
+  const bonusMensal=bateuMensal?BONUS_MENSAL_VALOR:0;
   let bonusSemanas=0;
   semanas.forEach(s=>{
     if(s.metaSemana<=0)return;
-    // Bate a própria semana → libera. Se não bateu a semana mas bateu o mês
-    // inteiro, libera de qualquer jeito (regra combinada com o usuário).
-    if(s.bateu||bateuMensal)bonusSemanas+=150;
+    // Bate a própria semana → libera a fatia dela. Se não bateu a semana mas
+    // bateu o mês inteiro, libera de qualquer jeito (regra combinada com o usuário).
+    if(s.bateu||bateuMensal)bonusSemanas+=s.bonusPotencial;
   });
-  return{diasUteis,metaDiaria,semanas,receitaTotalMes:R(receitaTotalMes,2),bateuMensal,bonusMensal,bonusSemanas,bonusTotal:bonusMensal+bonusSemanas};
+  bonusSemanas=R(bonusSemanas,2);
+  return{diasUteis,metaDiaria,semanas,receitaTotalMes:R(receitaTotalMes,2),bateuMensal,bonusMensal,bonusSemanas,bonusTotal:R(bonusMensal+bonusSemanas,2)};
 }
 
 function renderMetas(){
@@ -2792,7 +2847,7 @@ function renderMetas(){
           <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);padding:.75rem;margin-bottom:8px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
               <span style="font-size:12px;font-weight:700">Semana ${i+1} <span style="color:var(--t3);font-weight:400">(${formatarDataBR(s.inicio)} – ${formatarDataBR(s.fim)}, ${s.diasUteis} dia${s.diasUteis!==1?'s':''} útil${s.diasUteis!==1?'eis':''})</span></span>
-              <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${desbloqueado?'rgba(0,255,128,.15)':'rgba(255,255,255,.05)'};color:${desbloqueado?'var(--green)':'var(--t3)'}">${desbloqueado?'🔓 R$150 desbloqueado':'🔒 R$150 bloqueado'}</span>
+              <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${desbloqueado?'rgba(0,255,128,.15)':'rgba(255,255,255,.05)'};color:${desbloqueado?'var(--green)':'var(--t3)'}">${desbloqueado?'🔓 '+fmt(s.bonusPotencial)+' desbloqueado':'🔒 '+fmt(s.bonusPotencial)+' bloqueado'}</span>
             </div>
             <div class="progress-bar" style="height:8px"><div class="progress-fill" style="width:${pctSemana}%;background:${corSemana}"></div></div>
             <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px">
@@ -4546,7 +4601,7 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
       document.getElementById('gw-meta-semana-progress').style.width=pct+'%';
       document.getElementById('gw-meta-semana-valores').textContent=fmt(semanaAtual.receita)+' de '+fmt(semanaAtual.metaSemana);
       const badge=document.getElementById('gw-meta-semana-bonus');
-      badge.textContent=desbloqueado?'🔓 R$150':'🔒 R$150';
+      badge.textContent=desbloqueado?'🔓 '+fmt(semanaAtual.bonusPotencial):'🔒 '+fmt(semanaAtual.bonusPotencial);
       badge.style.background=desbloqueado?'rgba(255,255,255,.35)':'rgba(0,0,0,.25)';
       badge.style.color='#fff';
     }
