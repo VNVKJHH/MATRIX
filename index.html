@@ -1147,32 +1147,32 @@ tr:hover td{background:var(--neon-glow)}
     </div>
 
     <div id="gw-metas-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
-      <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Metas do mês</div>
-      <div id="gw-meta1-bloco" style="display:none;margin-bottom:12px">
+      <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Meta do mês</div>
+      <div id="gw-meta-semana-bloco" style="display:none;margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span> Meta 1</span>
-          <span id="gw-meta1-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
+          <span style="font-size:12px;font-weight:700;color:#fff">Semana atual</span>
+          <span id="gw-meta-semana-bonus" style="font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px">🔒 R$150</span>
         </div>
         <div style="position:relative;padding-right:14px">
           <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
-            <div id="gw-meta1-progress" style="height:100%;background:#00FF80;width:0%;border-radius:4px;transition:width .4s"></div>
+            <div id="gw-meta-semana-progress" style="height:100%;background:#00FF80;width:0%;border-radius:4px;transition:width .4s"></div>
           </div>
           <i class="ti ti-flag-filled" style="position:absolute;right:-2px;top:50%;transform:translateY(-50%);font-size:13px;color:#fff" title="Linha de chegada"></i>
         </div>
-        <div id="gw-meta1-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
+        <div id="gw-meta-semana-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
       </div>
-      <div id="gw-meta2-bloco" style="display:none">
+      <div id="gw-meta-mes-bloco" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#fff"><span style="width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.25);display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span> Meta 2</span>
-          <span id="gw-meta2-pct" style="font-size:11px;font-weight:800;color:#fff">0%</span>
+          <span style="font-size:12px;font-weight:700;color:#fff">Total do mês</span>
+          <span id="gw-meta-mes-bonus" style="font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px">🔒 R$500</span>
         </div>
         <div style="position:relative;padding-right:14px">
           <div style="height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden">
-            <div id="gw-meta2-progress" style="height:100%;background:#0EA5E9;width:0%;border-radius:4px;transition:width .4s"></div>
+            <div id="gw-meta-mes-progress" style="height:100%;background:#0EA5E9;width:0%;border-radius:4px;transition:width .4s"></div>
           </div>
           <i class="ti ti-flag-filled" style="position:absolute;right:-2px;top:50%;transform:translateY(-50%);font-size:13px;color:#fff" title="Linha de chegada"></i>
         </div>
-        <div id="gw-meta2-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
+        <div id="gw-meta-mes-valores" style="font-size:10px;color:rgba(255,255,255,.85);margin-top:4px">R$ 0 de R$ 0</div>
       </div>
     </div>
 
@@ -1275,20 +1275,40 @@ tr:hover td{background:var(--neon-glow)}
 
 <div class="modal-overlay" id="modal-meta" onclick="if(event.target===this)closeMetaModal()">
   <div class="modal" style="width:440px">
-    <p class="modal-title">Nova meta</p>
+    <p class="modal-title" id="mm-titulo">Nova meta</p>
     <div class="form-grid">
       <div class="form-group"><label>Mês</label><select id="mm-mes"></select></div>
       <div class="form-group"><label>Ano</label><input type="number" id="mm-ano" value="2026"></div>
-      <div class="form-group full"><label>Atendente</label><select id="mm-atend"><option value="">Todos</option></select></div>
-      <div class="form-group full"><label>Meta 1 de receita (R$)</label><input type="number" id="mm-receita" step="0.01" placeholder="0.00"></div>
-      <div class="form-group full"><label>Meta 2 de receita (R$) <span style="font-size:11px;color:var(--t2)">— opcional</span></label><input type="number" id="mm-receita2" step="0.01" placeholder="0.00"></div>
+      <div class="form-group full"><label>Atendente</label><select id="mm-atend"></select></div>
+      <div class="form-group full"><label>Meta mensal de receita (R$)</label><input type="number" id="mm-receita" step="0.01" placeholder="Ex: 35000.00"></div>
     </div>
+    <p style="font-size:11px;color:var(--t3);margin-top:10px">Depois de salvar, você marca no calendário quais dias esse vendedor vai trabalhar no mês — a meta diária e semanal são calculadas automaticamente a partir disso (meta ÷ dias úteis marcados).</p>
     <div class="modal-footer">
       <button class="btn" onclick="closeMetaModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarMeta()"><i class="ti ti-device-floppy"></i> Salvar meta</button>
+      <button class="btn btn-primary" onclick="salvarMeta()"><i class="ti ti-device-floppy"></i> Salvar e marcar dias úteis</button>
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="modal-dias-uteis" onclick="if(event.target===this)closeDiasUteisModal()">
+  <div class="modal" style="width:400px">
+    <p class="modal-title" id="du-titulo">Dias úteis do mês</p>
+    <p style="font-size:12px;color:var(--t2);margin-bottom:10px">Clique nos dias em que esse vendedor vai trabalhar. Os dias marcados ficam verdes.</p>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn btn-sm" onclick="marcarDiasUteisRapido('seg-sex')" style="flex:1;justify-content:center">Marcar seg–sex</button>
+      <button class="btn btn-sm" onclick="marcarDiasUteisRapido('limpar')" style="flex:1;justify-content:center">Limpar tudo</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:10px;color:var(--t3);text-align:center;margin-bottom:6px;font-weight:700;text-transform:uppercase">
+      <div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div><div>Dom</div>
+    </div>
+    <div id="du-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+    <div style="margin-top:12px;font-size:12px;color:var(--t2);text-align:center" id="du-resumo"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeDiasUteisModal()"><i class="ti ti-check"></i> Concluído</button>
+    </div>
+  </div>
+</div>
+
 
 <div class="modal-overlay" id="modal-meta-contas" onclick="if(event.target===this)closeMetaContasModal()">
   <div class="modal" style="width:520px;max-height:85vh;overflow-y:auto">
@@ -1776,10 +1796,10 @@ function initAllSelects(){
   ['f-atend','m-atend','mm-atend','pad-atend'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
     const v=el.value;
-    if(id==='mm-atend')el.innerHTML='<option value="">Todos</option>';else el.innerHTML='';
+    el.innerHTML='';
     nomes.forEach(n=>addOpt(el,n,n));
     if(v)el.value=v;
-    else if(id==='f-atend'&&nomes.length>0)el.value=nomes[0];
+    else if((id==='f-atend'||id==='mm-atend')&&nomes.length>0)el.value=nomes[0];
   });
   ['db-mes'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
@@ -2633,34 +2653,188 @@ function renderRanking(){
   if(resumos.length>0)charts['rank']=new Chart(document.getElementById('ch-rank'),{type:'bar',data:{labels:resumos.map(r=>r.nome.split(' ')[0]),datasets:[{label:'Receita',data:resumos.map(r=>R(r.bruto,2)),backgroundColor:colors.slice(0,resumos.length),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>'R$'+Number(v).toLocaleString('pt-BR')}}}}});
 }
 
+// Agrupa os dias úteis marcados (strings ISO) por semana — semana sempre
+// começando na segunda-feira, igual o resto do sistema já usa.
+function diasUteisPorSemana(diasUteisISO){
+  const grupos={};
+  diasUteisISO.forEach(iso=>{
+    const d=new Date(iso+'T00:00:00');
+    const inicioSem=isoDate(inicioSemana(d));
+    if(!grupos[inicioSem])grupos[inicioSem]=[];
+    grupos[inicioSem].push(iso);
+  });
+  return Object.keys(grupos).sort().map(k=>({inicioSemana:k,dias:grupos[k].sort()}));
+}
+
+// Calcula tudo que a tela de Metas (e o card do Dashboard) precisam: meta
+// diária, quebra por semana, receita real de cada semana, e o status dos
+// bônus — incluindo a regra de "bateu o mês mas não uma semana específica,
+// libera o bônus da semana mesmo assim".
+function calcularMetaSemanalDetalhe(meta){
+  const diasUteis=(meta.diasUteis||[]).slice().sort();
+  const metaDiaria=diasUteis.length>0?R(meta.metaTotal/diasUteis.length,2):0;
+  const totalDiasMes=new Date(meta.ano,MESES.indexOf(meta.mes)+1,0).getDate();
+  const primeiroDiaMes=diaToISO(1,meta.mes,meta.ano);
+  const ultimoDiaMes=diaToISO(totalDiasMes,meta.mes,meta.ano);
+
+  const semanas=diasUteisPorSemana(diasUteis).map(g=>{
+    const metaSemana=R(metaDiaria*g.dias.length,2);
+    const semanaInicioClip=g.inicioSemana<primeiroDiaMes?primeiroDiaMes:g.inicioSemana;
+    const semanaFimBruta=isoDate(addDias(new Date(g.inicioSemana+'T00:00:00'),6));
+    const semanaFimClip=semanaFimBruta>ultimoDiaMes?ultimoDiaMes:semanaFimBruta;
+    const {bruto}=getReceitaTotalPeriodo({inicio:semanaInicioClip,fim:semanaFimClip},meta.atendente);
+    return{
+      inicio:semanaInicioClip,fim:semanaFimClip,diasUteis:g.dias.length,
+      metaSemana,receita:R(bruto,2),
+      bateu:metaSemana>0&&bruto>=metaSemana
+    };
+  });
+
+  const {bruto:receitaTotalMes}=getReceitaTotalPeriodo({inicio:primeiroDiaMes,fim:ultimoDiaMes},meta.atendente);
+  const bateuMensal=meta.metaTotal>0&&receitaTotalMes>=meta.metaTotal;
+  const bonusMensal=bateuMensal?500:0;
+  let bonusSemanas=0;
+  semanas.forEach(s=>{
+    if(s.metaSemana<=0)return;
+    // Bate a própria semana → libera. Se não bateu a semana mas bateu o mês
+    // inteiro, libera de qualquer jeito (regra combinada com o usuário).
+    if(s.bateu||bateuMensal)bonusSemanas+=150;
+  });
+  return{diasUteis,metaDiaria,semanas,receitaTotalMes:R(receitaTotalMes,2),bateuMensal,bonusMensal,bonusSemanas,bonusTotal:bonusMensal+bonusSemanas};
+}
+
 function renderMetas(){
   const mes=document.getElementById('meta-mes-fil').value;
   const ano=document.getElementById('meta-ano-fil').value;
   const metasFil=metas.filter(m=>m.mes===mes&&String(m.ano)===String(ano));
   if(metasFil.length===0){document.getElementById('metas-container').innerHTML=`<div class="table-card"><div class="empty"><i class="ti ti-target"></i>Nenhuma meta para ${mes} ${ano}. Clique em "Nova meta".</div></div>`;return;}
   let html='';
-  metasFil.forEach((meta,mi)=>{
-    const rows=filtrar(meta.atendente||'',mes,ano);
-    let bruto=0,vendas=0;
-    rows.forEach(r=>{bruto+=r.bruto||0;vendas+=r.qtd_vendas||0;});
-    function bar(real,metaV,lbl){
-      if(!metaV||metaV<=0)return'';
-      const p=Math.min(R(real/metaV*100,1),100);
-      const cor=p>=100?'var(--green)':p>=60?'var(--amber)':'var(--red)';
-      const status=p>=100?'✅ Atingida':p>=60?'⚠️ Em andamento':'❌ Abaixo';
-      return`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--t2);font-weight:600">${lbl}</span><span style="font-weight:700">${p}% — ${status}</span></div><div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${p}%;background:${cor}"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px"><span>Realizado: <strong style="color:var(--t1)">${fmt(real)}</strong></span><span>Meta: <strong style="color:var(--t1)">${fmt(metaV)}</strong></span></div></div>`;
-    }
-    html+=`<div class="table-card" style="margin-bottom:14px"><div class="table-header"><div><p style="font-size:14px;font-weight:700">${meta.atendente||'Todos os atendentes'}</p><p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano}</p></div><button class="btn btn-danger btn-sm" onclick="deleteMeta(${mi})"><i class="ti ti-trash"></i></button></div><div style="padding:1rem">${bar(bruto,meta.receita,'Meta 1 de receita (R$)')}${bar(bruto,meta.receita2,'Meta 2 de receita (R$)')}</div></div>`;
+  metasFil.forEach((meta)=>{
+    const det=calcularMetaSemanalDetalhe(meta);
+    const pctMensal=meta.metaTotal>0?Math.min(R(det.receitaTotalMes/meta.metaTotal*100,1),100):0;
+    const corMensal=det.bateuMensal?'var(--green)':pctMensal>=60?'var(--amber)':'var(--red)';
+
+    const semanasHtml=det.semanas.length===0
+      ?`<div class="empty" style="padding:1rem"><i class="ti ti-calendar-off"></i>Nenhum dia útil marcado ainda. Clique em "Dias úteis" acima.</div>`
+      :det.semanas.map((s,i)=>{
+        const desbloqueado=s.bateu||det.bateuMensal;
+        const pctSemana=s.metaSemana>0?Math.min(R(s.receita/s.metaSemana*100,1),100):0;
+        const corSemana=desbloqueado?'var(--green)':pctSemana>=60?'var(--amber)':'var(--red)';
+        return`
+          <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);padding:.75rem;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+              <span style="font-size:12px;font-weight:700">Semana ${i+1} <span style="color:var(--t3);font-weight:400">(${formatarDataBR(s.inicio)} – ${formatarDataBR(s.fim)}, ${s.diasUteis} dia${s.diasUteis!==1?'s':''} útil${s.diasUteis!==1?'eis':''})</span></span>
+              <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${desbloqueado?'rgba(0,255,128,.15)':'rgba(255,255,255,.05)'};color:${desbloqueado?'var(--green)':'var(--t3)'}">${desbloqueado?'🔓 R$150 desbloqueado':'🔒 R$150 bloqueado'}</span>
+            </div>
+            <div class="progress-bar" style="height:8px"><div class="progress-fill" style="width:${pctSemana}%;background:${corSemana}"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px">
+              <span>Realizado: <strong style="color:var(--t1)">${fmt(s.receita)}</strong></span>
+              <span>Meta da semana: <strong style="color:var(--t1)">${fmt(s.metaSemana)}</strong></span>
+            </div>
+            ${!s.bateu&&det.bateuMensal?`<div style="font-size:10px;color:var(--green);margin-top:4px"><i class="ti ti-info-circle" style="font-size:10px"></i> Não bateu essa semana, mas o bônus foi liberado porque a meta do MÊS foi atingida.</div>`:''}
+          </div>`;
+      }).join('');
+
+    html+=`
+      <div class="table-card" style="margin-bottom:16px">
+        <div class="table-header">
+          <div>
+            <p style="font-size:14px;font-weight:700">${meta.atendente}</p>
+            <p style="font-size:11px;color:var(--t2)">${meta.mes} ${meta.ano} · Meta diária: ${det.metaDiaria>0?fmt(det.metaDiaria):'— (marque os dias úteis)'}</p>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" onclick="openDiasUteisModal('${meta.fbId}')"><i class="ti ti-calendar"></i> Dias úteis</button>
+            <button class="btn btn-sm" onclick="openMetaModal('${meta.fbId}')"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMeta('${meta.fbId}')"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+        <div style="padding:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:700">Meta mensal</span>
+            <span style="font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;background:${det.bateuMensal?'rgba(0,255,128,.15)':'rgba(255,255,255,.05)'};color:${det.bateuMensal?'var(--green)':'var(--t3)'}">${det.bateuMensal?'🔓 R$500 desbloqueado':'🔒 R$500 bloqueado'}</span>
+          </div>
+          <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pctMensal}%;background:${corMensal}"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t3);margin-top:5px;margin-bottom:16px">
+            <span>Realizado: <strong style="color:var(--t1)">${fmt(det.receitaTotalMes)}</strong></span>
+            <span>Meta: <strong style="color:var(--t1)">${fmt(meta.metaTotal)}</strong></span>
+          </div>
+          <p style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Semanas</p>
+          ${semanasHtml}
+          <div style="margin-top:8px;padding-top:12px;border-top:1.5px solid var(--border2);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:800;font-size:14px">Bônus total do mês até agora</span>
+            <span style="font-weight:800;font-size:18px;color:var(--neon)">${fmt(det.bonusTotal)}</span>
+          </div>
+        </div>
+      </div>`;
   });
   document.getElementById('metas-container').innerHTML=html;
 }
 
-function deleteMeta(idx){
-  if(confirm('Remover?')){
-    const item=metas[idx];
-    if(item&&item.fbId&&window.fbDelete)window.fbDelete('metas',item.fbId);
-    metas.splice(idx,1);renderMetas();toast('Meta removida.');
+function deleteMeta(fbId){
+  if(!confirm('Remover essa meta?'))return;
+  const idx=metas.findIndex(m=>m.fbId===fbId);
+  if(idx<0)return;
+  if(metas[idx].fbId&&window.fbDelete)window.fbDelete('metas',metas[idx].fbId);
+  metas.splice(idx,1);renderMetas();toast('Meta removida.');
+}
+
+let _metaDiasUteisFbId=null;
+function openDiasUteisModal(fbId){
+  _metaDiasUteisFbId=fbId;
+  const meta=metas.find(m=>m.fbId===fbId);
+  if(!meta)return;
+  document.getElementById('du-titulo').textContent=`Dias úteis — ${meta.atendente.split(' ')[0]} — ${meta.mes}/${meta.ano}`;
+  renderGradeDiasUteis();
+  document.getElementById('modal-dias-uteis').classList.add('open');
+}
+function closeDiasUteisModal(){
+  document.getElementById('modal-dias-uteis').classList.remove('open');
+  _metaDiasUteisFbId=null;
+  renderMetas();
+}
+function renderGradeDiasUteis(){
+  const meta=metas.find(m=>m.fbId===_metaDiasUteisFbId);
+  if(!meta)return;
+  const ano=meta.ano,mesIdx=MESES.indexOf(meta.mes);
+  const totalDias=new Date(ano,mesIdx+1,0).getDate();
+  const primeiroDiaSemana=(new Date(ano,mesIdx,1).getDay()+6)%7;
+  const diasUteis=new Set(meta.diasUteis||[]);
+  let html='';
+  for(let i=0;i<primeiroDiaSemana;i++)html+='<div></div>';
+  for(let d=1;d<=totalDias;d++){
+    const iso=diaToISO(d,meta.mes,ano);
+    const marcado=diasUteis.has(iso);
+    html+=`<div onclick="toggleDiaUtil('${iso}')" style="cursor:pointer;text-align:center;font-size:13px;padding:8px 0;border-radius:6px;font-weight:${marcado?'800':'500'};background:${marcado?'var(--neon-glow)':'var(--bg2)'};color:${marcado?'var(--neon)':'var(--t2)'};border:1.5px solid ${marcado?'var(--neon)':'var(--border2)'}">${d}</div>`;
   }
+  document.getElementById('du-grid').innerHTML=html;
+  document.getElementById('du-resumo').textContent=`${diasUteis.size} dia${diasUteis.size!==1?'s':''} útil${diasUteis.size!==1?'eis':''} marcado${diasUteis.size!==1?'s':''} — meta diária: ${diasUteis.size>0?fmt(meta.metaTotal/diasUteis.size):'—'}`;
+}
+function toggleDiaUtil(iso){
+  const meta=metas.find(m=>m.fbId===_metaDiasUteisFbId);
+  if(!meta)return;
+  if(!meta.diasUteis)meta.diasUteis=[];
+  const idx=meta.diasUteis.indexOf(iso);
+  if(idx>=0)meta.diasUteis.splice(idx,1);else meta.diasUteis.push(iso);
+  if(window.fbSave&&meta.fbId)window.fbSave('metas',meta.fbId,meta);
+  renderGradeDiasUteis();
+}
+function marcarDiasUteisRapido(modo){
+  const meta=metas.find(m=>m.fbId===_metaDiasUteisFbId);
+  if(!meta)return;
+  if(modo==='limpar'){
+    meta.diasUteis=[];
+  }else if(modo==='seg-sex'){
+    const ano=meta.ano,mesIdx=MESES.indexOf(meta.mes);
+    const totalDias=new Date(ano,mesIdx+1,0).getDate();
+    const dias=[];
+    for(let d=1;d<=totalDias;d++){
+      const diaSemana=new Date(ano,mesIdx,d).getDay();
+      if(diaSemana>=1&&diaSemana<=5)dias.push(diaToISO(d,meta.mes,ano));
+    }
+    meta.diasUteis=dias;
+  }
+  if(window.fbSave&&meta.fbId)window.fbSave('metas',meta.fbId,meta);
+  renderGradeDiasUteis();
 }
 
 function renderDados(){
@@ -3648,15 +3822,48 @@ function deleteRow(idx){
   }
 }
 
-function openMetaModal(){['mm-receita','mm-receita2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('modal-meta').classList.add('open');}
+let _editandoMetaFbId=null;
+function openMetaModal(metaFbIdParaEditar){
+  _editandoMetaFbId=metaFbIdParaEditar||null;
+  const titulo=document.getElementById('mm-titulo');
+  const meta=metaFbIdParaEditar?metas.find(m=>m.fbId===metaFbIdParaEditar):null;
+  if(meta){
+    titulo.textContent='Editar meta';
+    document.getElementById('mm-mes').value=meta.mes;
+    document.getElementById('mm-ano').value=meta.ano;
+    document.getElementById('mm-atend').value=meta.atendente;
+    document.getElementById('mm-receita').value=meta.metaTotal;
+  }else{
+    titulo.textContent='Nova meta';
+    document.getElementById('mm-receita').value='';
+  }
+  document.getElementById('modal-meta').classList.add('open');
+}
 function closeMetaModal(){document.getElementById('modal-meta').classList.remove('open');}
 function salvarMeta(){
   const mes=document.getElementById('mm-mes').value,ano=parseInt(document.getElementById('mm-ano').value)||2026,atendente=document.getElementById('mm-atend').value;
-  const rec={mes,ano,atendente,receita:parseFloat(document.getElementById('mm-receita').value)||0,receita2:parseFloat(document.getElementById('mm-receita2').value)||0};
-  rec.fbId='meta_'+Date.now();
-  metas.push(rec);
+  const metaTotal=parseFloat(document.getElementById('mm-receita').value)||0;
+  if(!atendente){toast('Selecione o atendente!');return;}
+  if(metaTotal<=0){toast('Informe o valor da meta!');return;}
+  let rec;
+  if(_editandoMetaFbId){
+    const idx=metas.findIndex(m=>m.fbId===_editandoMetaFbId);
+    if(idx<0){toast('Meta não encontrada.');closeMetaModal();return;}
+    // Mantém os dias úteis já marcados, só atualiza os outros campos.
+    rec={...metas[idx],mes,ano,atendente,metaTotal};
+    metas[idx]=rec;
+  }else{
+    const existente=metas.find(m=>m.atendente===atendente&&m.mes===mes&&String(m.ano)===String(ano));
+    if(existente){toast('Já existe uma meta desse atendente nesse mês! Edite a existente.');return;}
+    rec={mes,ano,atendente,metaTotal,diasUteis:[],fbId:'meta_'+Date.now()};
+    metas.push(rec);
+  }
   if(window.fbSave)window.fbSave('metas',rec.fbId,rec);
-  closeMetaModal();document.getElementById('meta-mes-fil').value=mes;document.getElementById('meta-ano-fil').value=String(ano);renderMetas();toast('Meta salva!');
+  closeMetaModal();
+  document.getElementById('meta-mes-fil').value=mes;document.getElementById('meta-ano-fil').value=String(ano);
+  renderMetas();
+  toast('Meta salva! Agora marque os dias úteis.');
+  openDiasUteisModal(rec.fbId);
 }
 
 let dashGloboInstance=null;
@@ -4251,30 +4458,38 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   const hojeMeta=new Date();
   const mesAtualMeta=MESES[hojeMeta.getMonth()];
   const anoAtualMeta=hojeMeta.getFullYear();
-  const metaDoMes = metas.find(m=>m.mes===mesAtualMeta && String(m.ano)===String(anoAtualMeta) && (atendFiltro?m.atendente===atendFiltro:!m.atendente));
-  function preencherMeta(num, valorMeta, cor){
-    const bloco=document.getElementById('gw-meta'+num+'-bloco');
-    if(!valorMeta||valorMeta<=0){ if(bloco)bloco.style.display='none'; return false; }
-    if(bloco)bloco.style.display='block';
-    const pct=Math.min(R(vMes.bruto/valorMeta*100,1),100);
-    document.getElementById('gw-meta'+num+'-pct').textContent=pct+'%';
-    document.getElementById('gw-meta'+num+'-progress').style.width=pct+'%';
-    document.getElementById('gw-meta'+num+'-progress').style.background=cor;
-    document.getElementById('gw-meta'+num+'-valores').textContent=fmt(vMes.bruto)+' de '+fmt(valorMeta);
-    return true;
-  }
-  document.getElementById('gw-meta1-bloco').style.display='none';
-  document.getElementById('gw-meta2-bloco').style.display='none';
+  // Meta agora é sempre individual — só mostra o card se um atendente
+  // específico estiver selecionado (não faz sentido pra "Todos").
+  const metaDoMes = atendFiltro ? metas.find(m=>m.mes===mesAtualMeta && String(m.ano)===String(anoAtualMeta) && m.atendente===atendFiltro) : null;
   let temMetaAtiva=false;
+  document.getElementById('gw-meta-semana-bloco').style.display='none';
+  document.getElementById('gw-meta-mes-bloco').style.display='none';
   if(metaDoMes){
-    const meta1=metaDoMes.receita||0, meta2=metaDoMes.receita2||0;
-    const meta1Batida = meta1>0 && vMes.bruto>=meta1;
-    if(meta1>0 && !meta1Batida){
-      temMetaAtiva=preencherMeta(1, meta1, '#00FF80');
-    } else if(meta2>0){
-      temMetaAtiva=preencherMeta(2, meta2, '#0EA5E9');
-    } else if(meta1>0){
-      temMetaAtiva=preencherMeta(1, meta1, '#00FF80');
+    const det=calcularMetaSemanalDetalhe(metaDoMes);
+    const hojeIso=isoDate(hojeMeta);
+    const semanaAtual=det.semanas.find(s=>hojeIso>=s.inicio&&hojeIso<=s.fim);
+    if(semanaAtual&&semanaAtual.metaSemana>0){
+      temMetaAtiva=true;
+      document.getElementById('gw-meta-semana-bloco').style.display='block';
+      const desbloqueado=semanaAtual.bateu||det.bateuMensal;
+      const pct=Math.min(R(semanaAtual.receita/semanaAtual.metaSemana*100,1),100);
+      document.getElementById('gw-meta-semana-progress').style.width=pct+'%';
+      document.getElementById('gw-meta-semana-valores').textContent=fmt(semanaAtual.receita)+' de '+fmt(semanaAtual.metaSemana);
+      const badge=document.getElementById('gw-meta-semana-bonus');
+      badge.textContent=desbloqueado?'🔓 R$150':'🔒 R$150';
+      badge.style.background=desbloqueado?'rgba(255,255,255,.35)':'rgba(0,0,0,.25)';
+      badge.style.color='#fff';
+    }
+    if(metaDoMes.metaTotal>0){
+      temMetaAtiva=true;
+      document.getElementById('gw-meta-mes-bloco').style.display='block';
+      const pctMes=Math.min(R(det.receitaTotalMes/metaDoMes.metaTotal*100,1),100);
+      document.getElementById('gw-meta-mes-progress').style.width=pctMes+'%';
+      document.getElementById('gw-meta-mes-valores').textContent=fmt(det.receitaTotalMes)+' de '+fmt(metaDoMes.metaTotal);
+      const badgeMes=document.getElementById('gw-meta-mes-bonus');
+      badgeMes.textContent=det.bateuMensal?'🔓 R$500':'🔒 R$500';
+      badgeMes.style.background=det.bateuMensal?'rgba(255,255,255,.35)':'rgba(0,0,0,.25)';
+      badgeMes.style.color='#fff';
     }
   }
   if(metasBloco) metasBloco.style.display = temMetaAtiva ? 'block' : 'none';
@@ -4860,8 +5075,23 @@ async function atualizarTodosRastreios(silencioso){
 
   if(status)status.textContent=`Sincronizando rastreamentos (0/${total})...`;
   let done=0;
-  for(const r of pendentes){const gi=dados.indexOf(r);await buscarRastreioSilent(gi,'rast');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,1800));}
-  for(const p of padPendentes){const gi=pads.indexOf(p);await buscarRastreioSilent(gi,'pad');done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,1800));}
+  // IMPORTANTE: procura a posição de cada pedido DE NOVO a cada volta do
+  // laço, usando o ID estável (fbId) — nunca guarda a posição calculada antes
+  // de começar. Como o ciclo é lento (1,8s entre cada item) e qualquer
+  // gravação no meio do caminho recarrega a lista "dados"/"pads" inteira do
+  // zero (por causa do tempo real do Firebase), uma posição antiga vira
+  // referência morta, e os pedidos seguintes acabavam sendo pulados sem
+  // nenhum aviso — essa era a causa de alguns pedidos nunca atualizarem.
+  for(const r of pendentes){
+    const gi=dados.findIndex(d=>d.fbId===r.fbId);
+    if(gi>=0) await buscarRastreioSilent(gi,'rast');
+    done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,1800));
+  }
+  for(const p of padPendentes){
+    const gi=pads.findIndex(d=>d.fbId===p.fbId);
+    if(gi>=0) await buscarRastreioSilent(gi,'pad');
+    done++;if(status)status.textContent=`Sincronizando rastreamentos (${done}/${total})...`;await new Promise(res=>setTimeout(res,1800));
+  }
   if(status)status.textContent=`✅ Atualizado — ${new Date().toLocaleTimeString('pt-BR')}`;
   setTimeout(()=>{if(status)status.textContent='';},5000);
   renderRastreamento();
