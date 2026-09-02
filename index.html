@@ -1146,8 +1146,11 @@ tr:hover td{background:var(--neon-glow)}
       <span id="gw-agendamentos-valor" style="font-size:14px;font-weight:800;color:#7DD3FC">R$ 0,00</span>
     </div>
 
-    <div id="gw-metas-bloco" style="display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)">
-      <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Meta do mês</div>
+    <div id="gw-metas-bloco" onclick="abrirDetalheMetaDashboard()" style="cursor:pointer;display:none;background:linear-gradient(135deg,#0a3d24,#0fa55c);border:1px solid rgba(0,255,128,.35);border-radius:10px;padding:13px;margin-bottom:16px;box-shadow:0 0 18px rgba(0,255,128,.12)" title="Clique para ver o detalhamento completo">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:9px;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1px;font-weight:700">Meta do mês</div>
+        <i class="ti ti-arrows-diagonal" style="font-size:12px;color:rgba(255,255,255,.6)"></i>
+      </div>
       <div id="gw-meta-semana-bloco" style="display:none;margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
           <span style="font-size:12px;font-weight:700;color:#fff">Semana atual</span>
@@ -1176,6 +1179,7 @@ tr:hover td{background:var(--neon-glow)}
       </div>
     </div>
 
+    <div id="gw-demais-periodos-wrap">
     <div style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Demais períodos</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px">
       <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:8px 6px;text-align:center">
@@ -1193,6 +1197,7 @@ tr:hover td{background:var(--neon-glow)}
         <div id="gw-mes-valor" style="font-size:13px;font-weight:700;color:var(--neon);margin-top:2px">R$ 0</div>
         <div id="gw-mes-vendas" style="font-size:9px;color:var(--t3)">0 ped.</div>
       </div>
+    </div>
     </div>
 
     <div id="adm-dash-despesas-wrap" style="display:none">
@@ -2670,6 +2675,69 @@ function diasUteisPorSemana(diasUteisISO){
 // diária, quebra por semana, receita real de cada semana, e o status dos
 // bônus — incluindo a regra de "bateu o mês mas não uma semana específica,
 // libera o bônus da semana mesmo assim".
+// Abre o mesmo detalhamento completo (semana a semana) que já existe na tela
+// de Metas, só que direto de cima do card do Dashboard — sem precisar trocar
+// de tela pra ver a evolução detalhada.
+function abrirDetalheMetaDashboard(){
+  const atendFiltro = adminLogado ? (document.getElementById('adm-dash-atend')?.value||'') : (usuarioLogado?.nome||'');
+  if(!atendFiltro){ toast('Selecione um atendente pra ver o detalhamento da meta.'); return; }
+  const hoje=new Date();
+  const mesAtual=MESES[hoje.getMonth()];
+  const anoAtual=hoje.getFullYear();
+  const meta=metas.find(m=>m.mes===mesAtual&&String(m.ano)===String(anoAtual)&&m.atendente===atendFiltro);
+  if(!meta){ toast('Nenhuma meta cadastrada pra '+atendFiltro.split(' ')[0]+' esse mês.'); return; }
+  const det=calcularMetaSemanalDetalhe(meta);
+  const pctMensal=meta.metaTotal>0?Math.min(R(det.receitaTotalMes/meta.metaTotal*100,1),100):0;
+  const corMensal=det.bateuMensal?'var(--green)':pctMensal>=60?'var(--amber)':'var(--red)';
+  const falta=Math.max(R(meta.metaTotal-det.receitaTotalMes,2),0);
+  const hojeIso=isoDate(hoje);
+
+  const linhaResumo=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border)"><span style="color:var(--t2);font-size:12px">${label}</span><span style="font-weight:700;font-size:13px;${cor?'color:'+cor:''}">${valor}</span></div>`;
+
+  const semanasHtml=det.semanas.length===0
+    ?`<div class="empty" style="padding:1rem"><i class="ti ti-calendar-off"></i>Nenhum dia útil marcado ainda.</div>`
+    :det.semanas.map((s,i)=>{
+      const desbloqueado=s.bateu||det.bateuMensal;
+      const pctSemana=s.metaSemana>0?Math.min(R(s.receita/s.metaSemana*100,1),100):0;
+      const corSemana=desbloqueado?'var(--green)':pctSemana>=60?'var(--amber)':'var(--red)';
+      const ehAtual=hojeIso>=s.inicio&&hojeIso<=s.fim;
+      const faltaSemana=Math.max(R(s.metaSemana-s.receita,2),0);
+      return`
+        <div style="background:var(--bg2);border:1.5px solid ${ehAtual?'var(--neon)':'var(--border2)'};border-radius:var(--r-md);padding:.75rem;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+            <span style="font-size:12px;font-weight:700">Semana ${i+1}${ehAtual?' <span style="color:var(--neon);font-weight:800">· atual</span>':''} <span style="color:var(--t3);font-weight:400">(${formatarDataBR(s.inicio)} – ${formatarDataBR(s.fim)})</span></span>
+            <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${desbloqueado?'rgba(0,255,128,.15)':'rgba(255,255,255,.05)'};color:${desbloqueado?'var(--green)':'var(--t3)'}">${desbloqueado?'🔓 R$150':'🔒 R$150'}</span>
+          </div>
+          <div class="progress-bar" style="height:8px"><div class="progress-fill" style="width:${pctSemana}%;background:${corSemana}"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-top:4px">
+            <span>Feito: <strong style="color:var(--t1)">${fmt(s.receita)}</strong></span>
+            <span>Meta: <strong style="color:var(--t1)">${fmt(s.metaSemana)}</strong></span>
+            <span>Falta: <strong style="color:${faltaSemana>0?'var(--amber-t)':'var(--green)'}">${faltaSemana>0?fmt(faltaSemana):'Batida!'}</strong></span>
+          </div>
+        </div>`;
+    }).join('');
+
+  document.getElementById('track-modal-title').textContent=`Meta — ${atendFiltro.split(' ')[0]} — ${meta.mes}/${meta.ano}`;
+  document.getElementById('track-modal-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:13px;font-weight:700">Meta mensal</span>
+      <span style="font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px;background:${det.bateuMensal?'rgba(0,255,128,.15)':'rgba(255,255,255,.05)'};color:${det.bateuMensal?'var(--green)':'var(--t3)'}">${det.bateuMensal?'🔓 R$500 desbloqueado':'🔒 R$500 bloqueado'}</span>
+    </div>
+    <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pctMensal}%;background:${corMensal}"></div></div>
+    ${linhaResumo('Meta diária', fmt(det.metaDiaria))}
+    ${linhaResumo('Realizado até agora', fmt(det.receitaTotalMes), 'var(--green)')}
+    ${linhaResumo('Meta total do mês', fmt(meta.metaTotal))}
+    ${linhaResumo('Falta pra bater o mês', falta>0?fmt(falta):'Meta batida! 🎉', falta>0?'var(--amber-t)':'var(--green)')}
+    <div style="margin-top:16px;padding-top:10px;border-top:1.5px solid var(--border2);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-weight:800;font-size:14px">Bônus total até agora</span>
+      <span style="font-weight:800;font-size:18px;color:var(--neon)">${fmt(det.bonusTotal)}</span>
+    </div>
+    <p style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Semanas</p>
+    ${semanasHtml}
+  `;
+  document.getElementById('modal-track').classList.add('open');
+}
+
 function calcularMetaSemanalDetalhe(meta){
   const diasUteis=(meta.diasUteis||[]).slice().sort();
   const metaDiaria=diasUteis.length>0?R(meta.metaTotal/diasUteis.length,2):0;
@@ -4381,6 +4449,8 @@ function renderCardGatewayDashAdm(atendFiltro, lucroHoje){
   const ontem = addDias(hoje,-1);
   const inicioSem = inicioSemana(hoje);
   const inicioM = inicioMes(hoje);
+  const demaisPeriodosWrap = document.getElementById('gw-demais-periodos-wrap');
+  if(demaisPeriodosWrap) demaisPeriodosWrap.style.display = adminLogado ? 'block' : 'none';
 
   function somaPeriodo(de, ate){
     let bruto=0, vendas=0;
